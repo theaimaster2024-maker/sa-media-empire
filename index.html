@@ -589,13 +589,26 @@ function setupNav(){
   document.getElementById('u-nm').textContent=name;
   document.getElementById('u-av').textContent=name.charAt(0).toUpperCase();
   document.getElementById('u-rl').innerHTML=`<span class="role-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span>`;
+
+  // Finance — OWNER ONLY, hidden for everyone else
+  const financeNav=document.getElementById('nav-finance');
   if(role==='owner'){
-    document.getElementById('nav-finance').style.display='flex';
+    financeNav.style.display='flex';
     document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
+  } else {
+    financeNav.style.display='none';
+    // Also hide finance page completely
+    const financePg=document.getElementById('pg-finance');
+    if(financePg)financePg.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-lock" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3"></i><div style="font-size:16px;font-weight:600">Access Denied</div><div style="font-size:13px;margin-top:6px">এই section শুধু Owner দেখতে পারবে</div></div>';
   }
 }
 function showPg(pg){
+  // Block finance for non-owners
+  if(pg==='finance'&&profile?.role!=='owner'){
+    toast('এই section শুধু Owner এর জন্য');
+    return;
+  }
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
   document.getElementById('pg-'+pg).classList.add('on');
