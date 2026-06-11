@@ -1478,19 +1478,25 @@ setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
 let _noteChanged=false, _pvtNoteChanged=false;
 
 async function loadSharedNote(){
-  document.getElementById('note-status').textContent='Loading...';
-  const {data,error}=await sb.from('shared_notes').select('*').order('id').limit(1).single();
-  if(error&&error.code!=='PGRST116'){
-    document.getElementById('note-status').textContent='Error loading';
-    return;
+  const statusEl=document.getElementById('note-status');
+  if(statusEl)statusEl.textContent='';
+  const {data,error}=await sb.from('shared_notes').select('*').order('id').limit(1);
+  if(error){if(statusEl)statusEl.textContent='Error loading';return;}
+  if(data&&data.length>0){
+    const note=data[0];
+    const ta=document.getElementById('shared-note-content');
+    if(ta)ta.value=note.content||'';
+    const t=new Date(note.updated_at);
+    const ls=document.getElementById('note-last-saved');
+    const sb2=document.getElementById('note-saved-by');
+    if(ls)ls.textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    if(sb2)sb2.textContent=note.updated_by_name?`by ${note.updated_by_name}`:'';
+  } else {
+    const ta=document.getElementById('shared-note-content');
+    if(ta)ta.value='';
+    const ls=document.getElementById('note-last-saved');
+    if(ls)ls.textContent='Not saved yet';
   }
-  if(data){
-    document.getElementById('shared-note-content').value=data.content||'';
-    const t=new Date(data.updated_at);
-    document.getElementById('note-last-saved').textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    document.getElementById('note-saved-by').textContent=data.updated_by_name?`by ${data.updated_by_name}`:'';
-  }
-  document.getElementById('note-status').textContent='';
   _noteChanged=false;
 }
 
@@ -1501,48 +1507,56 @@ function noteChanged(){
 
 async function saveSharedNote(){
   const content=document.getElementById('shared-note-content').value;
-  document.getElementById('note-status').textContent='Saving...';
-  // Check if row exists
-  const {data:existing}=await sb.from('shared_notes').select('id').limit(1).single();
+  const statusEl=document.getElementById('note-status');
+  if(statusEl)statusEl.textContent='Saving...';
+  const {data:existing}=await sb.from('shared_notes').select('id').limit(1);
   let error;
-  if(existing){
+  if(existing&&existing.length>0){
     ({error}=await sb.from('shared_notes').update({
-      content,
-      updated_at:new Date().toISOString(),
+      content,updated_at:new Date().toISOString(),
       updated_by:user?.id,
       updated_by_name:profile?.name||user?.email?.split('@')[0]
-    }).eq('id',existing.id));
+    }).eq('id',existing[0].id));
   } else {
     ({error}=await sb.from('shared_notes').insert({
-      content,
-      updated_by:user?.id,
+      content,updated_by:user?.id,
       updated_by_name:profile?.name||user?.email?.split('@')[0]
     }));
   }
-  if(error){toast('Error saving: '+error.message);document.getElementById('note-status').textContent='Save failed';return;}
+  if(error){toast('Error: '+error.message);if(statusEl)statusEl.textContent='Save failed';return;}
   const now=new Date();
-  document.getElementById('note-last-saved').textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  document.getElementById('note-saved-by').textContent=`by ${profile?.name||'you'}`;
-  document.getElementById('note-status').textContent='Saved ✓';
+  const ls=document.getElementById('note-last-saved');
+  const sb2=document.getElementById('note-saved-by');
+  if(ls)ls.textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(sb2)sb2.textContent=`by ${profile?.name||'you'}`;
+  if(statusEl)statusEl.textContent='Saved ✓';
   _noteChanged=false;
-  setTimeout(()=>document.getElementById('note-status').textContent='',2000);
+  setTimeout(()=>{if(statusEl)statusEl.textContent='';},2000);
   toast('Notes saved ✓');
 }
 
 // ── PRIVATE NOTES (owner only)
 async function loadPrivateNote(){
-  document.getElementById('pvt-note-status').textContent='Loading...';
-  const {data,error}=await sb.from('private_notes').select('*').eq('owner_id',user?.id).limit(1).single();
-  if(error&&error.code!=='PGRST116'){
-    document.getElementById('pvt-note-status').textContent='Error';
+  const statusEl=document.getElementById('pvt-note-status');
+  if(statusEl)statusEl.textContent='';
+  const {data,error}=await sb.from('private_notes').select('*').eq('owner_id',user?.id).limit(1);
+  if(error){
+    if(statusEl)statusEl.textContent='Error loading';
     return;
   }
-  if(data){
-    document.getElementById('private-note-content').value=data.content||'';
-    const t=new Date(data.updated_at);
-    document.getElementById('pvt-note-last-saved').textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(data&&data.length>0){
+    const note=data[0];
+    const ta=document.getElementById('private-note-content');
+    if(ta)ta.value=note.content||'';
+    const t=new Date(note.updated_at);
+    const ls=document.getElementById('pvt-note-last-saved');
+    if(ls)ls.textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  } else {
+    const ta=document.getElementById('private-note-content');
+    if(ta)ta.value='';
+    const ls=document.getElementById('pvt-note-last-saved');
+    if(ls)ls.textContent='Not saved yet';
   }
-  document.getElementById('pvt-note-status').textContent='';
   _pvtNoteChanged=false;
 }
 
@@ -1554,24 +1568,22 @@ function pvtNoteChanged(){
 async function savePrivateNote(){
   if(profile?.role!=='owner'){toast('🔒 শুধু Owner save করতে পারবে');return;}
   const content=document.getElementById('private-note-content').value;
-  document.getElementById('pvt-note-status').textContent='Saving...';
-  const {data:existing}=await sb.from('private_notes').select('id').eq('owner_id',user?.id).limit(1).single();
+  const statusEl=document.getElementById('pvt-note-status');
+  if(statusEl)statusEl.textContent='Saving...';
+  const {data:existing}=await sb.from('private_notes').select('id').eq('owner_id',user?.id).limit(1);
   let error;
-  if(existing){
-    ({error}=await sb.from('private_notes').update({
-      content,updated_at:new Date().toISOString()
-    }).eq('id',existing.id));
+  if(existing&&existing.length>0){
+    ({error}=await sb.from('private_notes').update({content,updated_at:new Date().toISOString()}).eq('id',existing[0].id));
   } else {
-    ({error}=await sb.from('private_notes').insert({
-      owner_id:user?.id,content
-    }));
+    ({error}=await sb.from('private_notes').insert({owner_id:user?.id,content}));
   }
-  if(error){toast('Error: '+error.message);document.getElementById('pvt-note-status').textContent='Failed';return;}
+  if(error){toast('Error: '+error.message);if(statusEl)statusEl.textContent='Failed';return;}
   const now=new Date();
-  document.getElementById('pvt-note-last-saved').textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  document.getElementById('pvt-note-status').textContent='Saved ✓';
+  const ls=document.getElementById('pvt-note-last-saved');
+  if(ls)ls.textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(statusEl)statusEl.textContent='Saved ✓';
   _pvtNoteChanged=false;
-  setTimeout(()=>document.getElementById('pvt-note-status').textContent='',2000);
+  setTimeout(()=>{if(statusEl)statusEl.textContent='';},2000);
   toast('Private notes saved ✓');
 }
 
