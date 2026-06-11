@@ -216,11 +216,10 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
-      <div class="nav-it" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
+      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
-      <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
-      <div class="nav-it" onclick="window.open('https://samediaempire.netlify.app','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
+      <div class="nav-it" onclick="window.open('https://samediaempire.netlify.app','_blank')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board <i class="ti ti-external-link" style="font-size:12px;margin-left:auto;opacity:.5"></i></div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
       <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
@@ -623,23 +622,21 @@ function setupNav(){
   document.getElementById('u-rl').innerHTML=`<span class="role-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span>`;
 
   if(role==='owner'){
-    // Owner: show finance nav + admin section + private notes
     document.getElementById('nav-finance').style.display='flex';
     document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
     document.getElementById('nav-private-notes').style.display='flex';
-    // Show finance content, hide blocked message
+    document.getElementById('nav-expenses').style.display='flex';
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='block';
     if(fb)fb.style.display='none';
   } else {
-    // Manager/Employee: hide finance + private notes + admin
     document.getElementById('nav-finance').style.display='none';
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
     document.getElementById('nav-private-notes').style.display='none';
-    // Block finance content
+    document.getElementById('nav-expenses').style.display='none';
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='none';
@@ -647,11 +644,9 @@ function setupNav(){
   }
 }
 function showPg(pg){
-  // Hard block finance for non-owners
-  if(pg==='finance'&&profile?.role!=='owner'){
-    toast('🔒 এই section শুধু Owner এর জন্য');
-    return;
-  }
+  // Hard block finance + expenses for non-owners
+  if(pg==='finance'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
+  if(pg==='expenses'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
   document.getElementById('pg-'+pg)?.classList.add('on');
