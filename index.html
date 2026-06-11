@@ -183,7 +183,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .b-card{position:absolute;background:white;border-radius:16px;border:1px solid rgba(108,99,255,.15);
   box-shadow:0 2px 16px rgba(108,99,255,.1),0 1px 4px rgba(108,99,255,.06);
   min-width:200px;min-height:110px;display:flex;flex-direction:column;
-  transition:box-shadow .2s,border-color .2s,transform .15s}
+  transition:box-shadow .2s,border-color .2s,transform .15s;z-index:2}
 .b-card:hover{border-color:rgba(108,99,255,.35);box-shadow:0 8px 28px rgba(108,99,255,.18);transform:translateY(-1px)}
 .b-card.bsel{border-color:#6C63FF!important;box-shadow:0 0 0 3px rgba(108,99,255,.18),0 8px 28px rgba(108,99,255,.2)!important;transform:translateY(-1px)}
 .b-card-head{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;
@@ -430,6 +430,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <span style="font-size:9px;font-weight:700;color:#9BA3C2;text-transform:uppercase;letter-spacing:.08em;padding-right:4px">Draw</span>
           <button class="tb" id="bt-pen" title="Pen / Marker" onclick="bTool('pen')"><i class="ti ti-pencil"></i></button>
           <button class="tb" id="bt-arrow" title="Arrow line" onclick="bTool('arrow')"><i class="ti ti-arrow-narrow-right"></i></button>
+          <button class="tb" id="bt-erase" title="Erase drawing" onclick="bTool('erase')"><i class="ti ti-eraser"></i></button>
+          <button class="tb" title="Clear all drawings" onclick="bClearDrawings()" style="color:#FF4E6A" title="সব drawing মুছে ফেলো"><i class="ti ti-eraser-off"></i></button>
           <button class="tb" id="bt-conn" title="Connect two cards" onclick="bTool('conn')"><i class="ti ti-share-2"></i></button>
 
           <div style="width:1px;height:24px;background:rgba(108,99,255,.15);margin:0 6px"></div>
@@ -482,8 +484,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           background-image:radial-gradient(circle,rgba(108,99,255,.18) 1.2px,transparent 1.2px);
           background-size:26px 26px">
           <div id="b-canvas" style="position:absolute;transform-origin:0 0">
-            <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none" width="10000" height="10000"></svg>
-            <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
+            <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
+            <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none;z-index:50"></canvas>
           </div>
         </div>
 
@@ -919,7 +921,26 @@ function initBoard(){
         else bAddCard(p.x,p.y,_bTool);
         bTool('sel'); return;
       }
-      if(e.button===0&&_bTool==='pen'){_bDrawing=true;const p=s2c(e.clientX,e.clientY);_bDctx.beginPath();_bDctx.moveTo(p.x,p.y);_bDctx.strokeStyle=_bColor;_bDctx.lineWidth=bPenSz/_bSc;_bDctx.lineCap='round';dc.style.pointerEvents='all';return;}
+      if(e.button===0&&_bTool==='pen'){
+        _bDrawing=true;
+        const p=s2c(e.clientX,e.clientY);
+        _bDctx.beginPath();_bDctx.moveTo(p.x,p.y);
+        _bDctx.strokeStyle=_bColor;_bDctx.lineWidth=bPenSz/_bSc;
+        _bDctx.lineCap='round';_bDctx.lineJoin='round';
+        _bDctx.globalCompositeOperation='source-over';
+        dc.style.pointerEvents='all';
+        return;
+      }
+      if(e.button===0&&_bTool==='erase'){
+        _bDrawing=true;
+        const p=s2c(e.clientX,e.clientY);
+        _bDctx.beginPath();_bDctx.moveTo(p.x,p.y);
+        _bDctx.globalCompositeOperation='destination-out';
+        _bDctx.lineWidth=(bPenSz*3)/_bSc;
+        _bDctx.lineCap='round';_bDctx.lineJoin='round';
+        dc.style.pointerEvents='all';
+        return;
+      }
       if(e.button===0&&_bTool==='arrow'){_bLineStart=s2c(e.clientX,e.clientY);return;}
       _bPan=true;_bPs={x:e.clientX,y:e.clientY,px:_bPx,py:_bPy};
       wrap.style.cursor='grabbing';
@@ -949,7 +970,11 @@ function initBoard(){
       el.style.width=nw+'px';el.style.height=nh+'px';el.style.left=nx+'px';el.style.top=ny+'px';
       c.w=nw;c.h=nh;c.x=nx;c.y=ny; bRedrawConns();
     }
-    if(_bDrawing){const p=s2c(e.clientX,e.clientY);_bDctx.lineTo(p.x,p.y);_bDctx.stroke();}
+    if(_bDrawing){
+      const p=s2c(e.clientX,e.clientY);
+      _bDctx.lineTo(p.x,p.y);
+      _bDctx.stroke();
+    }
     if(_bConnFrom&&_bTmpLine){const p=s2c(e.clientX,e.clientY);_bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);}
   });
 
@@ -957,7 +982,7 @@ function initBoard(){
     if(_bPan){_bPan=false;wrap.style.cursor='';}
     if(_bDrag){bPushH();_bDrag=null;}
     if(_bResize){bPushH();_bResize=null;}
-    if(_bDrawing){_bDrawing=false;dc.style.pointerEvents='none';bPushH();}
+    if(_bDrawing){_bDrawing=false;_bDctx.globalCompositeOperation='source-over';dc.style.pointerEvents='none';bPushH();}
     if(_bLineStart){
       const end=s2c(e.clientX,e.clientY);
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -1000,9 +1025,30 @@ function initBoard(){
 function bTool(t){
   _bTool=t;
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
-  const m={sel:'bt-note',note:'bt-note',script:'bt-script',sticky:'bt-sticky',pen:'bt-pen',arrow:'bt-arrow',conn:'bt-conn'};
-  // just highlight matching
-  ['note','script','sticky','pen','arrow','conn'].forEach(k=>{if(t===k)document.getElementById('bt-'+k)?.classList.add('on');});
+  ['note','script','sticky','pen','arrow','erase','conn'].forEach(k=>{
+    if(t===k)document.getElementById('bt-'+k)?.classList.add('on');
+  });
+  const dc=document.getElementById('b-dc');
+  if(dc){
+    if(t==='pen'||t==='erase'){
+      // Draw layer above cards
+      dc.style.zIndex='50';
+      dc.style.pointerEvents='none'; // will be set to 'all' on mousedown
+    } else {
+      // Draw layer below cards (cards have z-index:2, svg connections z-index:1)
+      dc.style.zIndex='3'; // above connections but pen marks stay visible
+      dc.style.pointerEvents='none';
+    }
+  }
+}
+function bClearDrawings(){
+  if(!confirm('সব drawing মুছে ফেলবে?'))return;
+  const dc=document.getElementById('b-dc');
+  if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
+  document.querySelectorAll('#b-svg .bcg').forEach(e=>e.remove());
+  _bConns=[];
+  toast('Drawings cleared ✓');
+  bPushH();
 }
 function bColor(el){
   _bColor=el.dataset.c;
