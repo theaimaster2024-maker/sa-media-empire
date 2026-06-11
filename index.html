@@ -466,6 +466,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           padding:6px 12px;font-size:12px;font-weight:600;color:#5A6080;
           box-shadow:0 2px 10px rgba(108,99,255,.1)">100%</div>
 
+        <!-- BOARDS BUTTON -->
+        <button id="b-boards-btn" onclick="bShowBoardPicker()" style="position:absolute;top:14px;right:14px;z-index:100;
+          background:linear-gradient(135deg,#6C63FF,#00C2CB);color:white;border:none;border-radius:10px;
+          padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+          display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(108,99,255,.3)">
+          <i class="ti ti-layout-board"></i>
+          <span id="b-board-name">Default Board</span>
+          <i class="ti ti-chevron-down" style="font-size:11px"></i>
+        </button>
+
         <!-- CANVAS WRAP — light dot grid like Claude -->
         <div id="b-wrap" style="width:100%;height:100%;overflow:hidden;cursor:grab;position:relative;
           background-color:#F0F2FF;
@@ -880,11 +890,13 @@ function initBoard(){
     e.preventDefault();
     const txt=e.dataTransfer.getData('text/plain');
     const p=s2c(e.clientX,e.clientY);
-    if(txt){const c=bAddCard(p.x-100,p.y-60,'note',{title:'Note',body:txt});bPushH();}
+    if(txt){bAddCard(p.x-100,p.y-60,'note',{title:'Note',body:txt});bPushH();}
   });
+
+  wrap.addEventListener('dblclick',e=>{
     if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
       const p=s2c(e.clientX,e.clientY);
-      bAddCard(p.x,p.y,'note');
+      bAddCard(p.x-100,p.y-55,'note');
     }
   });
 
@@ -953,9 +965,19 @@ function initBoard(){
   });
 
   applyT();
-  bLoadBoard();
-  if(!_bCards.length&&!_bStickies.length){
-    const c=bAddCard(150,160,'script',{title:'🎬 My Script',body:'Intro:\n\nMain:\n\nOutro:'});
+  // Load default board or first available
+  const boards=bGetAllBoards();
+  if(boards.length===0){
+    // First time - create default board
+    bSaveIndex([{id:'default',name:'Main Board',created:Date.now(),updated:Date.now()}]);
+  }
+  _bCurrentBoardId='default';
+  const nameEl=document.getElementById('b-board-name');
+  const allBoards=bGetAllBoards();
+  const curBoard=allBoards.find(b=>b.id==='default');
+  if(nameEl&&curBoard)nameEl.textContent=curBoard.name;
+  if(!bLoadBoard()){
+    bAddCard(150,160,'script',{title:'🎬 My Script',body:'Intro:\n\nMain:\n\nOutro:'});
     bAddCard(430,150,'note',{title:'📌 Notes',color:'#00C2CB'});
     bAddSticky(680,180);
     const st=document.querySelectorAll('.b-sticky-txt')[0];
@@ -1216,23 +1238,124 @@ function bUndo(){
   _bStickies.forEach(s=>{bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
   bRedrawConns();toast('Undo ✓');
 }
-function bSave(){
-  const data={cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}};
-  try{localStorage.setItem('sa_board_v4',JSON.stringify(data));toast('Board saved ✓');}catch(e){toast('Save failed');}
+// ── MULTI-BOARD SYSTEM
+let _bCurrentBoardId='default';
+
+function bGetAllBoards(){try{return JSON.parse(localStorage.getItem('sa_boards_index')||'[]');}catch{return[];}}
+function bSaveIndex(boards){localStorage.setItem('sa_boards_index',JSON.stringify(boards));}
+
+function bShowBoardPicker(){
+  const boards=bGetAllBoards();
+  let menu=document.getElementById('b-board-picker');
+  if(!menu){menu=document.createElement('div');menu.id='b-board-picker';menu.style.cssText='position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:300;background:white;border:1px solid rgba(108,99,255,.2);border-radius:16px;padding:12px;min-width:300px;box-shadow:0 8px 32px rgba(108,99,255,.2);max-height:420px;overflow-y:auto';document.getElementById('pg-board').appendChild(menu);}
+  menu.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 4px">
+      <span style="font-size:13px;font-weight:700;color:#1A1F3C">📋 My Boards</span>
+      <button onclick="bCreateNewBoard()" style="background:linear-gradient(135deg,#6C63FF,#00C2CB);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit"><i class="ti ti-plus"></i> New Board</button>
+    </div>
+    ${boards.length===0?`<div style="text-align:center;padding:20px;color:#9BA3C2;font-size:13px">No saved boards yet</div>`:
+      boards.map(b=>`<div onclick="bSwitchBoard('${b.id}');document.getElementById('b-board-picker').style.display='none'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid ${b.id===_bCurrentBoardId?'#6C63FF':'rgba(108,99,255,.1)'};background:${b.id===_bCurrentBoardId?'rgba(108,99,255,.06)':'white'};margin-bottom:6px;cursor:pointer">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6C63FF22,#00C2CB22);display:flex;align-items:center;justify-content:center">📋</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1F3C">${b.name}</div><div style="font-size:11px;color:#9BA3C2">${new Date(b.updated||b.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div></div>
+        ${b.id===_bCurrentBoardId?'<span style="font-size:10px;background:#6C63FF;color:white;padding:2px 8px;border-radius:20px;font-weight:600">Active</span>':''}
+        <button onclick="event.stopPropagation();bDeleteBoard('${b.id}')" style="background:none;border:none;cursor:pointer;color:#9BA3C2;font-size:15px;padding:4px;border-radius:6px" onmouseover="this.style.color='#FF4E6A'" onmouseout="this.style.color='#9BA3C2'"><i class="ti ti-trash"></i></button>
+      </div>`).join('')}
+    <div style="margin-top:10px;padding:10px 12px;background:rgba(108,99,255,.05);border-radius:10px;border:1px solid rgba(108,99,255,.1)">
+      <div style="font-size:10px;font-weight:700;color:#9BA3C2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🔗 Share (view-only)</div>
+      <div style="display:flex;gap:6px">
+        <input id="b-share-url" class="f-inp" value="${location.origin+location.pathname}?board=${_bCurrentBoardId}" readonly style="font-size:11px;flex:1;cursor:pointer" onclick="this.select()"/>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('b-share-url').value);toast('Link copied ✓')" style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:0 10px;cursor:pointer;color:#6C63FF;font-size:14px"><i class="ti ti-copy"></i></button>
+      </div>
+      <div style="font-size:10px;color:#9BA3C2;margin-top:4px">Link পেলে শুধু দেখতে পাবে · Manager ও Owner সব দেখবে</div>
+    </div>`;
+  menu.style.display=menu.style.display==='none'||!menu.style.display?'block':'none';
 }
-function bLoadBoard(){
-  const raw=localStorage.getItem('sa_board_v4');if(!raw)return false;
+
+function bCreateNewBoard(){
+  const name=prompt('Board এর নাম দিন:','New Board');
+  if(!name)return;
+  const id='b'+Date.now();
+  const boards=bGetAllBoards();
+  boards.push({id,name,created:Date.now(),updated:Date.now()});
+  bSaveIndex(boards);
+  bSwitchBoard(id);
+  document.getElementById('b-board-picker')&&(document.getElementById('b-board-picker').style.display='none');
+  toast(`"${name}" তৈরি হয়েছে ✓`);
+}
+
+function bSwitchBoard(id){
+  bSave(true);
+  _bCards.forEach(c=>document.getElementById(c.id)?.remove());
+  _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
+  document.querySelectorAll('.bcg').forEach(e=>e.remove());
+  const dc=document.getElementById('b-dc');if(dc){const ctx=dc.getContext('2d');ctx.clearRect(0,0,10000,10000);}
+  _bCards=[];_bStickies=[];_bConns=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
+  _bCurrentBoardId=id;
+  const boards=bGetAllBoards();
+  const board=boards.find(b=>b.id===id);
+  const nameEl=document.getElementById('b-board-name');
+  if(nameEl)nameEl.textContent=board?.name||'Board';
+  if(!bLoadBoard()){bAddCard(150,150,'note',{title:'📝 Start here'});bPushH();}
+  window._bApplyT?.();
+}
+
+function bDeleteBoard(id){
+  if(!confirm('এই board delete করবে?'))return;
+  localStorage.removeItem('sa_board_'+id);
+  const boards=bGetAllBoards().filter(b=>b.id!==id);
+  bSaveIndex(boards);
+  if(_bCurrentBoardId===id){
+    _bCurrentBoardId=boards[0]?.id||'default';
+    bSwitchBoard(_bCurrentBoardId);
+  }
+  bShowBoardPicker();toast('Deleted');
+}
+
+function bSave(silent=false){
+  const id=_bCurrentBoardId||'default';
+  const data={
+    cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
+    stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
+    conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
+  };
   try{
-    const data=JSON.parse(raw);
-    _bNid=data.nid||1;
-    if(data.vp){_bPx=data.vp.px;_bPy=data.vp.py;_bSc=data.vp.sc;}
-    data.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
-    data.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
-    _bConns=data.conns||[];bRedrawConns();window._bApplyT?.();
+    localStorage.setItem('sa_board_'+id,JSON.stringify(data));
+    const boards=bGetAllBoards();
+    const b=boards.find(b=>b.id===id);
+    if(b)b.updated=Date.now();
+    else boards.push({id,name:'Default Board',created:Date.now(),updated:Date.now()});
+    bSaveIndex(boards);
+    if(!silent)toast('Saved ✓');
+  }catch(e){if(!silent)toast('Save failed');}
+}
+
+function bLoadBoard(){
+  const id=_bCurrentBoardId||'default';
+  const raw=localStorage.getItem('sa_board_'+id);
+  if(!raw)return false;
+  try{
+    const d=JSON.parse(raw);
+    _bNid=d.nid||1;
+    if(d.vp){_bPx=d.vp.px;_bPy=d.vp.py;_bSc=d.vp.sc;}
+    d.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
+    d.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+    _bConns=d.conns||[];bRedrawConns();window._bApplyT?.();
     return true;
   }catch(e){return false;}
 }
-function bClear(){if(!confirm('Board clear করবে?'))return;_bCards.forEach(c=>document.getElementById(c.id)?.remove());_bStickies.forEach(s=>document.getElementById(s.id)?.remove());document.querySelectorAll('.bcg').forEach(e=>e.remove());_bCards=[];_bStickies=[];_bConns=[];toast('Cleared');}
+
+function bClear(){
+  if(!confirm('Board clear করবে?'))return;
+  _bCards.forEach(c=>document.getElementById(c.id)?.remove());
+  _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
+  document.querySelectorAll('.bcg').forEach(e=>e.remove());
+  const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
+  _bCards=[];_bStickies=[];_bConns=[];
+  toast('Cleared');
+}
+
+// Auto-save every 30 seconds
+setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
 
 init();
 </script>
