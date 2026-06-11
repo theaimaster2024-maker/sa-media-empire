@@ -174,7 +174,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .role-sel{font-family:inherit;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);outline:none;cursor:pointer}
 .role-sel:focus{border-color:var(--purple)}
 
-/* MOBILE */
+/* BOARD */
+.tb{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.tb:hover{background:var(--purple-l);color:var(--purple);border-color:var(--purple-m)}
+.tb.on{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple)}
+.bclr{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s;flex-shrink:0}
+.bclr.on{border-color:var(--text);transform:scale(1.2)}
+.b-card{position:absolute;background:white;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 2px 12px rgba(108,99,255,.08);min-width:200px;min-height:110px;display:flex;flex-direction:column}
+.b-card:hover{border-color:var(--purple-m);box-shadow:0 6px 24px rgba(108,99,255,.15)}
+.b-card.bsel{border-color:var(--purple)!important;box-shadow:0 0 0 3px rgba(108,99,255,.2)!important}
+.b-card-head{display:flex;align-items:center;gap:8px;padding:9px 11px 7px;border-bottom:1px solid var(--border);border-radius:14px 14px 0 0;flex-shrink:0;cursor:move}
+.b-card-ico{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.b-card-ttl{flex:1;font-size:13px;font-weight:700;color:var(--text);outline:none;border:none;background:transparent;cursor:text;font-family:inherit;min-width:0}
+.b-card-body{flex:1;padding:9px 11px;font-size:13px;color:var(--text);outline:none;line-height:1.7;cursor:text;word-break:break-word;white-space:pre-wrap;overflow-y:auto}
+.b-card-body:empty::before{content:attr(data-ph);color:var(--text3)}
+.b-card-body img{max-width:100%;border-radius:8px;margin:3px 0;display:block}
+.b-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px;transition:.15s;opacity:0}
+.b-card:hover .b-del{opacity:1}
+.b-del:hover{color:var(--red)}
+.brh{position:absolute;z-index:20;opacity:0;transition:.15s}
+.b-card:hover .brh{opacity:1}
+.brh-n{top:-4px;left:16px;right:16px;height:8px;cursor:n-resize}
+.brh-s{bottom:-4px;left:16px;right:16px;height:8px;cursor:s-resize}
+.brh-e{right:-4px;top:16px;bottom:16px;width:8px;cursor:e-resize}
+.brh-w{left:-4px;top:16px;bottom:16px;width:8px;cursor:w-resize}
+.brh-se{bottom:-6px;right:-6px;width:13px;height:13px;cursor:se-resize;border-radius:50%;background:var(--purple)}
+.brh-sw{bottom:-6px;left:-6px;width:13px;height:13px;cursor:sw-resize;border-radius:50%;background:var(--purple-m)}
+.brh-ne{top:-6px;right:-6px;width:13px;height:13px;cursor:ne-resize;border-radius:50%;background:var(--purple-m)}
+.brh-nw{top:-6px;left:-6px;width:13px;height:13px;cursor:nw-resize;border-radius:50%;background:var(--purple-m)}
+.bcd{position:absolute;width:13px;height:13px;border-radius:50%;background:var(--cyan);border:2px solid white;box-shadow:0 0 0 2px var(--cyan);cursor:crosshair;opacity:0;transition:.15s;z-index:15}
+.b-card:hover .bcd{opacity:1}
+.bcd-r{right:-6px;top:50%;transform:translateY(-50%)}
+.bcd-b{bottom:-6px;left:50%;transform:translateX(-50%)}
+.b-sticky{position:absolute;border-radius:10px;padding:11px;cursor:move;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:160px;min-height:110px;display:flex;flex-direction:column}
+.b-sticky-txt{flex:1;font-size:13px;font-weight:500;outline:none;cursor:text;line-height:1.6;word-break:break-word;white-space:pre-wrap}
+.b-sticky-txt:empty::before{content:'Note...';opacity:.4}
+.b-sdel{align-self:flex-end;background:rgba(0,0,0,.12);border:none;border-radius:5px;cursor:pointer;font-size:13px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s;margin-bottom:3px}
+.b-sticky:hover .b-sdel{opacity:1}
 @media(max-width:720px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -361,8 +397,68 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <!-- CANVAS BOARD PAGE -->
-    <div class="pg" id="pg-board" style="padding:0;margin:-28px;height:calc(100vh - 0px)">
-      <iframe id="board-iframe" src="" style="width:100%;height:100vh;border:none;display:block"></iframe>
+    <div class="pg" id="pg-board" style="padding:0;margin:-28px;position:relative;height:100vh;overflow:hidden">
+      <div id="board-container" style="width:100%;height:100vh;display:none;flex-direction:column">
+        <!-- Board toolbar -->
+        <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(255,255,255,.97);border:1px solid var(--border2);border-radius:14px;padding:7px 12px;display:flex;align-items:center;gap:4px;box-shadow:0 4px 20px rgba(108,99,255,.15)">
+          <span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Add</span>
+          <button class="tb" id="bt-note" title="Note card" onclick="bTool('note')"><i class="ti ti-notes"></i></button>
+          <button class="tb" id="bt-script" title="Script card" onclick="bTool('script')"><i class="ti ti-writing"></i></button>
+          <button class="tb" id="bt-sticky" title="Sticky note" onclick="bTool('sticky')"><i class="ti ti-sticky-note"></i></button>
+          <button class="tb" title="Image" onclick="document.getElementById('b-img-inp').click()"><i class="ti ti-photo"></i></button>
+          <button class="tb" title="YouTube embed" onclick="bModal('yt')"><i class="ti ti-brand-youtube"></i></button>
+          <button class="tb" title="Google Drive" onclick="bModal('drive')"><i class="ti ti-brand-google-drive"></i></button>
+          <div style="width:1px;height:22px;background:var(--border2);margin:0 4px"></div>
+          <span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Draw</span>
+          <button class="tb" id="bt-pen" title="Pen/Marker" onclick="bTool('pen')"><i class="ti ti-pencil"></i></button>
+          <button class="tb" id="bt-arrow" title="Arrow" onclick="bTool('arrow')"><i class="ti ti-arrow-narrow-right"></i></button>
+          <button class="tb" id="bt-conn" title="Connect cards" onclick="bTool('conn')"><i class="ti ti-share-2"></i></button>
+          <div style="width:1px;height:22px;background:var(--border2);margin:0 4px"></div>
+          <span style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Color</span>
+          <div class="bclr on" style="background:#6C63FF" data-c="#6C63FF" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#00C2CB" data-c="#00C2CB" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#00C48C" data-c="#00C48C" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#F5A623" data-c="#F5A623" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#FF4E6A" data-c="#FF4E6A" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#FF6B9D" data-c="#FF6B9D" onclick="bColor(this)"></div>
+          <div class="bclr" style="background:#1A1F3C" data-c="#1A1F3C" onclick="bColor(this)"></div>
+          <input type="range" min="2" max="20" value="4" id="b-pen-sz" style="width:60px;accent-color:var(--purple);cursor:pointer" oninput="bPenSz=+this.value"/>
+          <div style="width:1px;height:22px;background:var(--border2);margin:0 4px"></div>
+          <button class="tb" title="Zoom in" onclick="bZoom(.15)"><i class="ti ti-zoom-in"></i></button>
+          <button class="tb" title="Zoom out" onclick="bZoom(-.15)"><i class="ti ti-zoom-out"></i></button>
+          <button class="tb" title="Fit all" onclick="bFit()"><i class="ti ti-maximize"></i></button>
+          <button class="tb" title="Undo" onclick="bUndo()"><i class="ti ti-arrow-back-up"></i></button>
+          <div style="width:1px;height:22px;background:var(--border2);margin:0 4px"></div>
+          <button class="tb" title="Save board" onclick="bSave()" style="color:var(--green)"><i class="ti ti-device-floppy"></i></button>
+          <button class="tb" title="Clear board" onclick="bClear()" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </div>
+        <!-- Zoom badge -->
+        <div id="b-zoom" style="position:absolute;top:12px;left:12px;z-index:100;background:white;border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--text2)">100%</div>
+        <!-- Canvas wrap -->
+        <div id="b-wrap" style="width:100%;height:100%;overflow:hidden;cursor:grab;background-image:radial-gradient(circle,rgba(108,99,255,.1) 1px,transparent 1px);background-size:28px 28px;position:relative">
+          <div id="b-canvas" style="position:absolute;transform-origin:0 0">
+            <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none" width="10000" height="10000"></svg>
+            <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
+          </div>
+        </div>
+        <!-- Help -->
+        <div style="position:absolute;bottom:14px;left:14px;z-index:100;background:rgba(255,255,255,.9);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;font-size:11px;color:var(--text2)">
+          <b style="color:var(--purple)">Double-click</b> → card &nbsp;|&nbsp; <b style="color:var(--purple)">Dot</b> → connect &nbsp;|&nbsp; <b style="color:var(--purple)">Scroll</b> → zoom &nbsp;|&nbsp; <b style="color:var(--purple)">Ctrl+S</b> → save
+        </div>
+      </div>
+      <!-- Modal -->
+      <div id="b-modal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center">
+        <div style="background:white;border-radius:16px;padding:24px;width:380px;box-shadow:0 20px 60px rgba(108,99,255,.25)">
+          <h3 id="b-modal-title" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px"></h3>
+          <input id="b-modal-inp" class="f-inp" type="text" style="margin-bottom:10px"/>
+          <div id="b-modal-hint" style="font-size:11px;color:var(--text3);margin-bottom:14px"></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn-p" style="flex:1;padding:9px" onclick="bModalOk()">Add</button>
+            <button style="flex:1;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit" onclick="document.getElementById('b-modal').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="b-img-inp" accept="image/*" style="display:none" onchange="bHandleImg(this)"/>
     </div>
 
   </div>
@@ -451,9 +547,9 @@ function showPg(pg){
   if(pg==='finance')loadNotes();
   if(pg==='dashboard')loadDash();
   if(pg==='board'){
-    const iframe=document.getElementById('board-iframe');
-    if(!iframe.src||iframe.src==='about:blank'||iframe.src==='')
-      iframe.src='sa-board.html';
+    const c=document.getElementById('board-container');
+    c.style.display='flex';
+    if(!window._boardInit)initBoard();
   }
   document.getElementById('sb').classList.remove('open');
 }
@@ -661,7 +757,368 @@ const fmts=n=>n>=100000?'৳'+(n/100000).toFixed(1)+'L':n>=1000?'৳'+(n/1000).t
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
 
 
-// ── SCRIPT BOARD — now handled by sa-board.html iframe
+// ── SCRIPT BOARD — canvas
+let _bSc=1,_bPx=0,_bPy=0,_bTool='sel',_bColor='#6C63FF',bPenSz=4;
+let _bCards=[],_bStickies=[],_bConns=[],_bNid=1;
+let _bDrag=null,_bResize=null,_bPan=false,_bPs={};
+let _bConnFrom=null,_bTmpLine=null;
+let _bDrawing=false,_bDctx=null;
+let _bLineStart=null,_bSel=null;
+let _bHistory=[],_bHIdx=-1,_bModalMode='',_bModalTarget=null;
+
+function initBoard(){
+  window._boardInit=true;
+  const wrap=document.getElementById('b-wrap');
+  const canvas=document.getElementById('b-canvas');
+  const svg=document.getElementById('b-svg');
+  const dc=document.getElementById('b-dc');
+  _bDctx=dc.getContext('2d');
+
+  function applyT(){
+    canvas.style.transform=`translate(${_bPx}px,${_bPy}px) scale(${_bSc})`;
+    document.getElementById('b-zoom').textContent=Math.round(_bSc*100)+'%';
+  }
+  window._bApplyT=applyT;
+
+  function s2c(sx,sy){return{x:(sx-_bPx)/_bSc,y:(sy-_bPy)/_bSc};}
+  window._bs2c=s2c;
+
+  wrap.addEventListener('wheel',e=>{e.preventDefault();bZoom(e.deltaY<0?.1:-.1,e.clientX,e.clientY);},{passive:false});
+
+  wrap.addEventListener('dblclick',e=>{
+    if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
+      const p=s2c(e.clientX,e.clientY);
+      bAddCard(p.x,p.y,'note');
+    }
+  });
+
+  wrap.addEventListener('mousedown',e=>{
+    if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
+      if(e.button===0&&(_bTool==='note'||_bTool==='script'||_bTool==='sticky')){
+        const p=s2c(e.clientX,e.clientY);
+        if(_bTool==='sticky')bAddSticky(p.x,p.y);
+        else bAddCard(p.x,p.y,_bTool);
+        bTool('sel'); return;
+      }
+      if(e.button===0&&_bTool==='pen'){_bDrawing=true;const p=s2c(e.clientX,e.clientY);_bDctx.beginPath();_bDctx.moveTo(p.x,p.y);_bDctx.strokeStyle=_bColor;_bDctx.lineWidth=bPenSz/_bSc;_bDctx.lineCap='round';dc.style.pointerEvents='all';return;}
+      if(e.button===0&&_bTool==='arrow'){_bLineStart=s2c(e.clientX,e.clientY);return;}
+      _bPan=true;_bPs={x:e.clientX,y:e.clientY,px:_bPx,py:_bPy};
+      wrap.style.cursor='grabbing';
+    }
+    if(e.button===0)bSelCard(null);
+  });
+
+  document.addEventListener('mousemove',e=>{
+    if(_bPan){_bPx=_bPs.px+(e.clientX-_bPs.x);_bPy=_bPs.py+(e.clientY-_bPs.y);applyT();}
+    if(_bDrag){
+      const el=document.getElementById(_bDrag.id);
+      const nx=(e.clientX-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-_bPy)/_bSc-_bDrag.oy;
+      el.style.left=nx+'px';el.style.top=ny+'px';
+      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
+      if(c){c.x=nx;c.y=ny;} bRedrawConns();
+    }
+    if(_bResize){
+      const el=document.getElementById(_bResize.id);
+      const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
+      const mx=(e.clientX-_bPx)/_bSc,my=(e.clientY-_bPy)/_bSc;
+      const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
+      let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
+      if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
+      if(dir.includes('s'))nh=Math.max(100,_bResize.sh+dy);
+      if(dir.includes('w')){nw=Math.max(180,_bResize.sw-dx);nx=_bResize.cx+_bResize.sw-nw;}
+      if(dir.includes('n')){nh=Math.max(100,_bResize.sh-dy);ny=_bResize.cy+_bResize.sh-nh;}
+      el.style.width=nw+'px';el.style.height=nh+'px';el.style.left=nx+'px';el.style.top=ny+'px';
+      c.w=nw;c.h=nh;c.x=nx;c.y=ny; bRedrawConns();
+    }
+    if(_bDrawing){const p=s2c(e.clientX,e.clientY);_bDctx.lineTo(p.x,p.y);_bDctx.stroke();}
+    if(_bConnFrom&&_bTmpLine){const p=s2c(e.clientX,e.clientY);_bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);}
+  });
+
+  document.addEventListener('mouseup',e=>{
+    if(_bPan){_bPan=false;wrap.style.cursor='';}
+    if(_bDrag){bPushH();_bDrag=null;}
+    if(_bResize){bPushH();_bResize=null;}
+    if(_bDrawing){_bDrawing=false;dc.style.pointerEvents='none';bPushH();}
+    if(_bLineStart){
+      const end=s2c(e.clientX,e.clientY);
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',_bLineStart.x);line.setAttribute('y1',_bLineStart.y);
+      line.setAttribute('x2',end.x);line.setAttribute('y2',end.y);
+      line.setAttribute('stroke',_bColor);line.setAttribute('stroke-width',3/_bSc);line.setAttribute('stroke-linecap','round');
+      const ang=Math.atan2(end.y-_bLineStart.y,end.x-_bLineStart.x),aw=12/_bSc;
+      const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      arr.setAttribute('points',`${end.x},${end.y} ${end.x-aw*Math.cos(ang-.4)},${end.y-aw*Math.sin(ang-.4)} ${end.x-aw*Math.cos(ang+.4)},${end.y-aw*Math.sin(ang+.4)}`);
+      arr.setAttribute('fill',_bColor);
+      g.appendChild(line);g.appendChild(arr);svg.appendChild(g);
+      _bLineStart=null;bPushH();
+    }
+    if(_bConnFrom&&_bTmpLine){svg.removeChild(_bTmpLine);_bTmpLine=null;_bConnFrom=null;}
+  });
+
+  applyT();
+  bLoadBoard();
+  if(!_bCards.length&&!_bStickies.length){
+    const c=bAddCard(150,160,'script',{title:'🎬 My Script',body:'Intro:\n\nMain:\n\nOutro:'});
+    bAddCard(430,150,'note',{title:'📌 Notes',color:'#00C2CB'});
+    bAddSticky(680,180);
+    const st=document.querySelectorAll('.b-sticky-txt')[0];
+    if(st){st.innerText='💡 Idea here!';_bStickies[0].text=st.innerText;}
+    bPushH();
+  }
+}
+
+function bTool(t){
+  _bTool=t;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  const m={sel:'bt-note',note:'bt-note',script:'bt-script',sticky:'bt-sticky',pen:'bt-pen',arrow:'bt-arrow',conn:'bt-conn'};
+  // just highlight matching
+  ['note','script','sticky','pen','arrow','conn'].forEach(k=>{if(t===k)document.getElementById('bt-'+k)?.classList.add('on');});
+}
+function bColor(el){
+  _bColor=el.dataset.c;
+  document.querySelectorAll('.bclr').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+}
+function bZoom(d,cx,cy){
+  const wrap=document.getElementById('b-wrap');
+  const r=wrap.getBoundingClientRect();
+  const ox=cx??r.width/2,oy=cy??r.height/2;
+  const ns=Math.min(Math.max(_bSc+d,.15),4);
+  _bPx=ox-(ox-_bPx)*(ns/_bSc);_bPy=oy-(oy-_bPy)*(ns/_bSc);_bSc=ns;
+  window._bApplyT?.();
+}
+function bFit(){
+  const all=[..._bCards,..._bStickies];
+  if(!all.length)return;
+  const wrap=document.getElementById('b-wrap');
+  const xs=all.map(c=>c.x),ys=all.map(c=>c.y);
+  const mn={x:Math.min(...xs)-50,y:Math.min(...ys)-50};
+  const mx={x:Math.max(...xs)+280,y:Math.max(...ys)+220};
+  const w=wrap.clientWidth,h=wrap.clientHeight;
+  _bSc=Math.min(w/(mx.x-mn.x),h/(mx.y-mn.y),.95);
+  _bPx=-mn.x*_bSc+(w-(mx.x-mn.x)*_bSc)/2;
+  _bPy=-mn.y*_bSc+(h-(mx.y-mn.y)*_bSc)/2;
+  window._bApplyT?.();
+}
+
+function bAddCard(x,y,type,opts={}){
+  const id='bc'+(++_bNid);
+  const c={id,x,y,type,w:opts.w||230,h:opts.h||150,title:opts.title||(type==='script'?'New Script':'New Card'),body:opts.body||'',color:opts.color||_bColor};
+  _bCards.push(c);bRenderCard(c);return c;
+}
+function bRenderCard(c){
+  const el=document.createElement('div');
+  el.className='b-card';el.id=c.id;
+  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px`;
+  const col=c.color||'#6C63FF';
+  el.innerHTML=`
+    <div class="b-card-head" style="background:${col}12">
+      <div class="b-card-ico" style="background:${col}22;color:${col}"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
+      <div class="b-card-ttl" contenteditable="true" spellcheck="false">${c.title}</div>
+      <button class="b-del" onclick="bDelCard('${c.id}')"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="b-card-body" contenteditable="true" spellcheck="false" data-ph="Write here...">${c.body||''}</div>
+    <div class="bcd bcd-r" data-id="${c.id}"></div>
+    <div class="bcd bcd-b" data-id="${c.id}"></div>
+    <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
+    <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
+    <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
+    <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>`;
+
+  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;});
+  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;});
+
+  el.querySelector('.b-card-head').addEventListener('mousedown',e=>{
+    if(e.target.isContentEditable||e.target.closest('.b-del'))return;
+    e.stopPropagation();
+    _bDrag={id:c.id,ox:(e.clientX-_bPx)/_bSc-c.x,oy:(e.clientY-_bPy)/_bSc-c.y};
+    bSelCard(c.id);
+  });
+
+  el.querySelectorAll('.brh').forEach(rh=>{
+    rh.addEventListener('mousedown',e=>{
+      e.stopPropagation();e.preventDefault();
+      _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-_bPx)/_bSc,sy:(e.clientY-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
+    });
+  });
+
+  el.querySelectorAll('.bcd').forEach(dot=>{
+    const svg=document.getElementById('b-svg');
+    dot.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      const r=dot.getBoundingClientRect();
+      const p=window._bs2c?.((r.left+r.right)/2,(r.top+r.bottom)/2)||{x:c.x,y:c.y};
+      _bConnFrom=c.id;
+      _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+      _bTmpLine.setAttribute('x1',p.x);_bTmpLine.setAttribute('y1',p.y);
+      _bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);
+      _bTmpLine.setAttribute('stroke',_bColor);_bTmpLine.setAttribute('stroke-width','2');
+      _bTmpLine.setAttribute('stroke-dasharray','6 4');_bTmpLine.setAttribute('opacity','.7');
+      svg.appendChild(_bTmpLine);
+    });
+    dot.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==c.id){bAddConn(_bConnFrom,c.id);_bConnFrom=null;}});
+  });
+
+  el.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==c.id){bAddConn(_bConnFrom,c.id);_bConnFrom=null;}});
+  el.addEventListener('click',()=>bSelCard(c.id));
+  document.getElementById('b-canvas').appendChild(el);
+}
+function bDelCard(id){
+  _bCards=_bCards.filter(c=>c.id!==id);
+  _bConns=_bConns.filter(c=>c.f!==id&&c.t!==id);
+  document.getElementById(id)?.remove();bRedrawConns();bPushH();
+}
+function bSelCard(id){
+  _bSel=id;
+  document.querySelectorAll('.b-card').forEach(el=>el.classList.remove('bsel'));
+  if(id)document.getElementById(id)?.classList.add('bsel');
+}
+
+function bAddSticky(x,y){
+  const id='bs'+(++_bNid);
+  const cols=['#F5A623','#6C63FF','#00C48C','#FF6B9D','#00C2CB'];
+  const col=cols[Math.floor(Math.random()*cols.length)];
+  const s={id,x,y,text:'',color:col};
+  _bStickies.push(s);bRenderSticky(s);
+}
+function bRenderSticky(s){
+  const el=document.createElement('div');
+  el.className='b-sticky';el.id=s.id;
+  el.style.cssText=`left:${s.x}px;top:${s.y}px;background:${s.color}22;border:1.5px solid ${s.color}55;color:${s.color}`;
+  el.innerHTML=`<button class="b-sdel" onclick="bDelSticky('${s.id}')"><i class="ti ti-x"></i></button><div class="b-sticky-txt" contenteditable="true" spellcheck="false">${s.text}</div>`;
+  el.querySelector('.b-sticky-txt').addEventListener('input',e=>{s.text=e.target.innerText;});
+  el.addEventListener('mousedown',e=>{
+    if(e.target.isContentEditable||e.target.closest('.b-sdel'))return;
+    e.stopPropagation();
+    _bDrag={id:s.id,ox:(e.clientX-_bPx)/_bSc-s.x,oy:(e.clientY-_bPy)/_bSc-s.y};
+  });
+  document.getElementById('b-canvas').appendChild(el);
+}
+function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();}
+
+function bAddConn(f,t){
+  if(_bConns.find(c=>(c.f===f&&c.t===t)||(c.f===t&&c.t===f)))return;
+  _bConns.push({id:'bcn'+(++_bNid),f,t,color:_bColor});
+  bRedrawConns();bPushH();
+}
+function bGetCenter(id){
+  const el=document.getElementById(id);
+  const c=_bCards.find(c=>c.id===id)||_bStickies.find(s=>s.id===id);
+  if(!el||!c)return null;
+  return{x:c.x+el.offsetWidth/2,y:c.y+el.offsetHeight/2};
+}
+function bRedrawConns(){
+  const svg=document.getElementById('b-svg');
+  document.querySelectorAll('.bcg').forEach(e=>e.remove());
+  _bConns.forEach(conn=>{
+    const a=bGetCenter(conn.f),b=bGetCenter(conn.t);if(!a||!b)return;
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.className.baseVal='bcg';
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${a.x},${a.y} C${a.x+dx*.4},${a.y} ${b.x-dx*.4},${b.y} ${b.x},${b.y}`);
+    path.setAttribute('stroke',conn.color||'#6C63FF');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');path.setAttribute('opacity','.75');
+    const ang=Math.atan2(dy,dx),aw=10;
+    const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    arr.setAttribute('points',`${b.x},${b.y} ${b.x-aw*Math.cos(ang-.4)},${b.y-aw*Math.sin(ang-.4)} ${b.x-aw*Math.cos(ang+.4)},${b.y-aw*Math.sin(ang+.4)}`);
+    arr.setAttribute('fill',conn.color||'#6C63FF');arr.setAttribute('opacity','.75');
+    const dc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    dc.setAttribute('cx',mx);dc.setAttribute('cy',my);dc.setAttribute('r','8');
+    dc.setAttribute('fill','#FF4E6A');dc.setAttribute('opacity','0');dc.style.cursor='pointer';dc.style.pointerEvents='all';
+    dc.addEventListener('click',()=>{_bConns=_bConns.filter(c=>c.id!==conn.id);bRedrawConns();});
+    g.addEventListener('mouseenter',()=>dc.setAttribute('opacity','1'));
+    g.addEventListener('mouseleave',()=>dc.setAttribute('opacity','0'));
+    g.appendChild(path);g.appendChild(arr);g.appendChild(dc);svg.appendChild(g);
+  });
+}
+
+function bModal(mode,target){
+  _bModalMode=mode;_bModalTarget=target||null;
+  const titles={yt:'YouTube embed',drive:'Google Drive link'};
+  const phs={yt:'https://youtube.com/watch?v=...',drive:'https://drive.google.com/...'};
+  const hints={yt:'YouTube link paste করুন',drive:'Google Drive link paste করুন'};
+  document.getElementById('b-modal-title').textContent=titles[mode]||mode;
+  document.getElementById('b-modal-inp').value='';
+  document.getElementById('b-modal-inp').placeholder=phs[mode]||'';
+  document.getElementById('b-modal-hint').textContent=hints[mode]||'';
+  const m=document.getElementById('b-modal');m.style.display='flex';
+  setTimeout(()=>document.getElementById('b-modal-inp').focus(),50);
+}
+function bModalOk(){
+  const val=document.getElementById('b-modal-inp').value.trim();
+  if(!val){document.getElementById('b-modal').style.display='none';return;}
+  const wrap=document.getElementById('b-wrap');
+  const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:200,y:200};
+  if(_bModalMode==='yt'){
+    const m=val.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
+    if(!m){toast('Invalid YouTube URL');return;}
+    const c=bAddCard(p.x-150,p.y-120,'note',{w:320,h:240,title:'YouTube Video'});
+    const el=document.getElementById(c.id);
+    const body=el?.querySelector('.b-card-body');
+    if(body){body.innerHTML=`<iframe src="https://www.youtube.com/embed/${m[1]}" style="width:100%;aspect-ratio:16/9;border-radius:8px;border:none;display:block" allowfullscreen></iframe>`;c.body=body.innerHTML;}
+  } else if(_bModalMode==='drive'){
+    const c=bAddCard(p.x-130,p.y-50,'note',{w:280,h:110,title:'Google Drive'});
+    const el=document.getElementById(c.id);
+    const body=el?.querySelector('.b-card-body');
+    if(body){body.innerHTML=`<a href="${val}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text2);font-size:12px"><i class="ti ti-brand-google-drive" style="font-size:16px;color:#00C2CB"></i><span>Open in Google Drive</span></a>`;c.body=body.innerHTML;}
+  }
+  document.getElementById('b-modal').style.display='none';bPushH();
+}
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('pg-board')?.classList.contains('on')){
+    if(e.key==='Delete'&&_bSel&&!document.activeElement.isContentEditable)bDelCard(_bSel);
+    if(e.key==='z'&&(e.ctrlKey||e.metaKey)){e.preventDefault();bUndo();}
+    if(e.key==='s'&&(e.ctrlKey||e.metaKey)&&document.getElementById('pg-board')?.classList.contains('on')){e.preventDefault();bSave();}
+    if(e.key==='Escape'){bTool('sel');document.getElementById('b-modal').style.display='none';}
+  }
+});
+function bHandleImg(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const wrap=document.getElementById('b-wrap');
+    const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:200,y:200};
+    const c=bAddCard(p.x-120,p.y-90,'note',{w:260,h:200,title:'Image'});
+    const el=document.getElementById(c.id);
+    const body=el?.querySelector('.b-card-body');
+    if(body){body.innerHTML=`<img src="${e.target.result}" style="width:100%;border-radius:8px"/>`;c.body=body.innerHTML;}
+  };
+  r.readAsDataURL(f);inp.value='';
+}
+function bPushH(){
+  const snap=JSON.stringify({cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),conns:_bConns});
+  _bHistory=_bHistory.slice(0,_bHIdx+1);_bHistory.push(snap);_bHIdx=_bHistory.length-1;
+}
+function bUndo(){
+  if(_bHIdx<=0)return;
+  _bHIdx--;
+  const snap=JSON.parse(_bHistory[_bHIdx]);
+  _bCards.forEach(c=>document.getElementById(c.id)?.remove());
+  _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
+  document.querySelectorAll('.bcg').forEach(e=>e.remove());
+  _bCards=snap.cards;_bStickies=snap.stickies;_bConns=snap.conns;
+  _bCards.forEach(c=>{bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
+  _bStickies.forEach(s=>{bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+  bRedrawConns();toast('Undo ✓');
+}
+function bSave(){
+  const data={cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}};
+  try{localStorage.setItem('sa_board_v4',JSON.stringify(data));toast('Board saved ✓');}catch(e){toast('Save failed');}
+}
+function bLoadBoard(){
+  const raw=localStorage.getItem('sa_board_v4');if(!raw)return false;
+  try{
+    const data=JSON.parse(raw);
+    _bNid=data.nid||1;
+    if(data.vp){_bPx=data.vp.px;_bPy=data.vp.py;_bSc=data.vp.sc;}
+    data.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
+    data.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+    _bConns=data.conns||[];bRedrawConns();window._bApplyT?.();
+    return true;
+  }catch(e){return false;}
+}
+function bClear(){if(!confirm('Board clear করবে?'))return;_bCards.forEach(c=>document.getElementById(c.id)?.remove());_bStickies.forEach(s=>document.getElementById(s.id)?.remove());document.querySelectorAll('.bcg').forEach(e=>e.remove());_bCards=[];_bStickies=[];_bConns=[];toast('Cleared');}
 
 init();
 </script>
