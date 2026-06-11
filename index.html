@@ -184,7 +184,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 <div id="loading">
   <div class="spinner"></div>
-  <div style="font-size:14px;color:var(--text2)">SA Media Empire লোড হচ্ছে...</div>
+  <div style="font-size:14px;color:#6B7280">SA Media Empire লোড হচ্ছে...</div>
 </div>
 
 <div id="auth" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
@@ -200,7 +200,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <div class="f-grp"><label class="f-lbl">Password</label><input class="f-inp" type="password" id="a-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
     <div class="auth-err" id="a-err"></div>
     <button class="btn-main" id="a-btn" onclick="login()"><i class="ti ti-login"></i> Sign in</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px">Admin দ্বারা দেওয়া account দিয়ে login করুন</div>
+    <div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:12px">Admin দ্বারা দেওয়া account দিয়ে login করুন</div>
   </div>
 </div>
 
@@ -330,7 +330,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div class="panel">
           <div class="p-hd">
             <div class="p-ti"><i class="ti ti-notebook"></i> Shared notes</div>
-            <span id="note-status" style="font-size:11px;color:var(--text3)"></span>
+            <span id="note-status" style="font-size:11px;color:#9CA3AF"></span>
           </div>
           <textarea id="shared-note-content" class="f-inp" rows="20"
             style="resize:vertical;font-size:14px;line-height:1.8;min-height:420px"
@@ -340,16 +340,16 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div>
           <div class="panel" style="background:rgba(0,194,203,.05);border-color:rgba(0,194,203,.2)">
             <div class="p-ti" style="color:#00C2CB"><i class="ti ti-users"></i> Access</div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.9;margin-top:10px">
+            <div style="font-size:13px;color:#6B7280;line-height:1.9;margin-top:10px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — দেখতে ও লিখতে পারবে</div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Manager — দেখতে ও লিখতে পারবে</div>
-              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:var(--red)"></i> Employee — দেখতে পাবে না</div>
+              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:#EF4444"></i> Employee — দেখতে পাবে না</div>
             </div>
           </div>
           <div class="panel" style="margin-top:0">
             <div class="p-ti"><i class="ti ti-clock"></i> Last saved</div>
-            <div id="note-last-saved" style="font-size:13px;color:var(--text2);margin-top:10px">—</div>
-            <div id="note-saved-by" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+            <div id="note-last-saved" style="font-size:13px;color:#6B7280;margin-top:10px">—</div>
+            <div id="note-saved-by" style="font-size:11px;color:#9CA3AF;margin-top:4px"></div>
           </div>
         </div>
       </div>
@@ -358,14 +358,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <!-- PRIVATE NOTES PAGE (owner only) -->
     <div class="pg" id="pg-private-notes">
       <div class="pg-top">
-        <div><div class="pg-t">Private Notes <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">শুধু তুমি দেখতে পাবে — Manager ও দেখতে পারবে না</div></div>
+        <div><div class="pg-t">Private Notes <span style="font-size:14px;color:#9CA3AF;font-weight:400">· Owner only</span></div><div class="pg-s">শুধু তুমি দেখতে পাবে — Manager ও দেখতে পারবে না</div></div>
         <button class="btn-p" style="width:auto;padding:9px 16px" onclick="savePrivateNote()"><i class="ti ti-device-floppy"></i> Save</button>
       </div>
       <div class="two-col" style="align-items:start">
         <div class="panel" style="border-color:rgba(108,99,255,.25)">
           <div class="p-hd">
             <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
-            <span id="pvt-note-status" style="font-size:11px;color:var(--text3)"></span>
+            <span id="pvt-note-status" style="font-size:11px;color:#9CA3AF"></span>
           </div>
           <textarea id="private-note-content" class="f-inp" rows="20"
             style="resize:vertical;font-size:14px;line-height:1.8;min-height:420px"
@@ -375,15 +375,15 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div>
           <div class="panel" style="background:rgba(108,99,255,.05);border-color:rgba(108,99,255,.2)">
             <div class="p-ti"><i class="ti ti-lock"></i> Access</div>
-            <div style="font-size:13px;color:var(--text2);line-height:1.9;margin-top:10px">
+            <div style="font-size:13px;color:#6B7280;line-height:1.9;margin-top:10px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — শুধু তুমি দেখতে পারবে</div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-x" style="color:var(--red)"></i> Manager — দেখতে পারবে না</div>
-              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:var(--red)"></i> Employee — দেখতে পারবে না</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-x" style="color:#EF4444"></i> Manager — দেখতে পারবে না</div>
+              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:#EF4444"></i> Employee — দেখতে পারবে না</div>
             </div>
           </div>
           <div class="panel" style="margin-top:0">
             <div class="p-ti"><i class="ti ti-clock"></i> Last saved</div>
-            <div id="pvt-note-last-saved" style="font-size:13px;color:var(--text2);margin-top:10px">—</div>
+            <div id="pvt-note-last-saved" style="font-size:13px;color:#6B7280;margin-top:10px">—</div>
           </div>
         </div>
       </div>
@@ -393,16 +393,16 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <div class="pg" id="pg-finance">
       <!-- Owner check happens in JS, this is extra safety -->
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
-        <i class="ti ti-lock" style="font-size:52px;color:var(--text3);opacity:.3;display:block;margin-bottom:16px"></i>
-        <div style="font-size:18px;font-weight:700;color:var(--text2)">Access Denied</div>
-        <div style="font-size:13px;color:var(--text3);margin-top:8px">এই section শুধু Owner দেখতে পারবে</div>
+        <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
+        <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
+        <div style="font-size:13px;color:#9CA3AF;margin-top:8px">এই section শুধু Owner দেখতে পারবে</div>
       </div>
       <div id="finance-content">
-        <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
+        <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:#9CA3AF;font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
         <div class="panel">
           <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
           <textarea class="f-inp" id="fin-notes" rows="7" style="resize:vertical;margin-top:14px" placeholder="Personal finance notes, income records, private expenses...&#10;&#10;এখানে যা লিখবে শুধু তুমিই দেখতে পাবে।" oninput="saveNotes()"></textarea>
-          <div style="font-size:11px;color:var(--text3);margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
+          <div style="font-size:11px;color:#9CA3AF;margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
         </div>
       </div>
     </div>
@@ -432,7 +432,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
           <button class="btn-p" onclick="addMember()"><i class="ti ti-user-plus"></i> Add member</button>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:10px"><i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px"></i> নতুন member এই email ও password দিয়ে login করবে।</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:10px"><i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px"></i> নতুন member এই email ও password দিয়ে login করবে।</div>
       </div>
     </div>
 
@@ -522,7 +522,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
         <!-- HELP BAR -->
         <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;
-          background:rgba(255,255,255,.95);border:1px solid var(--border);border-radius:12px;
+          background:rgba(255,255,255,.95);border:1px solid #E5E7EB;border-radius:12px;
           padding:7px 16px;font-size:11px;color:#8B92B8;
           box-shadow:0 2px 12px rgba(108,99,255,.08);white-space:nowrap">
           <b style="color:#6C63FF">Double-click</b> → card &nbsp;·&nbsp;
@@ -535,13 +535,13 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <!-- MODAL -->
       <div id="b-modal" style="display:none;position:absolute;inset:0;background:rgba(26,31,60,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
         <div style="background:white;border-radius:18px;padding:26px;width:380px;
-          box-shadow:0 20px 60px rgba(108,99,255,.25);border:1px solid var(--border)">
+          box-shadow:0 20px 60px rgba(108,99,255,.25);border:1px solid #E5E7EB">
           <h3 id="b-modal-title" style="font-size:15px;font-weight:700;color:#1A1F3C;margin-bottom:14px"></h3>
           <input id="b-modal-inp" class="f-inp" type="text" style="margin-bottom:8px"/>
           <div id="b-modal-hint" style="font-size:11px;color:#9BA3C2;margin-bottom:14px"></div>
           <div style="display:flex;gap:10px">
             <button class="btn-p" style="flex:1;padding:10px" onclick="bModalOk()"><i class="ti ti-plus"></i> Add</button>
-            <button style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px" onclick="document.getElementById('b-modal').style.display='none'">Cancel</button>
+            <button style="flex:1;padding:10px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px" onclick="document.getElementById('b-modal').style.display='none'">Cancel</button>
           </div>
         </div>
       </div>
@@ -714,7 +714,7 @@ function renderExp(){
         <div class="exp-mt">
           <span class="badge" style="background:${c.b};color:${c.c}">${c.l}</span>
           ${e.note?`<span class="exp-no">${e.note}</span>`:''}
-          ${e.invoice_url?`<a href="${e.invoice_url}" target="_blank" style="font-size:11px;color:var(--purple);text-decoration:none"><i class="ti ti-paperclip" style="font-size:11px"></i> invoice</a>`:''}
+          ${e.invoice_url?`<a href="${e.invoice_url}" target="_blank" style="font-size:11px;color:#7C3AED;text-decoration:none"><i class="ti ti-paperclip" style="font-size:11px"></i> invoice</a>`:''}
         </div>
         <div class="exp-by"><i class="ti ti-user" style="font-size:11px"></i> ${e.added_by_name||'—'}</div>
       </div>
@@ -799,11 +799,11 @@ async function loadDash(){
   const html=Array.from({length:12},(_,i)=>{
     const m=i+1,v=byMonth[m]||0,pct=Math.round(v/maxV*100);
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1">
-      <div style="font-size:11px;color:var(--text3)">${fmts(v)}</div>
-      <div style="width:100%;background:var(--surface2);border-radius:4px;height:80px;display:flex;align-items:flex-end;overflow:hidden">
-        <div style="width:100%;height:${pct}%;background:${m===view.m+1?'linear-gradient(135deg,var(--purple),var(--cyan))':'var(--border2)'};border-radius:4px 4px 0 0;transition:.4s"></div>
+      <div style="font-size:11px;color:#9CA3AF">${fmts(v)}</div>
+      <div style="width:100%;background:#F3F4F6;border-radius:4px;height:80px;display:flex;align-items:flex-end;overflow:hidden">
+        <div style="width:100%;height:${pct}%;background:${m===view.m+1?'linear-gradient(135deg,#7C3AED,#0EA5E9)':'#D1D5DB'};border-radius:4px 4px 0 0;transition:.4s"></div>
       </div>
-      <div style="font-size:10px;color:var(--text3)">${MONTHS[i].slice(0,3)}</div>
+      <div style="font-size:10px;color:#9CA3AF">${MONTHS[i].slice(0,3)}</div>
     </div>`;
   }).join('');
   document.getElementById('dash-trend').innerHTML=`<div style="display:flex;gap:6px;align-items:flex-end">${html}</div>`;
@@ -828,8 +828,8 @@ async function loadUsers(){
     <div class="u-item">
       <div class="u-av">${(u.name||u.email).charAt(0).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text)">${u.name||'—'}</div>
-        <div style="font-size:11px;color:var(--text3)">${u.email}</div>
+        <div style="font-size:13px;font-weight:600;color:#111827">${u.name||'—'}</div>
+        <div style="font-size:11px;color:#9CA3AF">${u.email}</div>
       </div>
       <select class="role-sel" onchange="updateRole('${u.id}',this.value)" ${u.id===user?.id?'disabled':''}>
         <option value="owner" ${u.role==='owner'?'selected':''}>Owner</option>
