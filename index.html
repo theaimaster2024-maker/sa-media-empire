@@ -216,8 +216,8 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
-      <div class="nav-it on" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
-      <div class="nav-it" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(0,194,203,.15);color:#00C2CB;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
+      <div class="nav-it" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
+      <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
       <div class="nav-it" onclick="window.open('https://samediaempire.netlify.app','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
@@ -238,7 +238,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   <div class="main">
 
     <!-- EXPENSES -->
-    <div class="pg on" id="pg-expenses">
+    <div class="pg" id="pg-expenses">
       <div class="pg-top">
         <div><div class="pg-t">Expense Tracker</div><div class="pg-s">YouTube channel এর সব খরচ</div></div>
         <div class="m-nav">
@@ -592,7 +592,8 @@ function showApp(){
   document.getElementById('auth').style.display='none';
   document.getElementById('app').style.display='block';
   setupNav();
-  loadExp();
+  // Default page: Notes (visible to owner + manager)
+  showPg('notes');
   document.getElementById('f-date').value=now.toISOString().slice(0,10);
 }
 
