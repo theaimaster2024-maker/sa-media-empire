@@ -264,6 +264,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
       <div class="nav-it on" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
+      <div class="nav-it" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(0,194,203,.15);color:#00C2CB;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
+      <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
       <div class="nav-it" onclick="window.open('https://samediaempire.netlify.app','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
@@ -362,6 +364,75 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="panel">
         <div class="p-ti"><i class="ti ti-chart-line"></i> Monthly trend</div>
         <div id="dash-trend" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- SHARED NOTES PAGE -->
+    <div class="pg" id="pg-notes">
+      <div class="pg-top">
+        <div><div class="pg-t">Notes</div><div class="pg-s">Owner ও Manager — দুজনেই দেখতে ও লিখতে পারবে</div></div>
+        <button class="btn-p" style="width:auto;padding:9px 16px" onclick="saveSharedNote()"><i class="ti ti-device-floppy"></i> Save</button>
+      </div>
+      <div class="two-col" style="align-items:start">
+        <div class="panel">
+          <div class="p-hd">
+            <div class="p-ti"><i class="ti ti-notebook"></i> Shared notes</div>
+            <span id="note-status" style="font-size:11px;color:var(--text3)"></span>
+          </div>
+          <textarea id="shared-note-content" class="f-inp" rows="20"
+            style="resize:vertical;font-size:14px;line-height:1.8;min-height:420px"
+            placeholder="এখানে team এর জন্য notes লিখুন...&#10;&#10;• Important updates&#10;• Task lists&#10;• Meeting notes&#10;• Reminders"
+            oninput="noteChanged()"></textarea>
+        </div>
+        <div>
+          <div class="panel" style="background:rgba(0,194,203,.05);border-color:rgba(0,194,203,.2)">
+            <div class="p-ti" style="color:#00C2CB"><i class="ti ti-users"></i> Access</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — দেখতে ও লিখতে পারবে</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Manager — দেখতে ও লিখতে পারবে</div>
+              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:var(--red)"></i> Employee — দেখতে পাবে না</div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:0">
+            <div class="p-ti"><i class="ti ti-clock"></i> Last saved</div>
+            <div id="note-last-saved" style="font-size:13px;color:var(--text2);margin-top:10px">—</div>
+            <div id="note-saved-by" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIVATE NOTES PAGE (owner only) -->
+    <div class="pg" id="pg-private-notes">
+      <div class="pg-top">
+        <div><div class="pg-t">Private Notes <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">শুধু তুমি দেখতে পাবে — Manager ও দেখতে পারবে না</div></div>
+        <button class="btn-p" style="width:auto;padding:9px 16px" onclick="savePrivateNote()"><i class="ti ti-device-floppy"></i> Save</button>
+      </div>
+      <div class="two-col" style="align-items:start">
+        <div class="panel" style="border-color:rgba(108,99,255,.25)">
+          <div class="p-hd">
+            <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
+            <span id="pvt-note-status" style="font-size:11px;color:var(--text3)"></span>
+          </div>
+          <textarea id="private-note-content" class="f-inp" rows="20"
+            style="resize:vertical;font-size:14px;line-height:1.8;min-height:420px"
+            placeholder="এখানে personal/confidential notes লিখুন...&#10;&#10;• Income records&#10;• Personal plans&#10;• Passwords & credentials&#10;• Business strategy"
+            oninput="pvtNoteChanged()"></textarea>
+        </div>
+        <div>
+          <div class="panel" style="background:rgba(108,99,255,.05);border-color:rgba(108,99,255,.2)">
+            <div class="p-ti"><i class="ti ti-lock"></i> Access</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — শুধু তুমি দেখতে পারবে</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-x" style="color:var(--red)"></i> Manager — দেখতে পারবে না</div>
+              <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:var(--red)"></i> Employee — দেখতে পারবে না</div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:0">
+            <div class="p-ti"><i class="ti ti-clock"></i> Last saved</div>
+            <div id="pvt-note-last-saved" style="font-size:13px;color:var(--text2);margin-top:10px">—</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -599,29 +670,27 @@ function setupNav(){
   document.getElementById('u-rl').innerHTML=`<span class="role-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span>`;
 
   if(role==='owner'){
-    // Owner: show finance nav + admin section
+    // Owner: show finance nav + admin section + private notes
     document.getElementById('nav-finance').style.display='flex';
     document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
+    document.getElementById('nav-private-notes').style.display='flex';
     // Show finance content, hide blocked message
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='block';
     if(fb)fb.style.display='none';
   } else {
-    // Manager/Employee: hide finance nav completely
+    // Manager/Employee: hide finance + private notes + admin
     document.getElementById('nav-finance').style.display='none';
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
+    document.getElementById('nav-private-notes').style.display='none';
     // Block finance content
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='none';
     if(fb)fb.style.display='block';
-    // Manager sees team but not users admin
-    if(role==='manager'){
-      // manager can see expenses + board + dashboard only
-    }
   }
 }
 function showPg(pg){
@@ -636,6 +705,11 @@ function showPg(pg){
   document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
   if(pg==='users'&&profile?.role==='owner')loadUsers();
   if(pg==='finance'&&profile?.role==='owner')loadNotes();
+  if(pg==='notes')loadSharedNote();
+  if(pg==='private-notes'){
+    if(profile?.role!=='owner'){toast('🔒 শুধু Owner দেখতে পারবে');return;}
+    loadPrivateNote();
+  }
   if(pg==='dashboard')loadDash();
   if(pg==='board'){
     const c=document.getElementById('board-container');
@@ -1447,6 +1521,122 @@ function bClear(){
 
 // Auto-save every 30 seconds
 setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
+
+// ── SHARED NOTES
+let _noteChanged=false, _pvtNoteChanged=false;
+
+async function loadSharedNote(){
+  document.getElementById('note-status').textContent='Loading...';
+  const {data,error}=await sb.from('shared_notes').select('*').order('id').limit(1).single();
+  if(error&&error.code!=='PGRST116'){
+    document.getElementById('note-status').textContent='Error loading';
+    return;
+  }
+  if(data){
+    document.getElementById('shared-note-content').value=data.content||'';
+    const t=new Date(data.updated_at);
+    document.getElementById('note-last-saved').textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('note-saved-by').textContent=data.updated_by_name?`by ${data.updated_by_name}`:'';
+  }
+  document.getElementById('note-status').textContent='';
+  _noteChanged=false;
+}
+
+function noteChanged(){
+  _noteChanged=true;
+  document.getElementById('note-status').textContent='Unsaved changes...';
+}
+
+async function saveSharedNote(){
+  const content=document.getElementById('shared-note-content').value;
+  document.getElementById('note-status').textContent='Saving...';
+  // Check if row exists
+  const {data:existing}=await sb.from('shared_notes').select('id').limit(1).single();
+  let error;
+  if(existing){
+    ({error}=await sb.from('shared_notes').update({
+      content,
+      updated_at:new Date().toISOString(),
+      updated_by:user?.id,
+      updated_by_name:profile?.name||user?.email?.split('@')[0]
+    }).eq('id',existing.id));
+  } else {
+    ({error}=await sb.from('shared_notes').insert({
+      content,
+      updated_by:user?.id,
+      updated_by_name:profile?.name||user?.email?.split('@')[0]
+    }));
+  }
+  if(error){toast('Error saving: '+error.message);document.getElementById('note-status').textContent='Save failed';return;}
+  const now=new Date();
+  document.getElementById('note-last-saved').textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('note-saved-by').textContent=`by ${profile?.name||'you'}`;
+  document.getElementById('note-status').textContent='Saved ✓';
+  _noteChanged=false;
+  setTimeout(()=>document.getElementById('note-status').textContent='',2000);
+  toast('Notes saved ✓');
+}
+
+// ── PRIVATE NOTES (owner only)
+async function loadPrivateNote(){
+  document.getElementById('pvt-note-status').textContent='Loading...';
+  const {data,error}=await sb.from('private_notes').select('*').eq('owner_id',user?.id).limit(1).single();
+  if(error&&error.code!=='PGRST116'){
+    document.getElementById('pvt-note-status').textContent='Error';
+    return;
+  }
+  if(data){
+    document.getElementById('private-note-content').value=data.content||'';
+    const t=new Date(data.updated_at);
+    document.getElementById('pvt-note-last-saved').textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  document.getElementById('pvt-note-status').textContent='';
+  _pvtNoteChanged=false;
+}
+
+function pvtNoteChanged(){
+  _pvtNoteChanged=true;
+  document.getElementById('pvt-note-status').textContent='Unsaved changes...';
+}
+
+async function savePrivateNote(){
+  if(profile?.role!=='owner'){toast('🔒 শুধু Owner save করতে পারবে');return;}
+  const content=document.getElementById('private-note-content').value;
+  document.getElementById('pvt-note-status').textContent='Saving...';
+  const {data:existing}=await sb.from('private_notes').select('id').eq('owner_id',user?.id).limit(1).single();
+  let error;
+  if(existing){
+    ({error}=await sb.from('private_notes').update({
+      content,updated_at:new Date().toISOString()
+    }).eq('id',existing.id));
+  } else {
+    ({error}=await sb.from('private_notes').insert({
+      owner_id:user?.id,content
+    }));
+  }
+  if(error){toast('Error: '+error.message);document.getElementById('pvt-note-status').textContent='Failed';return;}
+  const now=new Date();
+  document.getElementById('pvt-note-last-saved').textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('pvt-note-status').textContent='Saved ✓';
+  _pvtNoteChanged=false;
+  setTimeout(()=>document.getElementById('pvt-note-status').textContent='',2000);
+  toast('Private notes saved ✓');
+}
+
+// Auto-save notes every 60 seconds if changed
+setInterval(async()=>{
+  if(_noteChanged)await saveSharedNote();
+  if(_pvtNoteChanged&&profile?.role==='owner')await savePrivateNote();
+},60000);
+
+// Ctrl+S saves notes when on notes pages
+document.addEventListener('keydown',e=>{
+  if(e.key==='s'&&(e.ctrlKey||e.metaKey)){
+    const activePg=document.querySelector('.pg.on')?.id;
+    if(activePg==='pg-notes'){e.preventDefault();saveSharedNote();}
+    if(activePg==='pg-private-notes'){e.preventDefault();savePrivateNote();}
+  }
+});
 
 init();
 </script>
