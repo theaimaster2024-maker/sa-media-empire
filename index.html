@@ -265,6 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="nav-sec">Main</div>
       <div class="nav-it on" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
+      <div class="nav-it" onclick="window.open(location.href+'#board','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
       <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
@@ -512,6 +513,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 const SB_URL='https://uftyyfrnqbeoyteafhxj.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdHl5ZnJucWJlb3l0ZWFmaHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTM5MDEsImV4cCI6MjA5NjcyOTkwMX0.y7WgJABO_QijcghWPKYPRiGlUZycXGuJMRQ5-XPv4d8';
+const SB_SERVICE='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdHl5ZnJucWJlb3l0ZWFmaHhqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTE1MzkwMSwiZXhwIjoyMDk2NzI5OTAxfQ.placeholder';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const CATS={
@@ -775,11 +777,24 @@ async function addMember(){
   const role=document.getElementById('n-role').value;
   if(!email||!pass||!name){toast('সব field পূরণ করুন');return;}
   if(pass.length<6){toast('Password কমপক্ষে 6 character');return;}
-  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{name,role}}});
-  if(error){toast('Error: '+error.message);return;}
+  // Use Supabase admin endpoint to create user
+  const res=await fetch(`${SB_URL}/auth/v1/admin/users`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${SB_SERVICE}`,'apikey':SB_SERVICE},
+    body:JSON.stringify({email,password:pass,email_confirm:true,user_metadata:{name,role}})
+  });
+  const data=await res.json();
+  if(!res.ok){
+    // Fallback: try regular signUp
+    const {error}=await sb.auth.signUp({email,password:pass,options:{data:{name,role}}});
+    if(error){toast('Error: '+error.message);return;}
+  }
+  // Update profile role
+  await new Promise(r=>setTimeout(r,1500));
+  await sb.from('profiles').update({role,name}).eq('email',email);
   toast(`${name} (${role}) added ✓`);
   ['n-email','n-pass','n-name'].forEach(id=>document.getElementById(id).value='');
-  setTimeout(loadUsers,1500);
+  setTimeout(loadUsers,1000);
 }
 
 // ── EXPORT
@@ -828,7 +843,45 @@ function initBoard(){
 
   wrap.addEventListener('wheel',e=>{e.preventDefault();bZoom(e.deltaY<0?.1:-.1,e.clientX,e.clientY);},{passive:false});
 
-  wrap.addEventListener('dblclick',e=>{
+  wrap.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    const p=s2c(e.clientX,e.clientY);
+    // Show custom context menu
+    let ctx=document.getElementById('b-ctx');
+    if(!ctx){ctx=document.createElement('div');ctx.id='b-ctx';ctx.style.cssText='position:fixed;z-index:500;background:white;border:1px solid rgba(108,99,255,.2);border-radius:14px;padding:6px;min-width:180px;box-shadow:0 8px 32px rgba(108,99,255,.2)';document.body.appendChild(ctx);}
+    ctx.innerHTML=`
+      <div style="padding:4px 10px 6px;font-size:10px;font-weight:700;color:#9BA3C2;text-transform:uppercase;letter-spacing:.07em">Add to board</div>
+      <div class="bctx-it" onclick="bAddCard(${p.x},${p.y},'script');hideBCtx()"><i class="ti ti-writing"></i> Script card</div>
+      <div class="bctx-it" onclick="bAddCard(${p.x},${p.y},'note');hideBCtx()"><i class="ti ti-notes"></i> Note card</div>
+      <div class="bctx-it" onclick="bAddSticky(${p.x},${p.y});hideBCtx()"><i class="ti ti-sticky-note"></i> Sticky note</div>
+      <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
+      <div class="bctx-it" onclick="bModal('yt');hideBCtx()"><i class="ti ti-brand-youtube"></i> YouTube embed</div>
+      <div class="bctx-it" onclick="bModal('drive');hideBCtx()"><i class="ti ti-brand-google-drive"></i> Google Drive</div>
+      <div class="bctx-it" onclick="document.getElementById('b-img-inp').click();hideBCtx()"><i class="ti ti-photo"></i> Add image</div>
+      <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
+      <div class="bctx-it" onclick="bFit();hideBCtx()"><i class="ti ti-maximize"></i> Fit all</div>
+      <div class="bctx-it" onclick="bSave();hideBCtx()"><i class="ti ti-device-floppy"></i> Save board</div>
+      <div class="bctx-it" style="color:#FF4E6A" onclick="bClear();hideBCtx()"><i class="ti ti-trash"></i> Clear board</div>`;
+    // Add styles if not exist
+    if(!document.getElementById('bctx-style')){
+      const s=document.createElement('style');s.id='bctx-style';
+      s.textContent='.bctx-it{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:13px;color:#1A1F3C;cursor:pointer;transition:.1s;user-select:none}.bctx-it:hover{background:rgba(108,99,255,.08);color:#6C63FF}.bctx-it i{font-size:15px;color:#6C63FF}';
+      document.head.appendChild(s);
+    }
+    ctx.style.display='block';
+    ctx.style.left=Math.min(e.clientX,window.innerWidth-200)+'px';
+    ctx.style.top=Math.min(e.clientY,window.innerHeight-320)+'px';
+    setTimeout(()=>document.addEventListener('click',hideBCtx,{once:true}),10);
+  });
+
+  // Board drag-drop for notes from anywhere
+  wrap.addEventListener('dragover',e=>e.preventDefault());
+  wrap.addEventListener('drop',e=>{
+    e.preventDefault();
+    const txt=e.dataTransfer.getData('text/plain');
+    const p=s2c(e.clientX,e.clientY);
+    if(txt){const c=bAddCard(p.x-100,p.y-60,'note',{title:'Note',body:txt});bPushH();}
+  });
     if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
       const p=s2c(e.clientX,e.clientY);
       bAddCard(p.x,p.y,'note');
@@ -1076,15 +1129,19 @@ function bRedrawConns(){
   });
 }
 
+function hideBCtx(){const ctx=document.getElementById('b-ctx');if(ctx)ctx.style.display='none';}
+
 function bModal(mode,target){
   _bModalMode=mode;_bModalTarget=target||null;
-  const titles={yt:'YouTube embed',drive:'Google Drive link'};
-  const phs={yt:'https://youtube.com/watch?v=...',drive:'https://drive.google.com/...'};
-  const hints={yt:'YouTube link paste করুন',drive:'Google Drive link paste করুন'};
-  document.getElementById('b-modal-title').textContent=titles[mode]||mode;
+  const cfg={
+    yt:{title:'YouTube embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube link paste করুন — সরাসরি play হবে'},
+    drive:{title:'Google Drive embed',ph:'https://drive.google.com/file/d/FILE_ID/view',hint:'Google Drive file link দিন (Share → Anyone with link)'},
+  };
+  const c=cfg[mode]||{title:mode,ph:'',hint:''};
+  document.getElementById('b-modal-title').textContent=c.title;
   document.getElementById('b-modal-inp').value='';
-  document.getElementById('b-modal-inp').placeholder=phs[mode]||'';
-  document.getElementById('b-modal-hint').textContent=hints[mode]||'';
+  document.getElementById('b-modal-inp').placeholder=c.ph;
+  document.getElementById('b-modal-hint').textContent=c.hint;
   const m=document.getElementById('b-modal');m.style.display='flex';
   setTimeout(()=>document.getElementById('b-modal-inp').focus(),50);
 }
@@ -1092,19 +1149,33 @@ function bModalOk(){
   const val=document.getElementById('b-modal-inp').value.trim();
   if(!val){document.getElementById('b-modal').style.display='none';return;}
   const wrap=document.getElementById('b-wrap');
-  const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:200,y:200};
+  const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:300,y:200};
   if(_bModalMode==='yt'){
-    const m=val.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
-    if(!m){toast('Invalid YouTube URL');return;}
-    const c=bAddCard(p.x-150,p.y-120,'note',{w:320,h:240,title:'YouTube Video'});
+    const m=val.match(/(?:v=|youtu\.be\/|shorts\/)([^&\s?\/]+)/);
+    if(!m){toast('Invalid YouTube URL — v= অংশ সহ দিন');return;}
+    const c=bAddCard(p.x-160,p.y-130,'note',{w:340,h:260,title:'▶ YouTube Video'});
     const el=document.getElementById(c.id);
     const body=el?.querySelector('.b-card-body');
-    if(body){body.innerHTML=`<iframe src="https://www.youtube.com/embed/${m[1]}" style="width:100%;aspect-ratio:16/9;border-radius:8px;border:none;display:block" allowfullscreen></iframe>`;c.body=body.innerHTML;}
+    if(body){
+      body.innerHTML=`<iframe src="https://www.youtube.com/embed/${m[1]}?rel=0" style="width:100%;aspect-ratio:16/9;border-radius:10px;border:none;display:block" allowfullscreen loading="lazy"></iframe>`;
+      c.body=body.innerHTML;
+    }
   } else if(_bModalMode==='drive'){
-    const c=bAddCard(p.x-130,p.y-50,'note',{w:280,h:110,title:'Google Drive'});
+    // Convert Google Drive view URL to embed URL
+    let embedUrl=val;
+    const fileMatch=val.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(fileMatch){
+      embedUrl=`https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+    } else if(val.includes('docs.google.com')){
+      embedUrl=val.replace('/edit','/preview').replace('/pub','/preview');
+    }
+    const c=bAddCard(p.x-160,p.y-130,'note',{w:340,h:280,title:'📂 Google Drive'});
     const el=document.getElementById(c.id);
     const body=el?.querySelector('.b-card-body');
-    if(body){body.innerHTML=`<a href="${val}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text2);font-size:12px"><i class="ti ti-brand-google-drive" style="font-size:16px;color:#00C2CB"></i><span>Open in Google Drive</span></a>`;c.body=body.innerHTML;}
+    if(body){
+      body.innerHTML=`<iframe src="${embedUrl}" style="width:100%;height:200px;border-radius:10px;border:none;display:block" allowfullscreen loading="lazy"></iframe><a href="${val}" target="_blank" style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#00C2CB;text-decoration:none"><i class="ti ti-external-link" style="font-size:13px"></i> Open in Drive</a>`;
+      c.body=body.innerHTML;
+    }
   }
   document.getElementById('b-modal').style.display='none';bPushH();
 }
