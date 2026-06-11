@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="nav-sec">Main</div>
       <div class="nav-it on" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
-      <div class="nav-it" onclick="window.open(location.href+'#board','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
+      <div class="nav-it" onclick="window.open('https://samediaempire.netlify.app','_blank')" style="padding-left:32px;margin-top:-4px" title="New tab এ খুলুন"><i class="ti ti-external-link" style="font-size:14px"></i> <span style="font-size:11px">New tab এ</span></div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
       <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
@@ -367,11 +367,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <!-- FINANCE (owner only) -->
     <div class="pg" id="pg-finance">
-      <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
-      <div class="panel">
-        <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
-        <textarea class="f-inp" id="fin-notes" rows="7" style="resize:vertical;margin-top:14px" placeholder="Personal finance notes, income records, private expenses...&#10;&#10;এখানে যা লিখবে শুধু তুমিই দেখতে পাবে।" oninput="saveNotes()"></textarea>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
+      <!-- Owner check happens in JS, this is extra safety -->
+      <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
+        <i class="ti ti-lock" style="font-size:52px;color:var(--text3);opacity:.3;display:block;margin-bottom:16px"></i>
+        <div style="font-size:18px;font-weight:700;color:var(--text2)">Access Denied</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:8px">এই section শুধু Owner দেখতে পারবে</div>
+      </div>
+      <div id="finance-content">
+        <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
+        <div class="panel">
+          <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
+          <textarea class="f-inp" id="fin-notes" rows="7" style="resize:vertical;margin-top:14px" placeholder="Personal finance notes, income records, private expenses...&#10;&#10;এখানে যা লিখবে শুধু তুমিই দেখতে পাবে।" oninput="saveNotes()"></textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
+        </div>
       </div>
     </div>
 
@@ -590,31 +598,44 @@ function setupNav(){
   document.getElementById('u-av').textContent=name.charAt(0).toUpperCase();
   document.getElementById('u-rl').innerHTML=`<span class="role-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span>`;
 
-  // Finance — OWNER ONLY, hidden for everyone else
-  const financeNav=document.getElementById('nav-finance');
   if(role==='owner'){
-    financeNav.style.display='flex';
+    // Owner: show finance nav + admin section
+    document.getElementById('nav-finance').style.display='flex';
     document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
+    // Show finance content, hide blocked message
+    const fc=document.getElementById('finance-content');
+    const fb=document.getElementById('finance-blocked');
+    if(fc)fc.style.display='block';
+    if(fb)fb.style.display='none';
   } else {
-    financeNav.style.display='none';
-    // Also hide finance page completely
-    const financePg=document.getElementById('pg-finance');
-    if(financePg)financePg.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-lock" style="font-size:48px;display:block;margin-bottom:12px;opacity:.3"></i><div style="font-size:16px;font-weight:600">Access Denied</div><div style="font-size:13px;margin-top:6px">এই section শুধু Owner দেখতে পারবে</div></div>';
+    // Manager/Employee: hide finance nav completely
+    document.getElementById('nav-finance').style.display='none';
+    document.getElementById('nav-admin-sec').style.display='none';
+    document.getElementById('nav-users').style.display='none';
+    // Block finance content
+    const fc=document.getElementById('finance-content');
+    const fb=document.getElementById('finance-blocked');
+    if(fc)fc.style.display='none';
+    if(fb)fb.style.display='block';
+    // Manager sees team but not users admin
+    if(role==='manager'){
+      // manager can see expenses + board + dashboard only
+    }
   }
 }
 function showPg(pg){
-  // Block finance for non-owners
+  // Hard block finance for non-owners
   if(pg==='finance'&&profile?.role!=='owner'){
-    toast('এই section শুধু Owner এর জন্য');
+    toast('🔒 এই section শুধু Owner এর জন্য');
     return;
   }
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
-  document.getElementById('pg-'+pg).classList.add('on');
+  document.getElementById('pg-'+pg)?.classList.add('on');
   document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
-  if(pg==='users')loadUsers();
-  if(pg==='finance')loadNotes();
+  if(pg==='users'&&profile?.role==='owner')loadUsers();
+  if(pg==='finance'&&profile?.role==='owner')loadNotes();
   if(pg==='dashboard')loadDash();
   if(pg==='board'){
     const c=document.getElementById('board-container');
