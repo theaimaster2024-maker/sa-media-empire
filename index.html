@@ -787,24 +787,35 @@ async function addMember(){
   const role=document.getElementById('n-role').value;
   if(!email||!pass||!name){toast('সব field পূরণ করুন');return;}
   if(pass.length<6){toast('Password কমপক্ষে 6 character');return;}
-  // Use Supabase admin endpoint to create user
-  const res=await fetch(`${SB_URL}/auth/v1/admin/users`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${SB_SERVICE}`,'apikey':SB_SERVICE},
-    body:JSON.stringify({email,password:pass,email_confirm:true,user_metadata:{name,role}})
+
+  const btn=document.querySelector('[onclick="addMember()"]');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Adding...';}
+
+  // Step 1: Create auth user
+  const {data,error}=await sb.auth.signUp({
+    email,password:pass,
+    options:{data:{name,role},emailRedirectTo:null}
   });
-  const data=await res.json();
-  if(!res.ok){
-    // Fallback: try regular signUp
-    const {error}=await sb.auth.signUp({email,password:pass,options:{data:{name,role}}});
-    if(error){toast('Error: '+error.message);return;}
+
+  if(error){
+    toast('Error: '+error.message);
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
+    return;
   }
-  // Update profile role
-  await new Promise(r=>setTimeout(r,1500));
-  await sb.from('profiles').update({role,name}).eq('email',email);
-  toast(`${name} (${role}) added ✓`);
+
+  // Step 2: Update profile role (trigger creates profile automatically)
+  if(data?.user){
+    await new Promise(r=>setTimeout(r,800));
+    await sb.from('profiles').upsert({
+      id:data.user.id,
+      email,name,role
+    },{onConflict:'id'});
+  }
+
+  toast(`✓ ${name} (${role}) added!`);
   ['n-email','n-pass','n-name'].forEach(id=>document.getElementById(id).value='');
-  setTimeout(loadUsers,1000);
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
+  setTimeout(loadUsers,1200);
 }
 
 // ── EXPORT
