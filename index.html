@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SA Media Empire</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#EEF2FF;--surface:#fff;--surface2:#F5F7FF;--border:#DDE3FF;--border2:#B8C4FF;
+  --text:#1A1F3C;--text2:#5A6080;--text3:#9BA3C2;
+  --purple:#6C63FF;--purple-d:#4A43CC;--purple-l:#EDEDFF;--purple-m:#A5A0FF;
+  --cyan:#00C2CB;--green:#00C48C;--green-l:#E0FBF4;
+  --amber:#F5A623;--amber-l:#FFF5E0;
+  --red:#FF4E6A;--red-l:#FFF0F3;
+  --r:12px;--rl:16px;
+  --glow:0 0 0 1px rgba(108,99,255,.1),0 4px 20px rgba(108,99,255,.06);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0D0F1E;--surface:#141728;--surface2:#1A1E30;--border:#252A42;--border2:#353C5E;
+  --text:#E8ECFF;--text2:#8B92B8;--text3:#4A5070;
+  --purple:#7C74FF;--purple-d:#6C63FF;--purple-l:#1E1D40;--purple-m:#4A43CC;
+  --green:#00E0A0;--green-l:#003328;--amber:#FFB830;--amber-l:#332800;
+  --red:#FF6080;--red-l:#330818;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* LOADING */
+#loading{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* AUTH */
+#auth{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:var(--glow)}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center}
+.auth-icon{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px}
+.auth-h{font-size:20px;font-weight:700;color:var(--text)}
+.auth-s{font-size:12px;color:var(--text2);margin-top:2px}
+.f-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px}
+.f-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--text);font-family:inherit;outline:none;transition:.2s}
+.f-inp:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(108,99,255,.13)}
+.f-grp{margin-bottom:14px}
+.auth-err{font-size:12px;color:var(--red);background:var(--red-l);padding:8px 12px;border-radius:8px;margin-bottom:12px;display:none}
+.auth-err.on{display:block}
+.btn-main{width:100%;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(108,99,255,.25);transition:.2s}
+.btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(108,99,255,.38)}
+.btn-main:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* APP */
+#app{display:none;min-height:100vh}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;transition:.25s}
+.sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-logo{display:flex;align-items:center;gap:10px}
+.sb-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;flex-shrink:0}
+.sb-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
+.sb-tag{font-size:10px;color:var(--text3)}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:8px 10px 4px}
+.nav-it{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:.15s;margin-bottom:2px;user-select:none}
+.nav-it:hover{background:var(--surface2);color:var(--text)}
+.nav-it.on{background:var(--purple-l);color:var(--purple)}
+.nav-it i{font-size:18px;flex-shrink:0}
+.nav-lock{margin-left:auto;font-size:13px;opacity:.5}
+.sb-user{padding:12px 14px;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:10px}
+.u-av{width:34px;height:34px;border-radius:10px;background:var(--purple-l);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--purple);flex-shrink:0}
+.u-name{font-size:13px;font-weight:600;color:var(--text)}
+.u-role{font-size:10px}
+.role-owner{color:var(--purple);font-weight:700}
+.role-manager{color:var(--green);font-weight:700}
+.role-employee{color:var(--amber);font-weight:700}
+.logout-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;transition:.15s}
+.logout-btn:hover{color:var(--red)}
+
+/* MAIN */
+.main{margin-left:240px;min-height:100vh;padding:28px}
+.pg{display:none}
+.pg.on{display:block}
+.pg-h{margin-bottom:22px}
+.pg-t{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.03em}
+.pg-s{font-size:13px;color:var(--text2);margin-top:3px}
+.pg-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--glow);transition:.2s;cursor:default}
+.stat:hover{transform:translateY(-2px);border-color:var(--purple-m)}
+.stat-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.stat-val{font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.8px}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px;box-shadow:var(--glow);margin-bottom:16px}
+.p-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.p-ti{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:7px}
+.p-ti i{font-size:16px;color:var(--purple)}
+
+/* TABS */
+.tabs{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap}
+.tab{font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:inherit;transition:.15s;font-weight:500}
+.tab:hover{background:var(--surface2);color:var(--text2)}
+.tab.on{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple);font-weight:700}
+
+/* MONTH NAV */
+.m-nav{display:flex;align-items:center;gap:8px}
+.m-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 11px;cursor:pointer;color:var(--text);font-size:14px;transition:.15s;box-shadow:var(--glow)}
+.m-btn:hover{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple)}
+.m-lbl{font-size:14px;font-weight:600;color:var(--text);min-width:130px;text-align:center}
+
+/* EXPENSE LIST */
+.exp-list{display:flex;flex-direction:column;gap:8px;max-height:460px;overflow-y:auto;padding-right:2px}
+.exp-list::-webkit-scrollbar{width:4px}
+.exp-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.exp-it{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);transition:.2s}
+.exp-it:hover{border-color:var(--purple-m);transform:translateX(2px)}
+.exp-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.exp-inf{flex:1;min-width:0}
+.exp-nm{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-mt{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+.exp-no{font-size:11px;color:var(--text3)}
+.exp-by{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:3px;margin-top:2px}
+.exp-rt{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.exp-am{font-size:15px;font-weight:700;color:var(--text)}
+.exp-dt{font-size:11px;color:var(--text3)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:2px;transition:.15s}
+.del-btn:hover{color:var(--red)}
+.empty{text-align:center;padding:40px;color:var(--text3)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.3}
+.empty p{font-size:13px}
+
+/* CAT BARS */
+.cat-list{display:flex;flex-direction:column;gap:12px}
+.cat-row{display:flex;align-items:center;gap:10px}
+.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.cat-nm{font-size:12px;color:var(--text2);flex:0 0 100px}
+.cat-trk{flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.cat-fill{height:100%;border-radius:4px;transition:width .5s}
+.cat-am{font-size:12px;font-weight:600;color:var(--text);min-width:72px;text-align:right}
+
+/* FORM */
+.form-g{display:flex;flex-direction:column;gap:12px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.up-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface2)}
+.up-zone:hover{border-color:var(--purple);background:var(--purple-l)}
+.up-zone input{display:none}
+.up-ico{font-size:22px;color:var(--text3);margin-bottom:4px}
+.up-txt{font-size:12px;color:var(--text2)}
+.up-ht{font-size:10px;color:var(--text3);margin-top:2px}
+.f-inf{font-size:11px;color:var(--purple);margin-top:5px;display:flex;align-items:center;gap:4px}
+.btn-p{font-family:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 20px;cursor:pointer;transition:.2s;border:none;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;box-shadow:0 4px 14px rgba(108,99,255,.22)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(108,99,255,.38)}
+.btn-p:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-d{font-family:inherit;font-size:12px;font-weight:600;border-radius:10px;padding:9px 16px;cursor:pointer;transition:.15s;border:1px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--red-l);color:var(--red)}
+.btn-d:hover{border-color:var(--red)}
+.btn-sm{font-family:inherit;font-size:11px;font-weight:600;border-radius:8px;padding:7px 13px;cursor:pointer;transition:.15s;border:1px solid var(--border);background:var(--surface2);color:var(--text2);display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.03em}
+.btn-sm:hover{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple)}
+.exp-row{display:flex;gap:8px;margin-top:12px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .3s;z-index:9999;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+.toast.on{opacity:1}
+
+/* USERS */
+.u-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px}
+.role-sel{font-family:inherit;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);outline:none;cursor:pointer}
+.role-sel:focus{border-color:var(--purple)}
+
+/* MOBILE */
+@media(max-width:720px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:14px}
+  .mob-btn{display:flex!important}
+}
+.mob-btn{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:20px;color:var(--text);box-shadow:var(--glow)}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:var(--text2)">SA Media Empire লোড হচ্ছে...</div>
+</div>
+
+<div id="auth" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-icon"><i class="ti ti-brand-youtube"></i></div>
+      <div>
+        <div class="auth-h">SA Media Empire</div>
+        <div class="auth-s">Team Management System</div>
+      </div>
+    </div>
+    <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" type="email" id="a-email" placeholder="your@email.com"/></div>
+    <div class="f-grp"><label class="f-lbl">Password</label><input class="f-inp" type="password" id="a-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
+    <div class="auth-err" id="a-err"></div>
+    <button class="btn-main" id="a-btn" onclick="login()"><i class="ti ti-login"></i> Sign in</button>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px">Admin দ্বারা দেওয়া account দিয়ে login করুন</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <button class="mob-btn" onclick="document.getElementById('sb').classList.toggle('open')"><i class="ti ti-menu-2"></i></button>
+
+  <div class="sidebar" id="sb">
+    <div class="sb-top">
+      <div class="sb-logo">
+        <div class="sb-icon"><i class="ti ti-brand-youtube"></i></div>
+        <div><div class="sb-name">SA Media Empire</div><div class="sb-tag">Management System</div></div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sec">Main</div>
+      <div class="nav-it on" onclick="showPg('expenses')" data-pg="expenses"><i class="ti ti-wallet"></i> Expense Tracker</div>
+      <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
+      <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
+      <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
+      <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
+      <div class="nav-it" id="nav-users" onclick="showPg('users')" data-pg="users" style="display:none"><i class="ti ti-users"></i> Team Members</div>
+    </nav>
+    <div class="sb-user">
+      <div class="user-row">
+        <div class="u-av" id="u-av">?</div>
+        <div><div class="u-name" id="u-nm">...</div><div class="u-role" id="u-rl">...</div></div>
+        <button class="logout-btn" onclick="doLogout()" title="Logout"><i class="ti ti-logout"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- EXPENSES -->
+    <div class="pg on" id="pg-expenses">
+      <div class="pg-top">
+        <div><div class="pg-t">Expense Tracker</div><div class="pg-s">YouTube channel এর সব খরচ</div></div>
+        <div class="m-nav">
+          <button class="m-btn" onclick="chMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+          <span class="m-lbl" id="m-lbl">—</span>
+          <button class="m-btn" onclick="chMonth(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-lbl"><i class="ti ti-wallet"></i> Total spent</div><div class="stat-val" id="s-tot">৳0</div><div class="stat-sub" id="s-cnt">0 expenses</div></div>
+        <div class="stat"><div class="stat-lbl"><i class="ti ti-video"></i> Video editors</div><div class="stat-val" id="s-ed">৳0</div><div class="stat-sub" id="s-edc">0 payments</div></div>
+        <div class="stat"><div class="stat-lbl"><i class="ti ti-refresh"></i> Subscriptions</div><div class="stat-val" id="s-sub">৳0</div><div class="stat-sub" id="s-subc">0 active</div></div>
+        <div class="stat"><div class="stat-lbl"><i class="ti ti-file-invoice"></i> With invoice</div><div class="stat-val" id="s-inv">0</div><div class="stat-sub">files attached</div></div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="panel">
+            <div class="p-hd"><div class="p-ti"><i class="ti ti-list-details"></i> Expenses this month</div></div>
+            <div class="tabs">
+              <button class="tab on" onclick="setF('all',this)">All</button>
+              <button class="tab" onclick="setF('editor',this)">Video editors</button>
+              <button class="tab" onclick="setF('subscription',this)">Subscriptions</button>
+              <button class="tab" onclick="setF('equipment',this)">Equipment</button>
+              <button class="tab" onclick="setF('other',this)">Other</button>
+            </div>
+            <div class="exp-list" id="exp-list"></div>
+            <div class="exp-row">
+              <button class="btn-sm" onclick="expCSV()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>
+              <button class="btn-sm" onclick="window.print()"><i class="ti ti-printer"></i> Print</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="p-ti"><i class="ti ti-chart-bar"></i> Breakdown by category</div>
+            <div style="margin-top:14px" class="cat-list" id="cat-list"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="p-ti" style="margin-bottom:16px"><i class="ti ti-plus"></i> Add expense</div>
+          <div class="form-g">
+            <div><label class="f-lbl">Description</label><input class="f-inp" type="text" id="f-desc" placeholder="e.g. Adobe Premiere Pro"/></div>
+            <div class="r2">
+              <div><label class="f-lbl">Amount (৳)</label><input class="f-inp" type="number" id="f-amt" placeholder="0" min="0"/></div>
+              <div><label class="f-lbl">Category</label>
+                <select class="f-inp" id="f-cat">
+                  <option value="editor">Video editor</option>
+                  <option value="subscription">Subscription</option>
+                  <option value="equipment">Equipment</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div><label class="f-lbl">Date</label><input class="f-inp" type="date" id="f-date"/></div>
+            <div><label class="f-lbl">Note (optional)</label><input class="f-inp" type="text" id="f-note" placeholder="e.g. Monthly retainer"/></div>
+            <div>
+              <label class="f-lbl">Invoice / receipt</label>
+              <div class="up-zone" onclick="document.getElementById('f-file').click()">
+                <input type="file" id="f-file" accept=".pdf,.jpg,.jpeg,.png" onchange="onFile(this)"/>
+                <div class="up-ico"><i class="ti ti-upload"></i></div>
+                <div class="up-txt">Click to attach file</div>
+                <div class="up-ht">PDF, JPG or PNG · max 5MB</div>
+              </div>
+              <div class="f-inf" id="f-fi"></div>
+            </div>
+            <button class="btn-p" id="add-btn" onclick="addExp()"><i class="ti ti-plus"></i> Add expense</button>
+            <div class="divider"></div>
+            <button class="btn-d" onclick="clearMon()"><i class="ti ti-trash"></i> Clear all this month</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="pg" id="pg-dashboard">
+      <div class="pg-h"><div class="pg-t">Dashboard</div><div class="pg-s">Monthly overview</div></div>
+      <div class="stats" id="dash-stats"></div>
+      <div class="panel">
+        <div class="p-ti"><i class="ti ti-chart-line"></i> Monthly trend</div>
+        <div id="dash-trend" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- FINANCE (owner only) -->
+    <div class="pg" id="pg-finance">
+      <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:var(--text3);font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
+      <div class="panel">
+        <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
+        <textarea class="f-inp" id="fin-notes" rows="7" style="resize:vertical;margin-top:14px" placeholder="Personal finance notes, income records, private expenses...&#10;&#10;এখানে যা লিখবে শুধু তুমিই দেখতে পাবে।" oninput="saveNotes()"></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
+      </div>
+    </div>
+
+    <!-- USERS (owner only) -->
+    <div class="pg" id="pg-users">
+      <div class="pg-h"><div class="pg-t">Team Members</div><div class="pg-s">সদস্যদের manage করুন</div></div>
+      <div class="panel">
+        <div class="p-ti"><i class="ti ti-users"></i> Current members</div>
+        <div id="users-list" style="margin-top:14px"></div>
+      </div>
+      <div class="panel">
+        <div class="p-ti"><i class="ti ti-user-plus"></i> Add new member</div>
+        <div class="form-g" style="margin-top:14px">
+          <div class="r2">
+            <div><label class="f-lbl">Email</label><input class="f-inp" type="email" id="n-email" placeholder="email@example.com"/></div>
+            <div><label class="f-lbl">Password</label><input class="f-inp" type="password" id="n-pass" placeholder="min 6 chars"/></div>
+          </div>
+          <div class="r2">
+            <div><label class="f-lbl">Name</label><input class="f-inp" type="text" id="n-name" placeholder="Full name"/></div>
+            <div><label class="f-lbl">Role</label>
+              <select class="f-inp" id="n-role">
+                <option value="manager">Manager</option>
+                <option value="employee">Employee</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-p" onclick="addMember()"><i class="ti ti-user-plus"></i> Add member</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px"><i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px"></i> নতুন member এই email ও password দিয়ে login করবে।</div>
+      </div>
+    </div>
+
+    <!-- CANVAS BOARD PAGE -->
+    <div class="pg" id="pg-board" style="padding:0;margin:-28px;height:calc(100vh - 0px)">
+      <iframe id="board-iframe" src="" style="width:100%;height:100vh;border:none;display:block"></iframe>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://uftyyfrnqbeoyteafhxj.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdHl5ZnJucWJlb3l0ZWFmaHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTM5MDEsImV4cCI6MjA5NjcyOTkwMX0.y7WgJABO_QijcghWPKYPRiGlUZycXGuJMRQ5-XPv4d8';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CATS={
+  editor:{l:'Video editor',c:'#6C63FF',b:'rgba(108,99,255,.13)',i:'ti-video'},
+  subscription:{l:'Subscription',c:'#00C2CB',b:'rgba(0,194,203,.13)',i:'ti-refresh'},
+  equipment:{l:'Equipment',c:'#F5A623',b:'rgba(245,166,35,.13)',i:'ti-device-laptop'},
+  other:{l:'Other',c:'#8A90A8',b:'rgba(138,144,168,.13)',i:'ti-dots'}
+};
+const now=new Date();
+let view={y:now.getFullYear(),m:now.getMonth()};
+let user=null,profile=null,expenses=[],filt='all',curFile=null;
+
+// ── INIT
+async function init(){
+  try{
+    const timeout=new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000));
+    const sessionReq=sb.auth.getSession();
+    const {data:{session}}=await Promise.race([sessionReq,timeout]);
+    if(session){await loadProfile(session.user);showApp();}
+    else showAuth();
+  }catch(e){
+    showAuth();
+  }
+  document.getElementById('loading').style.display='none';
+}
+async function loadProfile(u){
+  user=u;
+  const {data}=await sb.from('profiles').select('*').eq('id',u.id).single();
+  profile=data;
+}
+function showAuth(){document.getElementById('auth').style.display='flex';}
+function showApp(){
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').style.display='block';
+  setupNav();
+  loadExp();
+  document.getElementById('f-date').value=now.toISOString().slice(0,10);
+}
+
+// ── AUTH
+async function login(){
+  const email=document.getElementById('a-email').value.trim();
+  const pass=document.getElementById('a-pass').value;
+  const btn=document.getElementById('a-btn');
+  const err=document.getElementById('a-err');
+  if(!email||!pass){setErr('Email ও password দিন');return;}
+  btn.disabled=true;btn.textContent='Signing in...';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){setErr(error.message);btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Sign in';return;}
+  err.classList.remove('on');
+  await loadProfile(data.user);
+  showApp();
+}
+function setErr(m){const e=document.getElementById('a-err');e.textContent=m;e.classList.add('on');}
+async function doLogout(){await sb.auth.signOut();location.reload();}
+
+// ── NAV
+function setupNav(){
+  const role=profile?.role||'employee';
+  const name=profile?.name||user?.email?.split('@')[0]||'?';
+  document.getElementById('u-nm').textContent=name;
+  document.getElementById('u-av').textContent=name.charAt(0).toUpperCase();
+  document.getElementById('u-rl').innerHTML=`<span class="role-${role}">${role.charAt(0).toUpperCase()+role.slice(1)}</span>`;
+  if(role==='owner'){
+    document.getElementById('nav-finance').style.display='flex';
+    document.getElementById('nav-admin-sec').style.display='block';
+    document.getElementById('nav-users').style.display='flex';
+  }
+}
+function showPg(pg){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+pg).classList.add('on');
+  document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
+  if(pg==='users')loadUsers();
+  if(pg==='finance')loadNotes();
+  if(pg==='dashboard')loadDash();
+  if(pg==='board'){
+    const iframe=document.getElementById('board-iframe');
+    if(!iframe.src||iframe.src==='about:blank'||iframe.src==='')
+      iframe.src='sa-board.html';
+  }
+  document.getElementById('sb').classList.remove('open');
+}
+
+// ── MONTH
+function chMonth(d){
+  view.m+=d;
+  if(view.m<0){view.m=11;view.y--;}
+  if(view.m>11){view.m=0;view.y++;}
+  loadExp();
+}
+
+// ── EXPENSES
+async function loadExp(){
+  document.getElementById('m-lbl').textContent=MONTHS[view.m]+' '+view.y;
+  const {data,error}=await sb.from('expenses').select('*').eq('month',view.m+1).eq('year',view.y).order('expense_date',{ascending:false});
+  if(error){toast('Error loading');return;}
+  expenses=data||[];
+  renderExp();
+}
+function renderExp(){
+  const shown=filt==='all'?expenses:expenses.filter(e=>e.category===filt);
+  const tot=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  const edA=expenses.filter(e=>e.category==='editor');
+  const subA=expenses.filter(e=>e.category==='subscription');
+  const invC=expenses.filter(e=>e.invoice_url).length;
+  document.getElementById('s-tot').textContent=fmts(tot);
+  document.getElementById('s-cnt').textContent=expenses.length+' expense'+(expenses.length!==1?'s':'');
+  document.getElementById('s-ed').textContent=fmts(edA.reduce((s,e)=>s+Number(e.amount),0));
+  document.getElementById('s-edc').textContent=edA.length+' payment'+(edA.length!==1?'s':'');
+  document.getElementById('s-sub').textContent=fmts(subA.reduce((s,e)=>s+Number(e.amount),0));
+  document.getElementById('s-subc').textContent=subA.length+' active';
+  document.getElementById('s-inv').textContent=invC;
+  const list=document.getElementById('exp-list');
+  if(!shown.length){list.innerHTML='<div class="empty"><i class="ti ti-receipt-off"></i><p>No expenses yet</p></div>';return;}
+  list.innerHTML=shown.map(e=>{
+    const c=CATS[e.category]||CATS.other;
+    const d=new Date(e.expense_date+'T12:00:00');
+    const ds=d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const canDel=profile?.role==='owner'||e.added_by===user?.id;
+    return `<div class="exp-it">
+      <div class="exp-ico" style="background:${c.b};color:${c.c}"><i class="ti ${c.i}"></i></div>
+      <div class="exp-inf">
+        <div class="exp-nm">${e.description}</div>
+        <div class="exp-mt">
+          <span class="badge" style="background:${c.b};color:${c.c}">${c.l}</span>
+          ${e.note?`<span class="exp-no">${e.note}</span>`:''}
+          ${e.invoice_url?`<a href="${e.invoice_url}" target="_blank" style="font-size:11px;color:var(--purple);text-decoration:none"><i class="ti ti-paperclip" style="font-size:11px"></i> invoice</a>`:''}
+        </div>
+        <div class="exp-by"><i class="ti ti-user" style="font-size:11px"></i> ${e.added_by_name||'—'}</div>
+      </div>
+      <div class="exp-rt">
+        <span class="exp-am">${fmt(e.amount)}</span>
+        <span class="exp-dt">${ds}</span>
+        ${canDel?`<button class="del-btn" onclick="delExp(${e.id})"><i class="ti ti-trash"></i></button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  const catA={};expenses.forEach(e=>{catA[e.category]=(catA[e.category]||0)+Number(e.amount);});
+  const mx=Math.max(...Object.values(catA),1);
+  document.getElementById('cat-list').innerHTML=Object.keys(CATS).map(k=>{
+    const a=catA[k]||0,c=CATS[k];
+    return `<div class="cat-row">
+      <div class="cat-dot" style="background:${c.c}"></div>
+      <span class="cat-nm">${c.l}</span>
+      <div class="cat-trk"><div class="cat-fill" style="width:${Math.round(a/mx*100)}%;background:${c.c}"></div></div>
+      <span class="cat-am">${fmt(a)}</span>
+    </div>`;
+  }).join('');
+}
+function setF(f,el){filt=f;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderExp();}
+function onFile(inp){
+  const f=inp.files[0];if(!f)return;
+  if(f.size>5*1024*1024){toast('Max 5MB');return;}
+  curFile=f;document.getElementById('f-fi').innerHTML=`<i class="ti ti-paperclip"></i> ${f.name}`;
+}
+async function addExp(){
+  const desc=document.getElementById('f-desc').value.trim();
+  const amt=parseFloat(document.getElementById('f-amt').value);
+  const cat=document.getElementById('f-cat').value;
+  const date=document.getElementById('f-date').value;
+  const note=document.getElementById('f-note').value.trim();
+  if(!desc){toast('Description দিন');return;}
+  if(!amt||isNaN(amt)||amt<=0){toast('Valid amount দিন');return;}
+  if(!date){toast('Date দিন');return;}
+  const btn=document.getElementById('add-btn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Saving...';
+  let inv_url=null,inv_nm=null;
+  if(curFile){
+    const ext=curFile.name.split('.').pop();
+    const path=`invoices/${user.id}/${Date.now()}.${ext}`;
+    const {error:ue}=await sb.storage.from('invoices').upload(path,curFile,{upsert:true});
+    if(!ue){const {data:ud}=sb.storage.from('invoices').getPublicUrl(path);inv_url=ud.publicUrl;inv_nm=curFile.name;}
+  }
+  const d=new Date(date);
+  const {error}=await sb.from('expenses').insert({
+    description:desc,amount:amt,category:cat,expense_date:date,
+    note:note||null,invoice_url:inv_url,invoice_name:inv_nm,
+    added_by:user.id,
+    added_by_name:profile?.name||user.email.split('@')[0],
+    month:d.getMonth()+1,year:d.getFullYear()
+  });
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-plus"></i> Add expense';
+  if(error){toast('Error: '+error.message);return;}
+  curFile=null;
+  ['f-desc','f-amt','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-fi').innerHTML='';
+  document.getElementById('f-file').value='';
+  toast('Expense added ✓');
+  loadExp();
+}
+async function delExp(id){
+  if(!confirm('Delete this expense?'))return;
+  await sb.from('expenses').delete().eq('id',id);
+  toast('Deleted');loadExp();
+}
+async function clearMon(){
+  if(!confirm('এই মাসের সব expense delete করবে?'))return;
+  await sb.from('expenses').delete().eq('month',view.m+1).eq('year',view.y);
+  toast('Cleared');loadExp();
+}
+
+// ── DASHBOARD
+async function loadDash(){
+  const {data}=await sb.from('expenses').select('*').eq('year',view.y).order('month');
+  if(!data)return;
+  const byMonth={};
+  data.forEach(e=>{const k=e.month;byMonth[k]=(byMonth[k]||0)+Number(e.amount);});
+  const maxV=Math.max(...Object.values(byMonth),1);
+  const html=Array.from({length:12},(_,i)=>{
+    const m=i+1,v=byMonth[m]||0,pct=Math.round(v/maxV*100);
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1">
+      <div style="font-size:11px;color:var(--text3)">${fmts(v)}</div>
+      <div style="width:100%;background:var(--surface2);border-radius:4px;height:80px;display:flex;align-items:flex-end;overflow:hidden">
+        <div style="width:100%;height:${pct}%;background:${m===view.m+1?'linear-gradient(135deg,var(--purple),var(--cyan))':'var(--border2)'};border-radius:4px 4px 0 0;transition:.4s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3)">${MONTHS[i].slice(0,3)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('dash-trend').innerHTML=`<div style="display:flex;gap:6px;align-items:flex-end">${html}</div>`;
+  const tot=data.reduce((s,e)=>s+Number(e.amount),0);
+  const thisMon=data.filter(e=>e.month===view.m+1).reduce((s,e)=>s+Number(e.amount),0);
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="stat-lbl"><i class="ti ti-calendar"></i> This year</div><div class="stat-val">${fmts(tot)}</div><div class="stat-sub">${data.length} total expenses</div></div>
+    <div class="stat"><div class="stat-lbl"><i class="ti ti-calendar-month"></i> This month</div><div class="stat-val">${fmts(thisMon)}</div><div class="stat-sub">${data.filter(e=>e.month===view.m+1).length} expenses</div></div>`;
+}
+
+// ── FINANCE NOTES
+function loadNotes(){const v=localStorage.getItem('sa_fn_'+user?.id)||'';document.getElementById('fin-notes').value=v;}
+function saveNotes(){localStorage.setItem('sa_fn_'+user?.id,document.getElementById('fin-notes').value);}
+
+// ── USERS
+async function loadUsers(){
+  const {data}=await sb.from('profiles').select('*').order('created_at');
+  if(!data){return;}
+  const list=document.getElementById('users-list');
+  if(!data.length){list.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>No members yet</p></div>';return;}
+  list.innerHTML=data.map(u=>`
+    <div class="u-item">
+      <div class="u-av">${(u.name||u.email).charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${u.name||'—'}</div>
+        <div style="font-size:11px;color:var(--text3)">${u.email}</div>
+      </div>
+      <select class="role-sel" onchange="updateRole('${u.id}',this.value)" ${u.id===user?.id?'disabled':''}>
+        <option value="owner" ${u.role==='owner'?'selected':''}>Owner</option>
+        <option value="manager" ${u.role==='manager'?'selected':''}>Manager</option>
+        <option value="employee" ${u.role==='employee'?'selected':''}>Employee</option>
+      </select>
+    </div>`).join('');
+}
+async function updateRole(id,role){
+  await sb.from('profiles').update({role}).eq('id',id);
+  toast('Role updated ✓');loadUsers();
+}
+async function addMember(){
+  const email=document.getElementById('n-email').value.trim();
+  const pass=document.getElementById('n-pass').value;
+  const name=document.getElementById('n-name').value.trim();
+  const role=document.getElementById('n-role').value;
+  if(!email||!pass||!name){toast('সব field পূরণ করুন');return;}
+  if(pass.length<6){toast('Password কমপক্ষে 6 character');return;}
+  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{name,role}}});
+  if(error){toast('Error: '+error.message);return;}
+  toast(`${name} (${role}) added ✓`);
+  ['n-email','n-pass','n-name'].forEach(id=>document.getElementById(id).value='');
+  setTimeout(loadUsers,1500);
+}
+
+// ── EXPORT
+function expCSV(){
+  if(!expenses.length){toast('No data');return;}
+  const rows=[['Date','Description','Category','Amount','Note','Added By','Invoice']];
+  expenses.forEach(e=>rows.push([e.expense_date,e.description,CATS[e.category]?.l||e.category,e.amount,e.note||'',e.added_by_name||'',e.invoice_name||'']));
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`expenses_${MONTHS[view.m]}_${view.y}.csv`;a.click();
+  toast('CSV exported ✓');
+}
+
+// ── HELPERS
+const fmt=n=>'৳'+Number(n).toLocaleString('en-BD');
+const fmts=n=>n>=100000?'৳'+(n/100000).toFixed(1)+'L':n>=1000?'৳'+(n/1000).toFixed(1)+'k':fmt(n);
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
+
+
+// ── SCRIPT BOARD — now handled by sa-board.html iframe
+
+init();
+</script>
+</body>
+</html>
