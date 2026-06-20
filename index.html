@@ -219,6 +219,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
+      <div class="nav-it" onclick="showPg('editors')" data-pg="editors"><i class="ti ti-users"></i> Editors</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
       <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
@@ -388,7 +389,191 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       </div>
     </div>
 
-    <!-- FINANCE (owner only) -->
+    <!-- EDITORS PAGE -->
+    <div class="pg" id="pg-editors">
+      <div id="ed-view-list">
+        <div class="pg-top">
+          <div><div class="pg-t">Editors</div><div class="pg-s">Video editor workspace — project tracking, script, feedback ও payment</div></div>
+          <button class="btn-p" style="width:auto;padding:9px 16px" onclick="openEditorModal()"><i class="ti ti-plus"></i> New editor</button>
+        </div>
+        <div id="editor-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+      </div>
+      <div id="ed-view-workspace" style="display:none">
+        <!-- Profile header above tabs -->
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:18px;box-shadow:0 1px 2px rgba(0,0,0,.05)">
+          <div style="position:relative;flex-shrink:0">
+            <div id="ws-avatar" style="width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;overflow:hidden;cursor:pointer" onclick="document.getElementById('ed-photo-inp').click()" title="Click to change photo"></div>
+            <div style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;background:#7C3AED;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2)" onclick="document.getElementById('ed-photo-inp').click()"><i class="ti ti-camera" style="font-size:11px;color:#fff"></i></div>
+            <input type="file" id="ed-photo-inp" accept="image/*" style="display:none" onchange="uploadEditorPhoto(this)"/>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div id="ws-name" style="font-size:20px;font-weight:700;color:#111827"></div>
+              <span id="ws-status-badge" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
+            </div>
+            <div id="ws-meta" style="font-size:13px;color:#9CA3AF;margin-top:3px"></div>
+            <div id="ws-contact" style="display:flex;align-items:center;gap:14px;margin-top:6px;flex-wrap:wrap"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button onclick="closeWorkspace()" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;display:flex;align-items:center;gap:6px;font-family:inherit"><i class="ti ti-arrow-left"></i> Back</button>
+            <button onclick="openEditorModal(currentEditorId)" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit</button>
+            <button class="btn-p" style="width:auto;padding:8px 14px" onclick="openProjectModal()"><i class="ti ti-plus"></i> New project</button>
+          </div>
+        </div>
+        <!-- Tabs: Projects + Payment only -->
+        <div style="display:flex;gap:2px;background:#F3F4F6;padding:3px;border-radius:8px;width:fit-content;margin-bottom:20px">
+          <button class="ws-tab on" onclick="wsTab('projects',this)">Projects</button>
+          <button class="ws-tab" onclick="wsTab('payment',this)">Payment</button>
+        </div>
+        <!-- PROJECTS TAB: Kanban -->
+        <div id="ws-projects">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+            <div class="kanban-col" data-status="assigned" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event,'assigned')">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:#FEF3C7;border-radius:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:#F59E0B"></div>
+                <span style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:.05em">Assigned</span>
+                <span id="cnt-assigned" style="margin-left:auto;font-size:11px;color:#D97706;font-weight:700;background:#FDE68A;padding:1px 7px;border-radius:20px">0</span>
+              </div>
+              <div id="col-assigned" style="display:flex;flex-direction:column;gap:8px;min-height:80px"></div>
+            </div>
+            <div class="kanban-col" data-status="in_progress" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event,'in_progress')">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:#EDE9FE;border-radius:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:#7C3AED"></div>
+                <span style="font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.05em">In Progress</span>
+                <span id="cnt-in_progress" style="margin-left:auto;font-size:11px;color:#7C3AED;font-weight:700;background:#DDD6FE;padding:1px 7px;border-radius:20px">0</span>
+              </div>
+              <div id="col-in_progress" style="display:flex;flex-direction:column;gap:8px;min-height:80px"></div>
+            </div>
+            <div class="kanban-col" data-status="review" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event,'review')">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:#DBEAFE;border-radius:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:#3B82F6"></div>
+                <span style="font-size:11px;font-weight:700;color:#3B82F6;text-transform:uppercase;letter-spacing:.05em">Review</span>
+                <span id="cnt-review" style="margin-left:auto;font-size:11px;color:#3B82F6;font-weight:700;background:#BFDBFE;padding:1px 7px;border-radius:20px">0</span>
+              </div>
+              <div id="col-review" style="display:flex;flex-direction:column;gap:8px;min-height:80px"></div>
+            </div>
+            <div class="kanban-col" data-status="done" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event,'done')">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:#D1FAE5;border-radius:8px">
+                <div style="width:7px;height:7px;border-radius:50%;background:#10B981"></div>
+                <span style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em">Done</span>
+                <span id="cnt-done" style="margin-left:auto;font-size:11px;color:#10B981;font-weight:700;background:#A7F3D0;padding:1px 7px;border-radius:20px">0</span>
+              </div>
+              <div id="col-done" style="display:flex;flex-direction:column;gap:8px;min-height:80px"></div>
+            </div>
+          </div>
+        </div>
+        <!-- PAYMENT TAB -->
+        <div id="ws-payment" style="display:none">
+          <div class="two-col" style="align-items:start">
+            <div class="panel"><div class="p-hd"><div class="p-ti"><i class="ti ti-receipt"></i> Payment history</div></div><div id="payment-history-list"></div></div>
+            <div id="payment-summary-box"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITOR MODAL -->
+    <div id="editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+        <div style="padding:20px 24px 16px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between">
+          <h3 id="ed-modal-title" style="font-size:16px;font-weight:700;color:#111827">Add Editor</h3>
+          <button onclick="closeEditorModal()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+          <div class="r2">
+            <div><label class="f-lbl">Name *</label><input class="f-inp" id="ed-name" type="text" placeholder="Editor name"/></div>
+            <div><label class="f-lbl">Phone</label><input class="f-inp" id="ed-phone" type="text" placeholder="01XXXXXXXXX"/></div>
+          </div>
+          <div class="r2">
+            <div><label class="f-lbl">Email</label><input class="f-inp" id="ed-email" type="email" placeholder="editor@email.com"/></div>
+            <div><label class="f-lbl">Rate per video (৳)</label><input class="f-inp" id="ed-rate" type="number" placeholder="0" min="0"/></div>
+          </div>
+          <div class="r2">
+            <div><label class="f-lbl">Hire date</label><input class="f-inp" id="ed-hire" type="date"/></div>
+            <div><label class="f-lbl">Status</label>
+              <select class="f-inp" id="ed-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+            </div>
+          </div>
+          <div><label class="f-lbl">Skills / Software</label><input class="f-inp" id="ed-skills" type="text" placeholder="Premiere Pro, After Effects, DaVinci..."/></div>
+          <div><label class="f-lbl">Notes</label><textarea class="f-inp" id="ed-notes-inp" rows="3" style="resize:none" placeholder="Additional notes..."></textarea></div>
+        </div>
+        <div style="padding:0 24px 20px;display:flex;gap:10px">
+          <button class="btn-p" onclick="saveEditor()"><i class="ti ti-device-floppy"></i> Save</button>
+          <button id="ed-del-btn" onclick="deleteEditor()" style="display:none;flex:0 0 auto;width:auto;padding:9px 14px" class="btn-d"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT MODAL -->
+    <div id="project-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:660px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+        <div style="padding:20px 24px 16px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between">
+          <h3 id="proj-modal-title" style="font-size:16px;font-weight:700;color:#111827">New Project</h3>
+          <button onclick="closeProjectModal()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;max-height:75vh;overflow-y:auto">
+          <div><label class="f-lbl">Project / Video title *</label><input class="f-inp" id="proj-title" type="text" placeholder="e.g. Chest workout video ep.5"/></div>
+          <div class="r2">
+            <div><label class="f-lbl">Assigned date</label><input class="f-inp" id="proj-assigned" type="date"/></div>
+            <div><label class="f-lbl">Deadline</label><input class="f-inp" id="proj-deadline" type="date"/></div>
+          </div>
+          <div class="r2">
+            <div><label class="f-lbl">Status</label>
+              <select class="f-inp" id="proj-status"><option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select>
+            </div>
+            <div><label class="f-lbl">Payment status</label>
+              <select class="f-inp" id="proj-pay-status"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option></select>
+            </div>
+          </div>
+          <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
+            <div style="font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-coin" style="font-size:14px"></i> Payment Details</div>
+            <div class="r2" style="margin-bottom:10px">
+              <div><label class="f-lbl">Amount per video (৳)</label><input class="f-inp" id="proj-amount" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
+              <div><label class="f-lbl">Amount per minute (৳)</label><input class="f-inp" id="proj-amt-per-min" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
+            </div>
+            <div class="r2">
+              <div><label class="f-lbl">Total minutes</label><input class="f-inp" id="proj-minutes" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
+              <div><label class="f-lbl">Total amount (৳) <span style="color:#7C3AED;font-size:10px;font-weight:400">auto</span></label><input class="f-inp" id="proj-total-amount" type="number" placeholder="0" style="font-weight:700;color:#7C3AED"/></div>
+            </div>
+            <div class="r2" style="margin-top:10px">
+              <div><label class="f-lbl">Paid amount (৳)</label><input class="f-inp" id="proj-paid" type="number" placeholder="0" min="0"/></div>
+              <div><label class="f-lbl">Payment note</label><input class="f-inp" id="proj-pay-note" type="text" placeholder="bKash, bank transfer..."/></div>
+            </div>
+          </div>
+          <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
+            <div style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-text" style="font-size:14px"></i> Script & Instructions</div>
+            <div style="margin-bottom:10px"><label class="f-lbl">Google Doc / Script link</label><input class="f-inp" id="proj-script-link" type="text" placeholder="https://docs.google.com/document/..."/></div>
+            <div><label class="f-lbl">Editing Instructions</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
+          </div>
+          <div>
+            <label class="f-lbl">Google Drive video link <span style="color:#6B7280;font-weight:400">(editor fills when done)</span></label>
+            <input class="f-inp" id="proj-drive" type="text" placeholder="https://drive.google.com/file/d/..."/>
+          </div>
+          <div><label class="f-lbl">Feedback / Revision notes</label><textarea class="f-inp" id="proj-feedback" rows="3" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Revision requests, feedback..."></textarea></div>
+          <div><label class="f-lbl">Reference links</label><input class="f-inp" id="proj-refs" type="text" placeholder="https://youtube.com/..., https://drive.google.com/..."/></div>
+        </div>
+        <div style="padding:12px 24px 20px;border-top:1px solid #F3F4F6;display:flex;gap:10px">
+          <button class="btn-p" onclick="saveProject()"><i class="ti ti-device-floppy"></i> Save project</button>
+          <button id="proj-del-btn" onclick="deleteProject()" style="display:none;flex:0 0 auto;width:auto;padding:9px 14px" class="btn-d"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECT DETAIL MODAL -->
+    <div id="proj-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;display:flex;flex-direction:column">
+        <div style="padding:18px 24px 14px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div id="pdm-title" style="flex:1;font-size:16px;font-weight:700;color:#111827"></div>
+          <span id="pdm-status" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
+          <div id="pdm-actions"></div>
+          <button onclick="document.getElementById('proj-detail-modal').style.display='none'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="pdm-body" style="padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
+      </div>
+    </div>
+
+
+        <!-- FINANCE (owner only) -->
     <div class="pg" id="pg-finance">
       <!-- Owner check happens in JS, this is extra safety -->
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
@@ -654,6 +839,7 @@ function showPg(pg){
   if(pg==='users'&&profile?.role==='owner')loadUsers();
   if(pg==='finance'&&profile?.role==='owner')loadNotes();
   if(pg==='notes')loadSharedNote();
+  if(pg==='editors')loadEditors();
   if(pg==='private-notes'){
     if(profile?.role!=='owner'){toast('🔒 শুধু Owner দেখতে পারবে');return;}
     loadPrivateNote();
@@ -1597,6 +1783,492 @@ document.addEventListener('keydown',e=>{
     if(activePg==='pg-private-notes'){e.preventDefault();savePrivateNote();}
   }
 });
+
+// ── EDITORS
+let editors=[], currentEditorId=null;
+let _currentProjects=[], _currentProjId=null;
+const ED_STATUS={active:{bg:'#D1FAE5',text:'#059669'},inactive:{bg:'#F3F4F6',text:'#6B7280'}};
+const PAY_COL={paid:{bg:'#D1FAE5',text:'#059669'},unpaid:{bg:'#FEE2E2',text:'#EF4444'},partial:{bg:'#FEF3C7',text:'#D97706'}};
+const PROJ_COL={assigned:{bg:'#FEF3C7',text:'#D97706'},in_progress:{bg:'#EDE9FE',text:'#7C3AED'},review:{bg:'#DBEAFE',text:'#3B82F6'},done:{bg:'#D1FAE5',text:'#10B981'}};
+// Drag state
+let _dragProjId=null;
+
+// Inject ws-tab CSS
+(function(){
+  const s=document.createElement('style');
+  s.textContent='.ws-tab{font-family:inherit;font-size:12px;padding:5px 16px;border-radius:6px;border:none;background:transparent;color:#6B7280;cursor:pointer;transition:.12s;font-weight:500}.ws-tab:hover{color:#111827}.ws-tab.on{background:#fff;color:#111827;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}.kanban-col{transition:background .15s}.kanban-col.drag-over{background:rgba(124,58,237,.04);border-radius:10px}';
+  document.head.appendChild(s);
+})();
+
+// ─ Load editors list
+async function loadEditors(){
+  document.getElementById('ed-view-list').style.display='block';
+  document.getElementById('ed-view-workspace').style.display='none';
+  const {data,error}=await sb.from('editors').select('*').order('name');
+  if(error){toast('Error: '+error.message);return;}
+  editors=data||[];renderEditorCards();
+}
+
+function renderEditorCards(){
+  const el=document.getElementById('editor-list');
+  if(!editors.length){el.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#9CA3AF"><i class="ti ti-users" style="font-size:40px;display:block;margin-bottom:12px;opacity:.25"></i><div style="font-size:15px;font-weight:600;margin-bottom:6px">No editors yet</div><div style="font-size:13px">Click "New editor" to add your first editor</div></div>`;return;}
+  el.innerHTML=editors.map(ed=>{
+    const sc=ED_STATUS[ed.status]||ED_STATUS.active;
+    const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const avatarContent=ed.photo_url?`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:`<span>${ini}</span>`;
+    return `<div onclick="openWorkspace(${ed.id})" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#C4B5FD';this.style.boxShadow='0 4px 12px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;flex-shrink:0;overflow:hidden">${avatarContent}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#111827">${ed.name}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">${ed.email||ed.phone||'—'}</div></div>
+        <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;background:${sc.bg};color:${sc.text}">${ed.status}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #F3F4F6">
+        <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rate/video</div><div style="font-size:15px;font-weight:700;color:#7C3AED">৳${Number(ed.rate_per_video||0).toLocaleString()}</div></div>
+        <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Skills</div><div style="font-size:12px;color:#6B7280">${(ed.skills||[]).slice(0,2).join(', ')||'—'}</div></div>
+        <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Hired</div><div style="font-size:12px;color:#6B7280">${ed.hire_date?new Date(ed.hire_date).toLocaleDateString('en-GB',{month:'short',year:'numeric'}):'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─ Open workspace
+async function openWorkspace(id){
+  currentEditorId=id;
+  const ed=editors.find(e=>e.id===id);if(!ed)return;
+  document.getElementById('ed-view-list').style.display='none';
+  document.getElementById('ed-view-workspace').style.display='block';
+  // Profile header
+  const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const av=document.getElementById('ws-avatar');
+  if(ed.photo_url){av.innerHTML=`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`;}
+  else{av.innerHTML=ini;av.style.background='linear-gradient(135deg,#7C3AED,#0EA5E9)';}
+  document.getElementById('ws-name').textContent=ed.name;
+  document.getElementById('ws-meta').textContent=(ed.skills||[]).join(' · ')||'No skills listed';
+  const sc=ED_STATUS[ed.status]||ED_STATUS.active;
+  const badge=document.getElementById('ws-status-badge');
+  badge.textContent=ed.status;badge.style.background=sc.bg;badge.style.color=sc.text;
+  const contact=document.getElementById('ws-contact');
+  contact.innerHTML=[
+    ed.phone?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-phone" style="font-size:13px"></i>${ed.phone}</span>`:'',
+    ed.email?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-mail" style="font-size:13px"></i>${ed.email}</span>`:'',
+    ed.rate_per_video?`<span style="font-size:12px;color:#7C3AED;font-weight:600;display:flex;align-items:center;gap:4px"><i class="ti ti-coin" style="font-size:13px"></i>৳${Number(ed.rate_per_video).toLocaleString()}/video</span>`:''
+  ].filter(Boolean).join('');
+  // Show projects tab by default
+  wsTab('projects',document.querySelector('.ws-tab.on'));
+  await loadWorkspaceProjects();
+}
+
+function closeWorkspace(){
+  document.getElementById('ed-view-workspace').style.display='none';
+  document.getElementById('ed-view-list').style.display='block';
+  currentEditorId=null;
+}
+
+function wsTab(tab,btn){
+  document.querySelectorAll('.ws-tab').forEach(b=>b.classList.remove('on'));
+  btn?.classList.add('on');
+  document.getElementById('ws-projects').style.display=tab==='projects'?'block':'none';
+  document.getElementById('ws-payment').style.display=tab==='payment'?'block':'none';
+  if(tab==='payment')renderPaymentTab();
+}
+
+// ─ Load & render kanban
+async function loadWorkspaceProjects(){
+  const {data,error}=await sb.from('editor_projects').select('*').eq('editor_id',currentEditorId).order('created_at',{ascending:false});
+  if(error){toast('Error loading projects');return;}
+  _currentProjects=data||[];renderKanban();
+}
+
+function renderKanban(){
+  const cols={assigned:[],in_progress:[],review:[],done:[]};
+  _currentProjects.forEach(p=>{if(cols[p.status])cols[p.status].push(p);});
+  Object.keys(cols).forEach(st=>{
+    const cnt=document.getElementById('cnt-'+st);
+    const col=document.getElementById('col-'+st);
+    if(!cnt||!col)return;
+    cnt.textContent=cols[st].length;
+    if(!cols[st].length){col.innerHTML=`<div style="border:1.5px dashed #E5E7EB;border-radius:8px;padding:16px;text-align:center;color:#D1D5DB;font-size:12px">Drop here</div>`;return;}
+    const pc=PROJ_COL[st];
+    const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+    col.innerHTML=cols[st].map(p=>{
+      const overdue=p.deadline&&p.status!=='done'&&new Date(p.deadline)<new Date();
+      const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
+      return `<div draggable="true" ondragstart="kanbanDragStart(event,${p.id})" onclick="openProjDetail(${p.id})" style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${pc.text}';this.style.boxShadow='0 2px 8px rgba(0,0,0,.07)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+        <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:8px;line-height:1.4">${p.project_name}</div>
+        ${isOwnerManager?`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
+          <span style="font-size:12px;font-weight:700;color:#111827">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</span>
+        </div>`:''}
+        ${p.deadline?`<div style="font-size:11px;margin-top:7px;color:${overdue?'#EF4444':'#9CA3AF'};display:flex;align-items:center;gap:4px"><i class="ti ti-calendar" style="font-size:12px"></i>${new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}${overdue?' <span style="color:#EF4444;font-weight:600;margin-left:4px">Overdue</span>':''}</div>`:''}
+        ${p.instructions?`<div style="font-size:11px;color:#6B7280;margin-top:6px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
+      </div>`;
+    }).join('');
+  });
+}
+
+// ─ Drag and drop (with permission check)
+function kanbanDragStart(event,id){
+  _dragProjId=id;event.dataTransfer.effectAllowed='move';
+}
+function kanbanDragOver(event){
+  event.preventDefault();event.currentTarget.classList.add('drag-over');
+}
+async function kanbanDrop(event,newStatus){
+  event.preventDefault();event.currentTarget.classList.remove('drag-over');
+  if(!_dragProjId)return;
+  const role=profile?.role||'employee';
+  const p=_currentProjects.find(x=>x.id===_dragProjId);
+  if(!p){_dragProjId=null;return;}
+
+  // Editor/employee: strict rules
+  if(role!=='owner'&&role!=='manager'){
+    const allowed={assigned:['in_progress'],in_progress:['review']};
+    if(!(allowed[p.status]||[]).includes(newStatus)){
+      if(newStatus==='done'){
+        toast('🔒 Done করার permission নেই — Manager/Owner করবে');
+      } else {
+        toast('🔒 তুমি শুধু Assigned→In Progress এবং In Progress→Review করতে পারবে');
+      }
+      _dragProjId=null;return;
+    }
+  }
+  // Extra: no one except owner/manager can move to done
+  if(newStatus==='done'&&role!=='owner'&&role!=='manager'){
+    toast('🔒 Done করার permission শুধু Owner/Manager এর');
+    _dragProjId=null;return;
+  }
+  if(p.status===newStatus){_dragProjId=null;return;}
+  const {error}=await sb.from('editor_projects').update({status:newStatus}).eq('id',_dragProjId);
+  if(error){toast('Error: '+error.message);}
+  else{toast('Status updated ✓');await loadWorkspaceProjects();}
+  _dragProjId=null;
+}
+
+// ─ Project detail modal
+function openProjDetail(id){
+  const p=_currentProjects.find(x=>x.id===id);if(!p)return;
+  _currentProjId=id;
+  const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+  const pc=PROJ_COL[p.status]||PROJ_COL.assigned;
+  const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
+  document.getElementById('pdm-title').textContent=p.project_name;
+  const st=document.getElementById('pdm-status');
+  st.textContent=p.status.replace('_',' ');st.style.background=pc.bg;st.style.color=pc.text;
+  // Edit button — only owner/manager
+  const actionsDiv=document.getElementById('pdm-actions');
+  if(actionsDiv){
+    actionsDiv.innerHTML=isOwnerManager?`<button onclick="editProjectFromDetail()" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit</button>`:'';
+  }
+
+  // Drive embed
+  let driveEmbed='';
+  if(p.drive_link){
+    const fileMatch=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const embedUrl=fileMatch?`https://drive.google.com/file/d/${fileMatch[1]}/preview`:p.drive_link;
+    driveEmbed=`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Completed video (Google Drive)</div><iframe src="${embedUrl}" style="width:100%;aspect-ratio:16/9;border-radius:10px;border:none;display:block" allowfullscreen loading="lazy"></iframe><a href="${p.drive_link}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;color:#7C3AED;text-decoration:none"><i class="ti ti-external-link" style="font-size:13px"></i>Open in Drive</a></div>`;
+  }
+
+  // Script link
+  let scriptHtml='';
+  if(p.script_link){scriptHtml=`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Script / Doc</div><a href="${p.script_link}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:#F0FDF4;border:1px solid #A7F3D0;border-radius:8px;color:#059669;text-decoration:none;font-size:13px;font-weight:500"><i class="ti ti-file-text" style="font-size:15px"></i>Open Script / Google Doc</a></div>`;}
+
+  // Refs
+  const refs=(p.reference_urls||[]).map(u=>`<a href="${u}" target="_blank" style="color:#7C3AED;text-decoration:none;font-size:12px;display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><i class="ti ti-link" style="font-size:12px;vertical-align:-1px"></i> ${u}</a>`).join('');
+
+  document.getElementById('pdm-body').innerHTML=`
+    ${isOwnerManager?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:11px;background:#F5F3FF;border-radius:8px;border:1px solid #EDE9FE">
+        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Total amount</div>
+        <div style="font-size:18px;font-weight:700;color:#7C3AED">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</div>
+        ${p.amount_per_minute?`<div style="font-size:11px;color:#9CA3AF;margin-top:3px">৳${p.amount_per_minute}/min · ${p.total_minutes||0} min</div>`:''}
+      </div>
+      <div style="padding:11px;background:${pay.bg};border-radius:8px;border:1px solid ${pay.bg}">
+        <div style="font-size:10px;font-weight:600;color:${pay.text};text-transform:uppercase;margin-bottom:4px">Payment</div>
+        <div style="font-size:14px;font-weight:700;color:${pay.text}">${p.payment_status}</div>
+        ${p.paid_amount?`<div style="font-size:11px;color:${pay.text};margin-top:2px">Paid: ৳${Number(p.paid_amount).toLocaleString()}</div>`:''}
+        ${p.payment_note?`<div style="font-size:11px;color:${pay.text};margin-top:2px">${p.payment_note}</div>`:''}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
+        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Assigned</div>
+        <div style="font-size:13px;color:#111827">${p.assigned_date?new Date(p.assigned_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+      </div>
+      <div style="padding:11px;background:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#FEE2E2':'#F9FAFB'};border-radius:8px;border:1px solid #E5E7EB">
+        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Deadline</div>
+        <div style="font-size:13px;color:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#EF4444':'#111827'}">${p.deadline?new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+      </div>
+    </div>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
+        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Assigned</div>
+        <div style="font-size:13px;color:#111827">${p.assigned_date?new Date(p.assigned_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+      </div>
+      <div style="padding:11px;background:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#FEE2E2':'#F9FAFB'};border-radius:8px;border:1px solid #E5E7EB">
+        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Deadline</div>
+        <div style="font-size:13px;color:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#EF4444':'#111827'}">${p.deadline?new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+      </div>
+    </div>`}
+    ${driveEmbed}
+    ${scriptHtml}
+    ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
+    ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
+    ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
+    ${!p.drive_link&&(profile?.role==='editor'||profile?.role==='employee')?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
+  `;
+  document.getElementById('proj-detail-modal').style.display='flex';
+}
+
+async function submitDriveLink(projId){
+  const link=document.getElementById('drive-submit-inp')?.value.trim();
+  if(!link){toast('Drive link দিন');return;}
+  const {error}=await sb.from('editor_projects').update({drive_link:link}).eq('id',projId);
+  if(error){toast('Error: '+error.message);return;}
+  toast('Drive link submitted ✓');
+  document.getElementById('proj-detail-modal').style.display='none';
+  await loadWorkspaceProjects();
+  openProjDetail(projId);
+}
+
+function editProjectFromDetail(){
+  document.getElementById('proj-detail-modal').style.display='none';
+  if(profile?.role==='owner'||profile?.role==='manager')openProjectModal(_currentProjId);
+  else toast('🔒 শুধু Owner/Manager edit করতে পারবে');
+}
+
+// ─ Payment tab
+function renderPaymentTab(){
+  const total=_currentProjects.reduce((s,p)=>s+Number(p.total_amount||p.amount||0),0);
+  const paid=_currentProjects.reduce((s,p)=>s+Number(p.paid_amount||0),0);
+  const unpaid=total-paid;
+
+  // Summary box
+  document.getElementById('payment-summary-box').innerHTML=`
+    <div class="panel">
+      <div class="p-ti" style="margin-bottom:14px"><i class="ti ti-coin"></i> Payment Summary</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#F5F3FF;border-radius:8px;border:1px solid #EDE9FE">
+          <span style="font-size:12px;font-weight:600;color:#7C3AED">Total projects</span>
+          <span style="font-size:18px;font-weight:700;color:#7C3AED">${_currentProjects.length}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
+          <span style="font-size:12px;font-weight:600;color:#6B7280">Total amount</span>
+          <span style="font-size:16px;font-weight:700;color:#111827">৳${total.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#D1FAE5;border-radius:8px;border:1px solid #A7F3D0">
+          <span style="font-size:12px;font-weight:600;color:#065F46">Paid</span>
+          <span style="font-size:16px;font-weight:700;color:#059669">৳${paid.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#FEE2E2;border-radius:8px;border:1px solid #FECACA">
+          <span style="font-size:12px;font-weight:700;color:#991B1B">Unpaid</span>
+          <span style="font-size:20px;font-weight:700;color:#EF4444">৳${unpaid.toLocaleString()}</span>
+        </div>
+      </div>
+    </div>`;
+
+  // Per-project payment list
+  const list=document.getElementById('payment-history-list');
+  if(!_currentProjects.length){
+    list.innerHTML='<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px"><i class="ti ti-receipt-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>No projects yet</div>';
+    return;
+  }
+
+  list.innerHTML=_currentProjects.map(p=>{
+    const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
+    const pc=PROJ_COL[p.status]||PROJ_COL.assigned;
+    const totalAmt=Number(p.total_amount||p.amount||0);
+    const paidAmt=Number(p.paid_amount||0);
+    const unpaidAmt=Math.max(0,totalAmt-paidAmt);
+
+    // Payment method badge: per-minute or per-video
+    let payMethodHtml='';
+    if(p.amount_per_minute&&p.amount_per_minute>0){
+      payMethodHtml=`<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:#DBEAFE;color:#1D4ED8;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-clock" style="font-size:11px"></i> ৳${p.amount_per_minute}/min · ${p.total_minutes||0} min</span>`;
+    } else {
+      payMethodHtml=`<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:#EDE9FE;color:#7C3AED;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-video" style="font-size:11px"></i> Per video</span>`;
+    }
+
+    return `<div style="border:1px solid #E5E7EB;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;transition:all .15s" onmouseover="this.style.borderColor='#C4B5FD'" onmouseout="this.style.borderColor='#E5E7EB'">
+      <!-- Project header row -->
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer" onclick="openProjDetail(${p.id})">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.project_name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+            <span style="font-size:10px;padding:1px 7px;border-radius:20px;font-weight:600;background:${pc.bg};color:${pc.text}">${p.status.replace('_',' ')}</span>
+            ${payMethodHtml}
+            ${p.assigned_date?`<span style="font-size:11px;color:#9CA3AF">${new Date(p.assigned_date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:15px;font-weight:700;color:#111827">৳${totalAmt.toLocaleString()}</div>
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
+        </div>
+      </div>
+      <!-- Payment breakdown -->
+      <div style="display:flex;border-top:1px solid #F3F4F6">
+        <div style="flex:1;padding:9px 14px;border-right:1px solid #F3F4F6">
+          <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Paid</div>
+          <div style="font-size:14px;font-weight:700;color:#059669">৳${paidAmt.toLocaleString()}</div>
+          ${p.payment_note?`<div style="font-size:11px;color:#9CA3AF;margin-top:2px">${p.payment_note}</div>`:''}
+        </div>
+        <div style="flex:1;padding:9px 14px">
+          <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Remaining</div>
+          <div style="font-size:14px;font-weight:700;color:${unpaidAmt>0?'#EF4444':'#059669'}">৳${unpaidAmt.toLocaleString()}</div>
+        </div>
+        ${p.status==='done'&&p.payment_status!=='paid'?`<div style="flex:0 0 auto;padding:9px 14px;display:flex;align-items:center">
+          <button onclick="markPaid(${p.id},${totalAmt})" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Mark paid</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markPaid(projId, amount){
+  if(!confirm(`৳${amount.toLocaleString()} paid হিসেবে mark করবে?`))return;
+  const {error}=await sb.from('editor_projects').update({
+    payment_status:'paid',
+    paid_amount:amount,
+    payment_date:new Date().toISOString().slice(0,10)
+  }).eq('id',projId);
+  if(error){toast('Error: '+error.message);return;}
+  toast('Marked as paid ✓');
+  await loadWorkspaceProjects();
+  renderPaymentTab();
+}
+
+// ─ Editor photo upload
+async function uploadEditorPhoto(inp){
+  const file=inp.files[0];if(!file)return;
+  if(file.size>3*1024*1024){toast('File must be under 3MB');return;}
+  const path=`editor-photos/${currentEditorId}-${Date.now()}`;
+  const {data,error}=await sb.storage.from('invoices').upload(path,file,{upsert:true});
+  if(error){toast('Upload failed: '+error.message);return;}
+  const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
+  await sb.from('editors').update({photo_url:publicUrl}).eq('id',currentEditorId);
+  const av=document.getElementById('ws-avatar');
+  av.innerHTML=`<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
+  // Update local
+  const ed=editors.find(e=>e.id===currentEditorId);if(ed)ed.photo_url=publicUrl;
+  toast('Photo updated ✓');
+  inp.value='';
+}
+
+// ─ Editor Modal
+function openEditorModal(id=null){
+  const ed=id?editors.find(e=>e.id===id):null;
+  document.getElementById('ed-modal-title').textContent=ed?'Edit Editor':'Add Editor';
+  document.getElementById('ed-name').value=ed?.name||'';
+  document.getElementById('ed-phone').value=ed?.phone||'';
+  document.getElementById('ed-email').value=ed?.email||'';
+  document.getElementById('ed-rate').value=ed?.rate_per_video||'';
+  document.getElementById('ed-hire').value=ed?.hire_date||'';
+  document.getElementById('ed-status').value=ed?.status||'active';
+  document.getElementById('ed-skills').value=ed?.skills?.join(', ')||'';
+  document.getElementById('ed-notes-inp').value=ed?.notes||'';
+  document.getElementById('ed-del-btn').style.display=ed?'flex':'none';
+  document.getElementById('editor-modal').style.display='flex';
+  document.getElementById('editor-modal')._editId=id||null;
+}
+function closeEditorModal(){document.getElementById('editor-modal').style.display='none';}
+
+async function saveEditor(){
+  const name=document.getElementById('ed-name').value.trim();
+  if(!name){toast('Name দিন');return;}
+  const skills=document.getElementById('ed-skills').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const payload={name,phone:document.getElementById('ed-phone').value.trim()||null,email:document.getElementById('ed-email').value.trim()||null,rate_per_video:parseFloat(document.getElementById('ed-rate').value)||0,hire_date:document.getElementById('ed-hire').value||null,status:document.getElementById('ed-status').value,skills,notes:document.getElementById('ed-notes-inp').value.trim()||null,created_by:user?.id};
+  const editId=document.getElementById('editor-modal')._editId;
+  let error;
+  if(editId){({error}=await sb.from('editors').update(payload).eq('id',editId));}
+  else{({error}=await sb.from('editors').insert(payload));}
+  if(error){toast('Error: '+error.message);return;}
+  toast(editId?'Updated ✓':'Editor added ✓');
+  closeEditorModal();
+  const {data}=await sb.from('editors').select('*').order('name');
+  editors=data||[];
+  renderEditorCards();
+  if(editId&&currentEditorId===editId)openWorkspace(editId);
+}
+
+async function deleteEditor(){
+  const editId=document.getElementById('editor-modal')._editId;
+  if(!editId||!confirm('Delete this editor and all their projects?'))return;
+  await sb.from('editors').delete().eq('id',editId);
+  toast('Deleted');closeEditorModal();closeWorkspace();loadEditors();
+}
+
+// ─ Project modal
+function calcTotalAmount(){
+  const perVideo=parseFloat(document.getElementById('proj-amount').value)||0;
+  const perMin=parseFloat(document.getElementById('proj-amt-per-min').value)||0;
+  const mins=parseFloat(document.getElementById('proj-minutes').value)||0;
+  const total=perVideo+(perMin*mins);
+  document.getElementById('proj-total-amount').value=total||'';
+}
+
+function openProjectModal(id=null){
+  // Only owner/manager can open project modal
+  if(profile?.role!=='owner'&&profile?.role!=='manager'){toast('🔒 শুধু Owner/Manager project edit করতে পারবে');return;}
+  _currentProjId=id;
+  const p=id?_currentProjects.find(x=>x.id===id):null;
+  document.getElementById('proj-modal-title').textContent=p?'Edit Project':'New Project';
+  document.getElementById('proj-title').value=p?.project_name||'';
+  document.getElementById('proj-assigned').value=p?.assigned_date||new Date().toISOString().slice(0,10);
+  document.getElementById('proj-deadline').value=p?.deadline||'';
+  document.getElementById('proj-status').value=p?.status||'assigned';
+  document.getElementById('proj-pay-status').value=p?.payment_status||'unpaid';
+  document.getElementById('proj-amount').value=p?.amount||(editors.find(e=>e.id===currentEditorId)?.rate_per_video||'');
+  document.getElementById('proj-amt-per-min').value=p?.amount_per_minute||'';
+  document.getElementById('proj-minutes').value=p?.total_minutes||'';
+  document.getElementById('proj-total-amount').value=p?.total_amount||'';
+  document.getElementById('proj-paid').value=p?.paid_amount||'';
+  document.getElementById('proj-pay-note').value=p?.payment_note||'';
+  document.getElementById('proj-script-link').value=p?.script_link||'';
+  document.getElementById('proj-instructions').value=p?.instructions||'';
+  document.getElementById('proj-drive').value=p?.drive_link||'';
+  document.getElementById('proj-feedback').value=p?.feedback||'';
+  document.getElementById('proj-refs').value=(p?.reference_urls||[]).join(', ');
+  document.getElementById('proj-del-btn').style.display=p?'flex':'none';
+  document.getElementById('project-modal').style.display='flex';
+}
+function closeProjectModal(){document.getElementById('project-modal').style.display='none';}
+
+async function saveProject(){
+  const title=document.getElementById('proj-title').value.trim();
+  if(!title){toast('Project title দিন');return;}
+  const refs=document.getElementById('proj-refs').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const payload={
+    editor_id:currentEditorId,project_name:title,
+    assigned_date:document.getElementById('proj-assigned').value||null,
+    deadline:document.getElementById('proj-deadline').value||null,
+    status:document.getElementById('proj-status').value,
+    payment_status:document.getElementById('proj-pay-status').value,
+    amount:parseFloat(document.getElementById('proj-amount').value)||0,
+    amount_per_minute:parseFloat(document.getElementById('proj-amt-per-min').value)||0,
+    total_minutes:parseFloat(document.getElementById('proj-minutes').value)||0,
+    total_amount:parseFloat(document.getElementById('proj-total-amount').value)||0,
+    paid_amount:parseFloat(document.getElementById('proj-paid').value)||0,
+    payment_note:document.getElementById('proj-pay-note').value.trim()||null,
+    script_link:document.getElementById('proj-script-link').value.trim()||null,
+    instructions:document.getElementById('proj-instructions').value.trim()||null,
+    drive_link:document.getElementById('proj-drive').value.trim()||null,
+    feedback:document.getElementById('proj-feedback').value.trim()||null,
+    reference_urls:refs
+  };
+  let error;
+  if(_currentProjId){({error}=await sb.from('editor_projects').update(payload).eq('id',_currentProjId));}
+  else{({error}=await sb.from('editor_projects').insert(payload));}
+  if(error){toast('Error: '+error.message);return;}
+  toast(_currentProjId?'Updated ✓':'Project added ✓');
+  closeProjectModal();await loadWorkspaceProjects();
+}
+
+async function deleteProject(){
+  if(!_currentProjId||!confirm('Delete this project?'))return;
+  await sb.from('editor_projects').delete().eq('id',_currentProjId);
+  toast('Deleted');closeProjectModal();
+  document.getElementById('proj-detail-modal').style.display='none';
+  await loadWorkspaceProjects();
+}
+
 
 init();
 </script>
