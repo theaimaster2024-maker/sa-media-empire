@@ -880,15 +880,22 @@ let user=null,profile=null,expenses=[],filt='all',curFile=null;
 // ── INIT
 async function init(){
   try{
-    const timeout=new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000));
+    const timeout=new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),10000));
     const sessionReq=sb.auth.getSession();
     const {data:{session}}=await Promise.race([sessionReq,timeout]);
-    if(session){await loadProfile(session.user);showApp();}
-    else showAuth();
-  }catch(e){
+    if(session){
+      await loadProfile(session.user);
+      showApp();
+    } else {
+      showAuth();
+    }
+  } catch(e){
+    console.error('Init error:',e);
     showAuth();
+  } finally {
+    const l=document.getElementById('loading');
+    if(l)l.style.display='none';
   }
-  document.getElementById('loading').style.display='none';
 }
 async function loadProfile(u){
   user=u;
@@ -897,17 +904,21 @@ async function loadProfile(u){
 }
 function showAuth(){document.getElementById('auth').style.display='flex';}
 function showApp(){
-  document.getElementById('auth').style.display='none';
-  document.getElementById('app').style.display='block';
-  setupNav();
-  // Editor → go straight to editors page
-  const role=profile?.role||'employee';
-  if(role==='editor'||role==='employee'){
-    showPg('editors');
-  } else {
-    showPg('notes');
+  try{
+    document.getElementById('auth').style.display='none';
+    document.getElementById('app').style.display='block';
+    setupNav();
+    const role=profile?.role||'employee';
+    if(role==='editor'||role==='employee'){
+      showPg('editors');
+    } else {
+      showPg('notes');
+    }
+    const fd=document.getElementById('f-date');
+    if(fd)fd.value=now.toISOString().slice(0,10);
+  }catch(e){
+    console.error('showApp error:',e);
   }
-  document.getElementById('f-date').value=now.toISOString().slice(0,10);
 }
 
 // ── AUTH
@@ -1951,7 +1962,6 @@ async function loadEditors(){
   document.getElementById('ed-view-workspace').style.display='none';
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
 
-  // Hide "New editor" button for non-owner/manager
   const newEdBtn=document.querySelector('#ed-view-list .btn-p');
   if(newEdBtn)newEdBtn.style.display=isOwnerManager?'flex':'none';
 
@@ -1959,14 +1969,27 @@ async function loadEditors(){
   if(error){toast('Error: '+error.message);return;}
   editors=data||[];
 
-  // Editor role: auto-open their own workspace if linked by email
+  // Owner/Manager: init chat bubble
+  if(isOwnerManager&&editors.length){
+    initChatBubble();
+    const bubble=document.getElementById('chat-bubble');
+    if(bubble)bubble.style.display='flex';
+    startGlobalSubscription();
+    // Check unread counts
+    for(const ed of editors){
+      const c=await checkUnreadMessages(ed.id);
+      if(c>0)_unreadCounts[ed.id]=c;
+    }
+    updateBubbleBadge();
+  }
+
+  // Editor role: auto-open their own workspace
   if(!isOwnerManager){
     const myEditor=editors.find(e=>e.email===user?.email||e.phone===profile?.phone);
     if(myEditor){
       await openWorkspace(myEditor.id);
       return;
     } else {
-      // No editor profile linked — show message
       document.getElementById('editor-list').innerHTML=`
         <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#9CA3AF">
           <i class="ti ti-user-off" style="font-size:40px;display:block;margin-bottom:12px;opacity:.25"></i>
