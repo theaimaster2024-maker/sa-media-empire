@@ -2147,19 +2147,6 @@ function openProjDetail(id){
   const refs=(p.reference_urls||[]).map(u=>`<a href="${u}" target="_blank" style="color:#7C3AED;text-decoration:none;font-size:12px;display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><i class="ti ti-link" style="font-size:12px;vertical-align:-1px"></i> ${u}</a>`).join('');
 
   document.getElementById('pdm-tab-details').innerHTML=`
-    ${isOwnerManager?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div style="padding:11px;background:#F5F3FF;border-radius:8px;border:1px solid #EDE9FE">
-        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Total amount</div>
-        <div style="font-size:18px;font-weight:700;color:#7C3AED">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</div>
-        ${p.amount_per_minute?`<div style="font-size:11px;color:#9CA3AF;margin-top:3px">৳${p.amount_per_minute}/min · ${p.total_minutes||0} min</div>`:''}
-      </div>
-      <div style="padding:11px;background:${pay.bg};border-radius:8px;border:1px solid ${pay.bg}">
-        <div style="font-size:10px;font-weight:600;color:${pay.text};text-transform:uppercase;margin-bottom:4px">Payment</div>
-        <div style="font-size:14px;font-weight:700;color:${pay.text}">${p.payment_status}</div>
-        ${p.paid_amount?`<div style="font-size:11px;color:${pay.text};margin-top:2px">Paid: ৳${Number(p.paid_amount).toLocaleString()}</div>`:''}
-        ${p.payment_note?`<div style="font-size:11px;color:${pay.text};margin-top:2px">${p.payment_note}</div>`:''}
-      </div>
-    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div style="padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
         <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Assigned</div>
@@ -2169,16 +2156,7 @@ function openProjDetail(id){
         <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Deadline</div>
         <div style="font-size:13px;color:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#EF4444':'#111827'}">${p.deadline?new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
       </div>
-    </div>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div style="padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
-        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Assigned</div>
-        <div style="font-size:13px;color:#111827">${p.assigned_date?new Date(p.assigned_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
-      </div>
-      <div style="padding:11px;background:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#FEE2E2':'#F9FAFB'};border-radius:8px;border:1px solid #E5E7EB">
-        <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Deadline</div>
-        <div style="font-size:13px;color:${p.deadline&&new Date(p.deadline)<new Date()&&p.status!=='done'?'#EF4444':'#111827'}">${p.deadline?new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
-      </div>
-    </div>`}
+    </div>
     ${driveEmbed}
     ${scriptHtml}
     ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
@@ -2265,14 +2243,27 @@ async function loadPaymentTab(){
     <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px">
       <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:5px"><i class="ti ti-file-invoice" style="font-size:14px;color:#7C3AED"></i> Generate Invoice</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div><label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Payment method</label>
-          <input id="inv-method" class="f-inp" type="text" value="${p.payment_method||''}" placeholder="bKash, Bank transfer, Cash..." style="font-size:13px"/>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:6px">Payment method</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button onclick="selectPayMethod('bKash',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
+              <span style="width:10px;height:10px;background:#E2136E;border-radius:50%;display:inline-block"></span> bKash
+            </button>
+            <button onclick="selectPayMethod('Bank',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
+              <span style="width:10px;height:10px;background:#1D4ED8;border-radius:50%;display:inline-block"></span> Bank
+            </button>
+            <button onclick="selectPayMethod('Others',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
+              <i class="ti ti-dots" style="font-size:13px"></i> Others
+            </button>
+          </div>
+          <input id="inv-method" type="hidden" value="${p.payment_method||''}"/>
+          <input id="inv-account" class="f-inp" type="text" value="${p.payment_account||''}" placeholder="Account number / bank name..." style="font-size:13px"/>
         </div>
         <div><label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Note (optional)</label>
           <textarea id="inv-note" class="f-inp" rows="2" style="resize:none;font-size:13px" placeholder="Extra work, additional note...">${p.invoice_note||''}</textarea>
         </div>
-        <button onclick="generateInvoice(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
-          <i class="ti ti-download" style="font-size:15px"></i> Download Invoice (HTML)
+        <button onclick="generateInvoice(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ti ti-file-invoice" style="font-size:16px"></i> Generate & Download PDF Invoice
         </button>
       </div>
     </div>`;
@@ -2319,10 +2310,12 @@ async function markPaidFromPayTab(projId,amount){
 }
 
 async function generateInvoice(projId){
-  const method=document.getElementById('inv-method')?.value.trim();
-  const note=document.getElementById('inv-note')?.value.trim();
+  const method=document.getElementById('inv-method')?.value||'';
+  const account=document.getElementById('inv-account')?.value.trim()||'';
+  const note=document.getElementById('inv-note')?.value.trim()||'';
+  const fullMethod=method?`${method}${account?' — '+account:''}`:null;
   await sb.from('editor_projects').update({
-    payment_method:method||null,invoice_note:note||null,
+    payment_method:fullMethod,invoice_note:note||null,
     invoice_generated_at:new Date().toISOString()
   }).eq('id',projId);
   await loadWorkspaceProjects();
@@ -2333,42 +2326,63 @@ async function generateInvoice(projId){
   const isPerMin=Number(p.amount_per_minute||0)>0;
   const invDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   const invNo=`INV-${projId}-${Date.now().toString().slice(-6)}`;
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#fff;color:#111;padding:48px;max-width:680px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #7C3AED}.brand{font-size:22px;font-weight:800;color:#7C3AED}.brand-sub{font-size:11px;color:#9CA3AF;margin-top:2px}.inv-meta{text-align:right;font-size:12px;color:#6B7280}.inv-meta strong{font-size:18px;color:#111;display:block;margin-bottom:4px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;padding:16px;background:#F9FAFB;border-radius:8px}.party label{font-size:10px;font-weight:700;text-transform:uppercase;color:#9CA3AF;letter-spacing:.05em;margin-bottom:6px;display:block}.party strong{font-size:15px;color:#111;font-weight:700}.party p{font-size:12px;color:#6B7280;margin-top:3px}table{width:100%;border-collapse:collapse;margin-bottom:24px}th{background:#F5F3FF;color:#7C3AED;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;text-align:left;font-weight:700}td{padding:13px 14px;border-bottom:1px solid #F3F4F6;font-size:13px}.total-box{background:#F5F3FF;border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.total-label{font-size:13px;color:#7C3AED;font-weight:600}.total-amount{font-size:24px;font-weight:800;color:#7C3AED}.badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}.paid{background:#D1FAE5;color:#059669}.unpaid{background:#FEE2E2;color:#EF4444}.partial{background:#FEF3C7;color:#D97706}.footer{margin-top:32px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:11px;color:#9CA3AF;text-align:center}@media print{body{padding:24px}}</style>
-</head><body>
+  const methodDisp=fullMethod||'Not specified';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>${invNo}</title>
+<style>
+@page{size:A4;margin:20mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#111;background:#fff}
+.page{max-width:680px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2.5px solid #7C3AED;margin-bottom:22px}
+.brand{font-size:22px;font-weight:800;color:#7C3AED}.brand-sub{font-size:11px;color:#9CA3AF;margin-top:2px}
+.inv-no{font-size:18px;font-weight:800;color:#111;text-align:right}.inv-date{font-size:12px;color:#6B7280;margin-top:3px;text-align:right}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;background:#F9FAFB;border-radius:8px;margin-bottom:20px}
+.party-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF;margin-bottom:5px}
+.party-name{font-size:15px;font-weight:700;color:#111}.party-info{font-size:12px;color:#6B7280;margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+thead th{background:#7C3AED;color:#fff;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:left;font-weight:700}
+tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
+.total-box{background:#F5F3FF;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border:1px solid #EDE9FE}
+.total-lbl{font-size:13px;color:#7C3AED;font-weight:600}.total-amt{font-size:22px;font-weight:800;color:#7C3AED}
+.info-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px}
+.badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.paid{background:#D1FAE5;color:#059669}.unpaid{background:#FEE2E2;color:#EF4444}.partial{background:#FEF3C7;color:#D97706}
+.method-box{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:9px 14px;margin-bottom:14px;font-size:13px;color:#374151}
+.footer{margin-top:18px;padding-top:10px;border-top:1px solid #E5E7EB;font-size:10px;color:#9CA3AF;text-align:center}
+@media print{.no-print{display:none}}
+</style></head>
+<body><div class="page">
 <div class="header">
   <div><div class="brand">SA Media Empire</div><div class="brand-sub">Video Production Management</div></div>
-  <div class="inv-meta"><strong>Invoice #${invNo}</strong>Date: ${invDate}</div>
+  <div><div class="inv-no">Invoice #${invNo}</div><div class="inv-date">Date: ${invDate}</div></div>
 </div>
 <div class="parties">
-  <div class="party"><label>Bill From</label><strong>${ed?.name||'Editor'}</strong><p>${ed?.email||''}</p><p>${ed?.phone||''}</p></div>
-  <div class="party"><label>Bill To</label><strong>SA Media Empire</strong><p>Management System</p></div>
+  <div><div class="party-lbl">From (Editor)</div><div class="party-name">${ed?.name||'Editor'}</div><div class="party-info">${ed?.email||''}</div><div class="party-info">${ed?.phone||''}</div></div>
+  <div><div class="party-lbl">To</div><div class="party-name">SA Media Empire</div><div class="party-info">Management System</div></div>
 </div>
 <table>
-  <thead><tr><th>Project</th><th>Rate</th><th>Duration</th><th style="text-align:right">Amount</th></tr></thead>
-  <tbody>
-    <tr>
-      <td><strong>${p.project_name}</strong>${note?`<br><small style="color:#9CA3AF;font-size:11px">${note}</small>`:''}</td>
-      <td>${isPerMin?`৳${Number(p.amount_per_minute).toLocaleString()}/min`:`৳${Number(p.amount||0).toLocaleString()}/video`}</td>
-      <td>${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`${p.video_duration_min||0}m ${p.video_duration_sec||0}s`:'—'}</td>
-      <td style="text-align:right;font-weight:700;font-size:15px">৳${totalAmt.toLocaleString()}</td>
-    </tr>
-  </tbody>
+<thead><tr><th>Project / Video</th><th>Rate</th><th>Duration</th><th style="text-align:right">Amount</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>${p.project_name}</strong>${note?`<br><small style="font-size:11px;color:#9CA3AF">${note}</small>`:''}</td>
+  <td>${isPerMin?`৳${Number(p.amount_per_minute).toLocaleString()}/min`:`৳${Number(p.amount||0).toLocaleString()}/video`}</td>
+  <td>${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`${p.video_duration_min||0}m ${p.video_duration_sec||0}s`:'—'}</td>
+  <td style="text-align:right;font-weight:700;font-size:15px">৳${totalAmt.toLocaleString()}</td>
+</tr>
+</tbody>
 </table>
-<div class="total-box"><span class="total-label">Total Amount</span><span class="total-amount">৳${totalAmt.toLocaleString()}</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-  <span style="font-size:13px;color:#6B7280">Payment Status:</span>
-  <span class="badge ${p.payment_status||'unpaid'}">${(p.payment_status||'UNPAID').toUpperCase()}</span>
-  ${method?`<span style="font-size:13px;color:#6B7280">via <strong>${method}</strong></span>`:''}
-</div>
+<div class="total-box"><span class="total-lbl">Total Amount</span><span class="total-amt">৳${totalAmt.toLocaleString()}</span></div>
+<div class="info-row"><span style="color:#6B7280;font-weight:500">Payment Status:</span><span class="badge ${p.payment_status||'unpaid'}">${(p.payment_status||'UNPAID').toUpperCase()}</span></div>
+<div class="method-box">💳 Payment via: <strong>${methodDisp}</strong></div>
 <div class="footer">Generated by SA Media Empire Management System • ${invDate}</div>
+</div>
+<script>window.addEventListener('load',function(){window.print();});<\/script>
 </body></html>`;
-  const blob=new Blob([html],{type:'text/html'});
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`${invNo}.html`;a.click();
-  URL.revokeObjectURL(url);
-  toast('Invoice downloaded ✓');
+  const win=window.open(url,'_blank');
+  if(win)win.focus();
+  toast('Invoice খুলেছে — Print → Save as PDF করো ✓');
 }
 
 // ─ Project detail tabs
