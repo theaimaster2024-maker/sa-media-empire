@@ -625,14 +625,33 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:10px;display:flex;align-items:center;gap:6px">
                 <i class="ti ti-message-plus" style="font-size:14px;color:#7C3AED"></i> Add review comment
               </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:#EDE9FE;border-radius:8px;padding:8px 12px;flex-wrap:wrap">
-                <i class="ti ti-clock" style="font-size:15px;color:#7C3AED"></i>
-                <span style="font-size:12px;color:#7C3AED;font-weight:600">Timestamp:</span>
-                <input id="rc-timestamp" type="number" min="0" step="1" value="0"
-                  style="width:70px;border:1.5px solid #C4B5FD;border-radius:6px;padding:3px 8px;font-size:14px;font-weight:700;color:#7C3AED;font-family:inherit;outline:none;background:#fff;text-align:center"
-                  oninput="document.getElementById('rc-ts-display').textContent=fmtTs(this.value||0)"/>
-                <span id="rc-ts-display" style="font-size:13px;font-weight:600;color:#7C3AED">0:00</span>
-                <span style="font-size:11px;color:#9CA3AF">seconds — manually enter the video timestamp</span>
+              <!-- Timestamp: min:sec range -->
+              <div style="background:#EDE9FE;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+                <div style="font-size:11px;font-weight:600;color:#7C3AED;margin-bottom:8px;display:flex;align-items:center;gap:5px"><i class="ti ti-clock" style="font-size:13px"></i> Timestamp range</div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <input id="rc-min-start" type="number" min="0" value="0" placeholder="0"
+                      style="width:44px;border:1.5px solid #C4B5FD;border-radius:6px;padding:4px 6px;font-size:14px;font-weight:700;color:#7C3AED;font-family:inherit;outline:none;background:#fff;text-align:center"
+                      oninput="updateRcTsDisplay()"/>
+                    <span style="font-size:14px;font-weight:700;color:#7C3AED">:</span>
+                    <input id="rc-sec-start" type="number" min="0" max="59" value="0" placeholder="00"
+                      style="width:44px;border:1.5px solid #C4B5FD;border-radius:6px;padding:4px 6px;font-size:14px;font-weight:700;color:#7C3AED;font-family:inherit;outline:none;background:#fff;text-align:center"
+                      oninput="updateRcTsDisplay()"/>
+                  </div>
+                  <span style="font-size:13px;color:#9CA3AF;font-weight:500">→</span>
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <input id="rc-min-end" type="number" min="0" value="" placeholder="0"
+                      style="width:44px;border:1.5px solid #C4B5FD;border-radius:6px;padding:4px 6px;font-size:14px;font-weight:700;color:#9CA3AF;font-family:inherit;outline:none;background:#fff;text-align:center"
+                      oninput="updateRcTsDisplay()"/>
+                    <span style="font-size:14px;font-weight:700;color:#9CA3AF">:</span>
+                    <input id="rc-sec-end" type="number" min="0" max="59" value="" placeholder="00"
+                      style="width:44px;border:1.5px solid #C4B5FD;border-radius:6px;padding:4px 6px;font-size:14px;font-weight:700;color:#9CA3AF;font-family:inherit;outline:none;background:#fff;text-align:center"
+                      oninput="updateRcTsDisplay()"/>
+                  </div>
+                  <span id="rc-ts-display" style="font-size:12px;font-weight:600;color:#7C3AED;background:#fff;padding:3px 10px;border-radius:6px;border:1px solid #C4B5FD">0:00</span>
+                  <input id="rc-timestamp" type="hidden" value="0"/>
+                </div>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:6px">শুরুর সময় → শেষের সময় (শুধু শুরু দিলেও চলবে)</div>
               </div>
               <textarea id="rc-text" class="f-inp" rows="2" style="resize:none;font-size:13px;line-height:1.6;margin-bottom:10px" placeholder="Describe the change needed at this timestamp..."></textarea>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -2224,6 +2243,25 @@ function updateTsDisplay(sec){
   if(disp)disp.textContent=fmtTs(sec);
 }
 
+function updateRcTsDisplay(){
+  const ms=parseInt(document.getElementById('rc-min-start')?.value)||0;
+  const ss=parseInt(document.getElementById('rc-sec-start')?.value)||0;
+  const me=document.getElementById('rc-min-end')?.value;
+  const se=document.getElementById('rc-sec-end')?.value;
+  const startSec=ms*60+ss;
+  const inp=document.getElementById('rc-timestamp');
+  if(inp)inp.value=startSec;
+  const disp=document.getElementById('rc-ts-display');
+  if(!disp)return;
+  const hasEnd=(me!==''&&me!==null&&me!==undefined)||(se!==''&&se!==null&&se!==undefined);
+  if(hasEnd){
+    const endSec=(parseInt(me)||0)*60+(parseInt(se)||0);
+    disp.textContent=`${fmtTs(startSec)} → ${fmtTs(endSec)}`;
+  } else {
+    disp.textContent=fmtTs(startSec);
+  }
+}
+
 function fmtTs(sec){
   const m=Math.floor(sec/60),s=Math.floor(sec%60);
   return `${m}:${String(s).padStart(2,'0')}`;
@@ -2276,7 +2314,7 @@ function renderReviewComments(comments){
     }
     return `<div style="background:${c.resolved?'#F0FDF4':'#F9FAFB'};border:1px solid ${c.resolved?'#A7F3D0':'#E5E7EB'};border-radius:10px;padding:12px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        <button onclick="seekVideo(${c.timestamp_sec})" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px;transition:.12s" onmouseover="this.style.background='#6D28D9'" onmouseout="this.style.background='#7C3AED'" title="Click to seek video to ${ts}"><i class="ti ti-clock" style="font-size:11px"></i> ${ts}</button>
+        <button onclick="seekVideo(${c.timestamp_sec})" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px;transition:.12s" onmouseover="this.style.background='#6D28D9'" onmouseout="this.style.background='#7C3AED'" title="Click to seek video"><i class="ti ti-clock" style="font-size:11px"></i> ${c.timestamp_end?`${ts} → ${fmtTs(c.timestamp_end)}`:ts}</button>
         <span style="font-size:12px;font-weight:600;color:${rc}">${c.created_by_name||'?'}</span>
         <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${rc}18;color:${rc};font-weight:600">${c.created_by_role||'?'}</span>
         <span style="font-size:11px;color:#9CA3AF;margin-left:auto">${new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
@@ -2308,20 +2346,38 @@ async function rcAttach(inp,type){
 async function submitReviewComment(){
   const text=document.getElementById('rc-text')?.value.trim();
   if(!text){toast('Comment লিখুন');return;}
-  const ts=parseFloat(document.getElementById('rc-timestamp')?.value)||0;
+  // Get start time
+  const ms=parseInt(document.getElementById('rc-min-start')?.value)||0;
+  const ss=parseInt(document.getElementById('rc-sec-start')?.value)||0;
+  const startSec=ms*60+ss;
+  // Get end time (optional)
+  const meVal=document.getElementById('rc-min-end')?.value;
+  const seVal=document.getElementById('rc-sec-end')?.value;
+  const hasEnd=(meVal!==''&&meVal!==null)||(seVal!==''&&seVal!==null);
+  const endSec=hasEnd?(parseInt(meVal||0)*60+parseInt(seVal||0)):null;
   const driveLink=document.getElementById('rc-drive')?.value.trim();
   let aUrl=_rcAttachUrl,aType=_rcAttachType,aName=_rcAttachName;
   if(driveLink&&!aUrl){aUrl=driveLink;aType='drive';aName=driveLink.slice(0,50);}
   const {error}=await sb.from('video_review_comments').insert({
-    project_id:_currentProjId,timestamp_sec:ts,comment:text,
+    project_id:_currentProjId,
+    timestamp_sec:startSec,
+    timestamp_end:endSec,
+    comment:text,
     attachment_url:aUrl||null,attachment_type:aType||null,attachment_name:aName||null,
-    created_by:user?.id,created_by_name:profile?.name||user?.email?.split('@')[0],created_by_role:profile?.role
+    created_by:user?.id,
+    created_by_name:profile?.name||user?.email?.split('@')[0],
+    created_by_role:profile?.role
   });
   if(error){toast('Error: '+error.message);return;}
+  // Reset
   document.getElementById('rc-text').value='';
   document.getElementById('rc-drive').value='';
-  document.getElementById('rc-timestamp').value='0';
+  if(document.getElementById('rc-min-start'))document.getElementById('rc-min-start').value='0';
+  if(document.getElementById('rc-sec-start'))document.getElementById('rc-sec-start').value='0';
+  if(document.getElementById('rc-min-end'))document.getElementById('rc-min-end').value='';
+  if(document.getElementById('rc-sec-end'))document.getElementById('rc-sec-end').value='';
   document.getElementById('rc-attachment-preview').innerHTML='';
+  document.getElementById('rc-ts-display').textContent='0:00';
   _rcAttachUrl=null;_rcAttachType=null;_rcAttachName=null;
   toast('Comment posted ✓');
   await loadReviewComments();
