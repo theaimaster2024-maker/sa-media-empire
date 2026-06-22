@@ -597,15 +597,69 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
 
     <!-- PROJECT DETAIL MODAL -->
-    <div id="proj-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-      <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;display:flex;flex-direction:column">
-        <div style="padding:18px 24px 14px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <div id="proj-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:860px;margin:auto;box-shadow:0 24px 64px rgba(0,0,0,.18);max-height:94vh;display:flex;flex-direction:column">
+        <!-- Header -->
+        <div style="padding:16px 20px 12px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:10px;flex-shrink:0">
           <div id="pdm-title" style="flex:1;font-size:16px;font-weight:700;color:#111827"></div>
           <span id="pdm-status" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
           <div id="pdm-actions"></div>
           <button onclick="document.getElementById('proj-detail-modal').style.display='none'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
         </div>
-        <div id="pdm-body" style="padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
+        <!-- Tabs -->
+        <div style="padding:0 20px;border-bottom:1px solid #E5E7EB;display:flex;gap:0;flex-shrink:0">
+          <button class="pdm-tab on" onclick="pdmTab('details',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Details</button>
+          <button class="pdm-tab" onclick="pdmTab('review',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Review</button>
+        </div>
+        <!-- Details tab -->
+        <div id="pdm-tab-details" style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
+        <!-- Review tab -->
+        <div id="pdm-tab-review" style="display:none;flex:1;overflow:hidden;display:none;flex-direction:column">
+          <!-- Video embed area -->
+          <div style="padding:16px 20px 0;flex-shrink:0">
+            <div id="pdm-video-area"></div>
+          </div>
+          <!-- Comment area -->
+          <div style="flex:1;overflow-y:auto;padding:0 20px 16px;display:flex;flex-direction:column;gap:10px;min-height:0">
+            <!-- Add comment box -->
+            <div id="pdm-add-comment" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-top:12px">
+              <div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+                <i class="ti ti-message-plus" style="font-size:14px;color:#7C3AED"></i> Add review comment
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <div style="flex:0 0 120px">
+                  <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">At timestamp</label>
+                  <div style="display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:6px 10px">
+                    <i class="ti ti-clock" style="font-size:13px;color:#7C3AED"></i>
+                    <input id="rc-timestamp" type="number" min="0" step="1" value="0" placeholder="sec" style="width:50px;border:none;outline:none;font-size:13px;font-weight:600;color:#111827;font-family:inherit"/>
+                    <span style="font-size:11px;color:#9CA3AF">sec</span>
+                  </div>
+                </div>
+                <div style="flex:1">
+                  <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Comment</label>
+                  <textarea id="rc-text" class="f-inp" rows="2" style="resize:none;font-size:13px;line-height:1.6" placeholder="Describe the change needed at this timestamp..."></textarea>
+                </div>
+              </div>
+              <!-- Attachment options -->
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:11px;color:#9CA3AF;font-weight:600">Attach:</span>
+                <button onclick="document.getElementById('rc-img-inp').click()" style="display:flex;align-items:center;gap:4px;background:#EDE9FE;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#7C3AED;font-family:inherit"><i class="ti ti-photo" style="font-size:13px"></i> Image</button>
+                <button onclick="document.getElementById('rc-audio-inp').click()" style="display:flex;align-items:center;gap:4px;background:#DBEAFE;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#1D4ED8;font-family:inherit"><i class="ti ti-microphone" style="font-size:13px"></i> Audio</button>
+                <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:160px">
+                  <input id="rc-drive" type="text" class="f-inp" placeholder="Drive/YouTube link (optional)" style="font-size:12px;padding:5px 10px"/>
+                </div>
+                <input id="rc-img-inp" type="file" accept="image/*" style="display:none" onchange="rcAttach(this,'image')"/>
+                <input id="rc-audio-inp" type="file" accept="audio/*" style="display:none" onchange="rcAttach(this,'audio')"/>
+              </div>
+              <div id="rc-attachment-preview" style="margin-top:8px"></div>
+              <div style="display:flex;justify-content:flex-end;margin-top:10px">
+                <button onclick="submitReviewComment()" class="btn-p" style="width:auto;padding:7px 16px;font-size:13px"><i class="ti ti-send"></i> Post comment</button>
+              </div>
+            </div>
+            <!-- Comments list -->
+            <div id="pdm-comments-list" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2067,7 +2121,7 @@ function openProjDetail(id){
   // Refs
   const refs=(p.reference_urls||[]).map(u=>`<a href="${u}" target="_blank" style="color:#7C3AED;text-decoration:none;font-size:12px;display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><i class="ti ti-link" style="font-size:12px;vertical-align:-1px"></i> ${u}</a>`).join('');
 
-  document.getElementById('pdm-body').innerHTML=`
+  document.getElementById('pdm-tab-details').innerHTML=`
     ${isOwnerManager?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div style="padding:11px;background:#F5F3FF;border-radius:8px;border:1px solid #EDE9FE">
         <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;margin-bottom:4px">Total amount</div>
@@ -2105,9 +2159,149 @@ function openProjDetail(id){
     ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
     ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
-    ${!p.drive_link&&(profile?.role==='editor'||profile?.role==='employee')?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
+    ${!p.drive_link?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
   `;
+  // Switch to details tab by default
+  pdmTab('details', document.querySelector('.pdm-tab.on'));
   document.getElementById('proj-detail-modal').style.display='flex';
+}
+
+// ─ Project detail tabs
+function pdmTab(tab, btn){
+  document.querySelectorAll('.pdm-tab').forEach(b=>{
+    b.classList.remove('on');
+    b.style.color='#6B7280';
+    b.style.borderBottomColor='transparent';
+    b.style.fontWeight='500';
+  });
+  if(btn){
+    btn.classList.add('on');
+    btn.style.color='#7C3AED';
+    btn.style.borderBottomColor='#7C3AED';
+    btn.style.fontWeight='600';
+  }
+  document.getElementById('pdm-tab-details').style.display=tab==='details'?'flex':'none';
+  const rv=document.getElementById('pdm-tab-review');
+  if(tab==='review'){
+    rv.style.display='flex';
+    loadReviewTab();
+  } else {
+    rv.style.display='none';
+  }
+}
+
+// ─ Video Review System (Frame.io style)
+let _rcAttachUrl=null,_rcAttachType=null,_rcAttachName=null;
+
+async function loadReviewTab(){
+  const p=_currentProjects.find(x=>x.id===_currentProjId);
+  if(!p)return;
+  const videoArea=document.getElementById('pdm-video-area');
+  if(p.drive_link){
+    const fm=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const ym=p.drive_link.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
+    if(fm){
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:10px;background:#000"><iframe src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div><div style="font-size:11px;color:#9CA3AF;margin-bottom:4px;display:flex;align-items:center;gap:4px"><i class="ti ti-brand-google-drive" style="font-size:13px;color:#10B981"></i> Google Drive video — add timestamped comments below</div>`;
+    } else if(ym){
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:10px"><iframe src="https://www.youtube.com/embed/${ym[1]}?rel=0" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div>`;
+    } else {
+      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px"><i class="ti ti-link" style="color:#7C3AED"></i><a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED;text-decoration:none">${p.drive_link.slice(0,60)}...</a></div>`;
+    }
+  } else {
+    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:10px;text-align:center"><div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div><div style="font-size:11px;color:#92400E;margin-top:4px">Editor Drive link submit করলে এখানে video দেখাবে</div></div>`;
+  }
+  await loadReviewComments();
+}
+
+async function loadReviewComments(){
+  const {data,error}=await sb.from('video_review_comments').select('*').eq('project_id',_currentProjId).order('timestamp_sec').order('created_at');
+  if(error){return;}
+  renderReviewComments(data||[]);
+}
+
+function renderReviewComments(comments){
+  const list=document.getElementById('pdm-comments-list');
+  if(!list)return;
+  if(!comments.length){list.innerHTML=`<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px"><i class="ti ti-message-circle" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>No review comments yet</div>`;return;}
+  const roleColor={owner:'#7C3AED',manager:'#10B981',editor:'#0EA5E9',employee:'#0EA5E9'};
+  list.innerHTML=comments.map(c=>{
+    const rc=roleColor[c.created_by_role]||'#6B7280';
+    const mins=Math.floor(c.timestamp_sec/60),secs=Math.floor(c.timestamp_sec%60);
+    const ts=`${mins}:${String(secs).padStart(2,'0')}`;
+    let attach='';
+    if(c.attachment_url){
+      if(c.attachment_type==='image') attach=`<img src="${c.attachment_url}" style="max-width:100%;max-height:180px;border-radius:8px;margin-top:8px;border:1px solid #E5E7EB;object-fit:contain"/>`;
+      else if(c.attachment_type==='audio') attach=`<audio controls style="width:100%;height:36px;margin-top:8px"><source src="${c.attachment_url}"/></audio>`;
+      else attach=`<a href="${c.attachment_url}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#7C3AED;text-decoration:none;background:#F5F3FF;padding:4px 10px;border-radius:6px;margin-top:6px"><i class="ti ti-external-link" style="font-size:12px"></i>${c.attachment_name||'Open link'}</a>`;
+    }
+    return `<div style="background:${c.resolved?'#F0FDF4':'#F9FAFB'};border:1px solid ${c.resolved?'#A7F3D0':'#E5E7EB'};border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <button onclick="document.getElementById('rc-timestamp').value=${c.timestamp_sec}" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px"><i class="ti ti-clock" style="font-size:11px"></i> ${ts}</button>
+        <span style="font-size:12px;font-weight:600;color:${rc}">${c.created_by_name||'?'}</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${rc}18;color:${rc};font-weight:600">${c.created_by_role||'?'}</span>
+        <span style="font-size:11px;color:#9CA3AF;margin-left:auto">${new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+        ${!c.resolved?`<button onclick="resolveComment(${c.id})" style="font-family:inherit;font-size:10px;border:1px solid #E5E7EB;border-radius:6px;padding:2px 8px;background:white;cursor:pointer;color:#6B7280" onmouseover="this.style.borderColor='#10B981';this.style.color='#10B981'" onmouseout="this.style.borderColor='#E5E7EB';this.style.color='#6B7280'"><i class="ti ti-check" style="font-size:11px"></i> Resolve</button>`:`<span style="font-size:10px;color:#10B981;font-weight:600"><i class="ti ti-check"></i> Resolved</span>`}
+        <button onclick="deleteReviewComment(${c.id})" style="background:none;border:none;cursor:pointer;color:#D1D5DB;font-size:14px;line-height:1" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='#D1D5DB'"><i class="ti ti-trash"></i></button>
+      </div>
+      <div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap">${c.comment}</div>
+      ${attach}
+    </div>`;
+  }).join('');
+}
+
+function seekVideo(sec){
+  const inp=document.getElementById('rc-timestamp');
+  if(inp)inp.value=sec;
+  document.getElementById('pdm-video-area')?.scrollIntoView({behavior:'smooth'});
+}
+
+async function rcAttach(inp,type){
+  const file=inp.files[0];if(!file)return;
+  if(file.size>5*1024*1024){toast('Max 5MB');return;}
+  const path=`review-attachments/${_currentProjId}-${Date.now()}`;
+  const {error}=await sb.storage.from('invoices').upload(path,file,{upsert:true});
+  if(error){toast('Upload failed: '+error.message);return;}
+  const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
+  _rcAttachUrl=publicUrl;_rcAttachType=type;_rcAttachName=file.name;
+  const prev=document.getElementById('rc-attachment-preview');
+  if(prev){
+    if(type==='image') prev.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="${publicUrl}" style="height:48px;border-radius:6px;border:1px solid #E5E7EB"/><button onclick="_rcAttachUrl=null;_rcAttachType=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px"><i class="ti ti-x"></i></button></div>`;
+    else prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#7C3AED"><i class="ti ti-paperclip"></i>${file.name}<button onclick="_rcAttachUrl=null;_rcAttachType=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:14px"><i class="ti ti-x"></i></button></div>`;
+  }
+  inp.value='';toast('Attached ✓');
+}
+
+async function submitReviewComment(){
+  const text=document.getElementById('rc-text')?.value.trim();
+  if(!text){toast('Comment লিখুন');return;}
+  const ts=parseFloat(document.getElementById('rc-timestamp')?.value)||0;
+  const driveLink=document.getElementById('rc-drive')?.value.trim();
+  let aUrl=_rcAttachUrl,aType=_rcAttachType,aName=_rcAttachName;
+  if(driveLink&&!aUrl){aUrl=driveLink;aType='drive';aName=driveLink.slice(0,50);}
+  const {error}=await sb.from('video_review_comments').insert({
+    project_id:_currentProjId,timestamp_sec:ts,comment:text,
+    attachment_url:aUrl||null,attachment_type:aType||null,attachment_name:aName||null,
+    created_by:user?.id,created_by_name:profile?.name||user?.email?.split('@')[0],created_by_role:profile?.role
+  });
+  if(error){toast('Error: '+error.message);return;}
+  document.getElementById('rc-text').value='';
+  document.getElementById('rc-drive').value='';
+  document.getElementById('rc-timestamp').value='0';
+  document.getElementById('rc-attachment-preview').innerHTML='';
+  _rcAttachUrl=null;_rcAttachType=null;_rcAttachName=null;
+  toast('Comment posted ✓');
+  await loadReviewComments();
+}
+
+async function resolveComment(id){
+  await sb.from('video_review_comments').update({resolved:true}).eq('id',id);
+  await loadReviewComments();
+}
+
+async function deleteReviewComment(id){
+  if(!confirm('Delete this comment?'))return;
+  await sb.from('video_review_comments').delete().eq('id',id);
+  await loadReviewComments();
 }
 
 async function submitDriveLink(projId){
