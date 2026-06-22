@@ -420,10 +420,11 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <button id="ws-new-proj-btn" class="btn-p" style="width:auto;padding:8px 14px" onclick="openProjectModal()"><i class="ti ti-plus"></i> New project</button>
           </div>
         </div>
-        <!-- Tabs: Projects + Payment (Payment hidden for editors) -->
+        <!-- Tabs: Projects + Payment + Notes -->
         <div style="display:flex;gap:2px;background:#F3F4F6;padding:3px;border-radius:8px;width:fit-content;margin-bottom:20px">
           <button class="ws-tab on" onclick="wsTab('projects',this)">Projects</button>
           <button class="ws-tab" id="ws-payment-tab" onclick="wsTab('payment',this)">Payment</button>
+          <button class="ws-tab" onclick="wsTab('ednotes',this)">Notes</button>
         </div>
         <!-- PROJECTS TAB: Kanban -->
         <div id="ws-projects">
@@ -467,6 +468,42 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div class="two-col" style="align-items:start">
             <div class="panel"><div class="p-hd"><div class="p-ti"><i class="ti ti-receipt"></i> Payment history</div></div><div id="payment-history-list"></div></div>
             <div id="payment-summary-box"></div>
+          </div>
+        </div>
+
+        <!-- NOTES TAB -->
+        <div id="ws-ednotes" style="display:none">
+          <div class="two-col" style="align-items:start">
+            <div class="panel">
+              <div class="p-hd">
+                <div class="p-ti"><i class="ti ti-notebook"></i> Editor notes</div>
+                <span id="ednote-status" style="font-size:11px;color:#9CA3AF"></span>
+              </div>
+              <textarea id="ednote-content" class="f-inp" rows="16"
+                style="resize:vertical;font-size:14px;line-height:1.8;min-height:360px"
+                placeholder="এখানে editor এর জন্য notes লিখুন...&#10;&#10;• Future project ideas&#10;• Instructions&#10;• Feedback&#10;• Reminders"
+                oninput="ednoteChanged()"></textarea>
+              <div style="display:flex;justify-content:flex-end;margin-top:10px">
+                <button class="btn-p" style="width:auto;padding:8px 16px" onclick="saveEditorNote()">
+                  <i class="ti ti-device-floppy"></i> Save
+                </button>
+              </div>
+            </div>
+            <div>
+              <div class="panel" style="background:rgba(124,58,237,.04);border-color:rgba(124,58,237,.15)">
+                <div class="p-ti" style="color:#7C3AED;margin-bottom:12px"><i class="ti ti-info-circle"></i> এই Notes সম্পর্কে</div>
+                <div style="font-size:13px;color:#6B7280;line-height:1.8">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#10B981"></i> Owner দেখতে ও লিখতে পারবে</div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#10B981"></i> Manager দেখতে ও লিখতে পারবে</div>
+                  <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-check" style="color:#10B981"></i> Editor নিজে দেখতে ও লিখতে পারবে</div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="p-ti" style="margin-bottom:10px"><i class="ti ti-clock"></i> Last saved</div>
+                <div id="ednote-saved-at" style="font-size:13px;color:#6B7280">—</div>
+                <div id="ednote-saved-by" style="font-size:11px;color:#9CA3AF;margin-top:4px"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -816,12 +853,28 @@ function setupNav(){
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='block';
     if(fb)fb.style.display='none';
-  } else {
+  } else if(role==='manager'){
     document.getElementById('nav-finance').style.display='none';
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
     document.getElementById('nav-private-notes').style.display='none';
     document.getElementById('nav-expenses').style.display='none';
+    const fc=document.getElementById('finance-content');
+    const fb=document.getElementById('finance-blocked');
+    if(fc)fc.style.display='none';
+    if(fb)fb.style.display='block';
+  } else {
+    // Editor/employee: ONLY show Editors section
+    document.getElementById('nav-finance').style.display='none';
+    document.getElementById('nav-admin-sec').style.display='none';
+    document.getElementById('nav-users').style.display='none';
+    document.getElementById('nav-private-notes').style.display='none';
+    document.getElementById('nav-expenses').style.display='none';
+    // Hide everything except editors
+    document.querySelectorAll('.nav-it').forEach(n=>{
+      const pg=n.getAttribute('data-pg');
+      if(pg&&pg!=='editors') n.style.display='none';
+    });
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='none';
@@ -1906,7 +1959,9 @@ function wsTab(tab,btn){
   btn?.classList.add('on');
   document.getElementById('ws-projects').style.display=tab==='projects'?'block':'none';
   document.getElementById('ws-payment').style.display=tab==='payment'?'block':'none';
+  document.getElementById('ws-ednotes').style.display=tab==='ednotes'?'block':'none';
   if(tab==='payment')renderPaymentTab();
+  if(tab==='ednotes')loadEditorNote();
 }
 
 // ─ Load & render kanban
@@ -2160,7 +2215,7 @@ function renderPaymentTab(){
 }
 
 async function markPaid(projId, amount){
-  if(!confirm(`৳${amount.toLocaleString()} paid হিসেবে mark করবে?`))return;
+  if(!confirm(`৳${Number(amount).toLocaleString()} paid হিসেবে mark করবে?`))return;
   const {error}=await sb.from('editor_projects').update({
     payment_status:'paid',
     paid_amount:amount,
@@ -2172,6 +2227,82 @@ async function markPaid(projId, amount){
   renderPaymentTab();
 }
 
+// ─ Editor Notes
+let _edNoteChanged=false;
+
+async function loadEditorNote(){
+  const statusEl=document.getElementById('ednote-status');
+  if(statusEl)statusEl.textContent='Loading...';
+  const {data,error}=await sb.from('editor_notes').select('*').eq('editor_id',currentEditorId).limit(1);
+  if(error){if(statusEl)statusEl.textContent='Error';return;}
+  if(data&&data.length>0){
+    const note=data[0];
+    const ta=document.getElementById('ednote-content');
+    if(ta)ta.value=note.content||'';
+    const t=new Date(note.updated_at);
+    const el=document.getElementById('ednote-saved-at');
+    const bl=document.getElementById('ednote-saved-by');
+    if(el)el.textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    if(bl)bl.textContent=note.updated_by_name?`by ${note.updated_by_name}`:'';
+  } else {
+    const ta=document.getElementById('ednote-content');
+    if(ta)ta.value='';
+    const el=document.getElementById('ednote-saved-at');
+    if(el)el.textContent='Not saved yet';
+  }
+  if(statusEl)statusEl.textContent='';
+  _edNoteChanged=false;
+}
+
+function ednoteChanged(){
+  _edNoteChanged=true;
+  const s=document.getElementById('ednote-status');
+  if(s)s.textContent='Unsaved...';
+}
+
+async function saveEditorNote(){
+  const content=document.getElementById('ednote-content')?.value||'';
+  const s=document.getElementById('ednote-status');
+  if(s)s.textContent='Saving...';
+  const {data:existing}=await sb.from('editor_notes').select('id').eq('editor_id',currentEditorId).limit(1);
+  const payload={
+    editor_id:currentEditorId,
+    content,
+    updated_by:user?.id,
+    updated_by_name:profile?.name||user?.email?.split('@')[0]
+  };
+  let error;
+  if(existing&&existing.length>0){
+    ({error}=await sb.from('editor_notes').update(payload).eq('id',existing[0].id));
+  } else {
+    ({error}=await sb.from('editor_notes').insert(payload));
+  }
+  if(error){toast('Error: '+error.message);if(s)s.textContent='Failed';return;}
+  const now=new Date();
+  const el=document.getElementById('ednote-saved-at');
+  const bl=document.getElementById('ednote-saved-by');
+  if(el)el.textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(bl)bl.textContent=`by ${profile?.name||'you'}`;
+  if(s){s.textContent='Saved ✓';setTimeout(()=>s.textContent='',2000);}
+  _edNoteChanged=false;
+  toast('Notes saved ✓');
+}
+
+// Auto-save every 60s if changed
+setInterval(()=>{
+  if(_edNoteChanged&&currentEditorId&&document.getElementById('ws-ednotes')?.style.display==='block'){
+    saveEditorNote();
+  }
+},60000);
+
+// Ctrl+S saves editor note
+document.addEventListener('keydown',e=>{
+  if(e.key==='s'&&(e.ctrlKey||e.metaKey)){
+    if(document.getElementById('ws-ednotes')?.style.display==='block'){
+      e.preventDefault();saveEditorNote();
+    }
+  }
+});
 // ─ Editor photo upload
 async function uploadEditorPhoto(inp){
   const file=inp.files[0];if(!file)return;
