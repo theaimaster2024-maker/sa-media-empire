@@ -2240,33 +2240,63 @@ async function loadPaymentTab(){
     </div>`;
 
   document.getElementById('pdm-pay-invoice-box').innerHTML=`
-    <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px">
-      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:5px"><i class="ti ti-file-invoice" style="font-size:14px;color:#7C3AED"></i> Generate Invoice</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:16px">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;display:flex;align-items:center;gap:5px"><i class="ti ti-file-invoice" style="font-size:14px;color:#7C3AED"></i> Generate Invoice</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <!-- Method selector -->
         <div>
-          <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:6px">Payment method</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            <button onclick="selectPayMethod('bKash',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
-              <span style="width:10px;height:10px;background:#E2136E;border-radius:50%;display:inline-block"></span> bKash
+          <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:8px">Payment method</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="selectPayMethod('bKash',this)" class="pay-method-btn" data-method="bKash"
+              style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:2px solid #E5E7EB;border-radius:10px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:all .15s">
+              <span style="width:12px;height:12px;background:#E2136E;border-radius:50%;display:inline-block;flex-shrink:0"></span> bKash
             </button>
-            <button onclick="selectPayMethod('Bank',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
-              <span style="width:10px;height:10px;background:#1D4ED8;border-radius:50%;display:inline-block"></span> Bank
+            <button onclick="selectPayMethod('Bank',this)" class="pay-method-btn" data-method="Bank"
+              style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:2px solid #E5E7EB;border-radius:10px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:all .15s">
+              <span style="width:12px;height:12px;background:#1D4ED8;border-radius:50%;display:inline-block;flex-shrink:0"></span> Bank
             </button>
-            <button onclick="selectPayMethod('Others',this)" class="pay-method-btn" style="display:flex;align-items:center;gap:5px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:.12s">
-              <i class="ti ti-dots" style="font-size:13px"></i> Others
+            <button onclick="selectPayMethod('Others',this)" class="pay-method-btn" data-method="Others"
+              style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:2px solid #E5E7EB;border-radius:10px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;font-family:inherit;transition:all .15s">
+              <i class="ti ti-dots" style="font-size:14px"></i> Others
             </button>
           </div>
-          <input id="inv-method" type="hidden" value="${p.payment_method||''}"/>
-          <input id="inv-account" class="f-inp" type="text" value="${p.payment_account||''}" placeholder="Account number / bank name..." style="font-size:13px"/>
+          <input id="inv-method" type="hidden" value=""/>
         </div>
-        <div><label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Note (optional)</label>
-          <textarea id="inv-note" class="f-inp" rows="2" style="resize:none;font-size:13px" placeholder="Extra work, additional note...">${p.invoice_note||''}</textarea>
+        <!-- Dynamic fields — shown after selection -->
+        <div id="inv-dynamic-fields" style="display:none;flex-direction:column;gap:10px;background:#F9FAFB;border-radius:8px;padding:12px;border:1px solid #E5E7EB"></div>
+        <!-- Note -->
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Note (optional)</label>
+          <textarea id="inv-note" class="f-inp" rows="2" style="resize:none;font-size:13px" placeholder="Extra work, additional charges...">${p.invoice_note||''}</textarea>
         </div>
         <button onclick="generateInvoice(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
           <i class="ti ti-file-invoice" style="font-size:16px"></i> Generate & Download PDF Invoice
         </button>
       </div>
     </div>`;
+
+  // Restore selected method if already saved
+  if(p.payment_method){
+    const saved=p.payment_method;
+    const method=saved.startsWith('bKash')?'bKash':saved.startsWith('Bank')?'Bank':saved.startsWith('Others')?'Others':null;
+    if(method){
+      const btn=document.querySelector(`.pay-method-btn[data-method="${method}"]`);
+      if(btn){
+        selectPayMethod(method,btn);
+        // Restore saved values into fields after fields are rendered
+        setTimeout(()=>{
+          const parts=saved.split('|');
+          if(method==='bKash'&&document.getElementById('inv-bkash-num'))document.getElementById('inv-bkash-num').value=parts[1]||'';
+          if(method==='Bank'){
+            if(document.getElementById('inv-bank-name'))document.getElementById('inv-bank-name').value=parts[1]||'';
+            if(document.getElementById('inv-bank-acc'))document.getElementById('inv-bank-acc').value=parts[2]||'';
+            if(document.getElementById('inv-bank-owner'))document.getElementById('inv-bank-owner').value=parts[3]||'';
+          }
+          if(method==='Others'&&document.getElementById('inv-other-detail'))document.getElementById('inv-other-detail').value=parts[1]||'';
+        },50);
+      }
+    }
+  }
 }
 
 function calcPayment(){
@@ -2309,13 +2339,81 @@ async function markPaidFromPayTab(projId,amount){
   await loadWorkspaceProjects();loadPaymentTab();
 }
 
+function selectPayMethod(method, btn){
+  document.querySelectorAll('.pay-method-btn').forEach(b=>{
+    b.style.borderColor='#E5E7EB';b.style.color='#6B7280';b.style.background='#F9FAFB';
+  });
+  const colors={bKash:'#E2136E',Bank:'#1D4ED8',Others:'#7C3AED'};
+  const c=colors[method]||'#7C3AED';
+  btn.style.borderColor=c;btn.style.color=c;btn.style.background=c+'18';
+  const inp=document.getElementById('inv-method');
+  if(inp)inp.value=method;
+  const df=document.getElementById('inv-dynamic-fields');
+  if(!df)return;
+  df.style.display='flex';
+  if(method==='bKash'){
+    df.innerHTML=`
+      <div style="font-size:12px;font-weight:700;color:#E2136E;margin-bottom:2px;display:flex;align-items:center;gap:5px">
+        <span style="width:10px;height:10px;background:#E2136E;border-radius:50%"></span> bKash details
+      </div>
+      <div><label class="f-lbl">bKash number *</label>
+        <input id="inv-bkash-num" class="f-inp" type="text" placeholder="01XXXXXXXXX" style="font-size:14px;font-weight:600;letter-spacing:.5px"/>
+      </div>`;
+  } else if(method==='Bank'){
+    df.innerHTML=`
+      <div style="font-size:12px;font-weight:700;color:#1D4ED8;margin-bottom:2px;display:flex;align-items:center;gap:5px">
+        <span style="width:10px;height:10px;background:#1D4ED8;border-radius:50%"></span> Bank details
+      </div>
+      <div><label class="f-lbl">Bank name *</label>
+        <input id="inv-bank-name" class="f-inp" type="text" placeholder="e.g. Dutch Bangla Bank, BRAC Bank..."/>
+      </div>
+      <div><label class="f-lbl">Account number *</label>
+        <input id="inv-bank-acc" class="f-inp" type="text" placeholder="Account number" style="font-size:14px;font-weight:600;letter-spacing:.5px"/>
+      </div>
+      <div class="r2">
+        <div><label class="f-lbl">Account holder name</label>
+          <input id="inv-bank-owner" class="f-inp" type="text" placeholder="Name on account"/>
+        </div>
+        <div><label class="f-lbl">Branch (optional)</label>
+          <input id="inv-bank-branch" class="f-inp" type="text" placeholder="Branch name"/>
+        </div>
+      </div>`;
+  } else if(method==='Others'){
+    df.innerHTML=`
+      <div style="font-size:12px;font-weight:700;color:#7C3AED;margin-bottom:2px">Other payment details</div>
+      <div><label class="f-lbl">Payment details *</label>
+        <textarea id="inv-other-detail" class="f-inp" rows="3" style="resize:none;font-size:13px" placeholder="Method, account info, etc..."></textarea>
+      </div>`;
+  }
+}
+
 async function generateInvoice(projId){
   const method=document.getElementById('inv-method')?.value||'';
-  const account=document.getElementById('inv-account')?.value.trim()||'';
+  if(!method){toast('Payment method সিলেক্ট করুন');return;}
   const note=document.getElementById('inv-note')?.value.trim()||'';
-  const fullMethod=method?`${method}${account?' — '+account:''}`:null;
+  // Collect method-specific details
+  let methodDetail='',methodFull='';
+  if(method==='bKash'){
+    const num=document.getElementById('inv-bkash-num')?.value.trim()||'';
+    if(!num){toast('bKash number দিন');return;}
+    methodFull=`bKash|${num}`;
+    methodDetail=`bKash: ${num}`;
+  } else if(method==='Bank'){
+    const bname=document.getElementById('inv-bank-name')?.value.trim()||'';
+    const bacc=document.getElementById('inv-bank-acc')?.value.trim()||'';
+    const bown=document.getElementById('inv-bank-owner')?.value.trim()||'';
+    const bbranch=document.getElementById('inv-bank-branch')?.value.trim()||'';
+    if(!bname||!bacc){toast('Bank name ও Account number দিন');return;}
+    methodFull=`Bank|${bname}|${bacc}|${bown}|${bbranch}`;
+    methodDetail=`Bank: ${bname} | Acc: ${bacc}${bown?' | '+bown:''}${bbranch?' | Branch: '+bbranch:''}`;
+  } else if(method==='Others'){
+    const od=document.getElementById('inv-other-detail')?.value.trim()||'';
+    if(!od){toast('Payment details লিখুন');return;}
+    methodFull=`Others|${od}`;
+    methodDetail=od;
+  }
   await sb.from('editor_projects').update({
-    payment_method:fullMethod,invoice_note:note||null,
+    payment_method:methodFull,invoice_note:note||null,
     invoice_generated_at:new Date().toISOString()
   }).eq('id',projId);
   await loadWorkspaceProjects();
@@ -2326,7 +2424,7 @@ async function generateInvoice(projId){
   const isPerMin=Number(p.amount_per_minute||0)>0;
   const invDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   const invNo=`INV-${projId}-${Date.now().toString().slice(-6)}`;
-  const methodDisp=fullMethod||'Not specified';
+  const methodDisp=methodDetail||'Not specified';
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>${invNo}</title>
 <style>
 @page{size:A4;margin:20mm}
