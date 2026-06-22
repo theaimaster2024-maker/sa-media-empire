@@ -610,6 +610,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div style="padding:0 20px;border-bottom:1px solid #E5E7EB;display:flex;gap:0;flex-shrink:0">
           <button class="pdm-tab on" onclick="pdmTab('details',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Details</button>
           <button class="pdm-tab" onclick="pdmTab('review',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Review</button>
+          <button class="pdm-tab" id="pdm-payment-tab" onclick="pdmTab('payment',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Payment</button>
         </div>
         <!-- Details tab -->
         <div id="pdm-tab-details" style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
@@ -677,6 +678,20 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div style="flex:1;overflow-y:auto;padding:10px 20px 16px">
             <div id="pdm-comments-list" style="display:flex;flex-direction:column;gap:8px"></div>
           </div>
+        </div>
+
+        <!-- PAYMENT TAB (Owner + Editor only) -->
+        <div id="pdm-tab-payment" style="display:none;flex:1;overflow-y:auto;flex-direction:column;padding:20px;gap:16px">
+          <!-- Rate info (owner sets) -->
+          <div id="pdm-pay-rate-box"></div>
+          <!-- Duration input (editor fills) -->
+          <div id="pdm-pay-duration-box"></div>
+          <!-- Calculation result -->
+          <div id="pdm-pay-calc-box"></div>
+          <!-- Payment status -->
+          <div id="pdm-pay-status-box"></div>
+          <!-- Invoice generator -->
+          <div id="pdm-pay-invoice-box"></div>
         </div>
       </div>
     </div>
@@ -885,8 +900,13 @@ function showApp(){
   document.getElementById('auth').style.display='none';
   document.getElementById('app').style.display='block';
   setupNav();
-  // Default page: Notes (visible to owner + manager)
-  showPg('notes');
+  // Editor → go straight to editors page
+  const role=profile?.role||'employee';
+  if(role==='editor'||role==='employee'){
+    showPg('editors');
+  } else {
+    showPg('notes');
+  }
   document.getElementById('f-date').value=now.toISOString().slice(0,10);
 }
 
@@ -2166,9 +2186,189 @@ function openProjDetail(id){
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
     ${!p.drive_link?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
   `;
+  // Payment tab — hidden from manager
+  const payTab=document.getElementById('pdm-payment-tab');
+  if(payTab)payTab.style.display=(profile?.role==='manager')?'none':'flex';
+
   // Switch to details tab by default
   pdmTab('details', document.querySelector('.pdm-tab.on'));
   document.getElementById('proj-detail-modal').style.display='flex';
+}
+
+// ─ Payment Tab
+async function loadPaymentTab(){
+  const p=_currentProjects.find(x=>x.id===_currentProjId);
+  if(!p)return;
+  const isOwner=profile?.role==='owner';
+  const isEditor=(profile?.role==='editor'||profile?.role==='employee');
+  const ratePerMin=Number(p.amount_per_minute||0);
+  const ratePerVideo=Number(p.amount||0);
+  const isPerMin=ratePerMin>0;
+
+  document.getElementById('pdm-pay-rate-box').innerHTML=`
+    <div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px">
+      <div style="font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:5px"><i class="ti ti-coin" style="font-size:14px"></i> Payment Rate</div>
+      ${isPerMin
+        ?`<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:26px;font-weight:700;color:#7C3AED">৳${ratePerMin.toLocaleString()}</span><span style="font-size:13px;color:#9CA3AF">per minute</span></div>`
+        :`<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:26px;font-weight:700;color:#7C3AED">৳${ratePerVideo.toLocaleString()}</span><span style="font-size:13px;color:#9CA3AF">per video</span></div>`
+      }
+      ${isOwner?`<button onclick="document.getElementById('proj-detail-modal').style.display='none';openProjectModal(${p.id})" style="margin-top:10px;background:none;border:1px solid #C4B5FD;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:#7C3AED;cursor:pointer;font-family:inherit">Edit rate</button>`:''}
+    </div>`;
+
+  if(isPerMin){
+    document.getElementById('pdm-pay-duration-box').innerHTML=`
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:5px"><i class="ti ti-clock" style="font-size:14px"></i> Video Duration</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <input id="pay-dur-min" type="number" min="0" value="${p.video_duration_min||''}" placeholder="0"
+              style="width:64px;border:1.5px solid #E5E7EB;border-radius:6px;padding:6px 8px;font-size:18px;font-weight:700;color:#111827;font-family:inherit;text-align:center"
+              oninput="calcPayment()"/>
+            <span style="font-size:13px;color:#9CA3AF;font-weight:500">min</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input id="pay-dur-sec" type="number" min="0" max="59" value="${p.video_duration_sec||''}" placeholder="0"
+              style="width:64px;border:1.5px solid #E5E7EB;border-radius:6px;padding:6px 8px;font-size:18px;font-weight:700;color:#111827;font-family:inherit;text-align:center"
+              oninput="calcPayment()"/>
+            <span style="font-size:13px;color:#9CA3AF;font-weight:500">sec</span>
+          </div>
+          <div id="pay-calc-result" style="font-size:20px;font-weight:700;color:#7C3AED;margin-left:8px"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button onclick="saveDuration(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save duration</button>
+        </div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:8px">Duration লিখলে total payment automatically calculate হবে</div>
+      </div>`;
+    setTimeout(()=>calcPayment(),50);
+  } else {
+    document.getElementById('pdm-pay-duration-box').innerHTML='';
+  }
+
+  const payStatus=p.payment_status||'unpaid';
+  const PAY={paid:{bg:'#D1FAE5',text:'#059669'},unpaid:{bg:'#FEE2E2',text:'#EF4444'},partial:{bg:'#FEF3C7',text:'#D97706'}};
+  const ps=PAY[payStatus]||PAY.unpaid;
+  const totalAmt=Number(p.total_amount||p.amount||0);
+  const paidAmt=Number(p.paid_amount||0);
+  document.getElementById('pdm-pay-status-box').innerHTML=`
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Payment Status</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:22px;font-weight:700;color:#111827">৳${totalAmt.toLocaleString()}</span>
+        <span style="font-size:12px;padding:4px 12px;border-radius:20px;font-weight:700;background:${ps.bg};color:${ps.text}">${payStatus.toUpperCase()}</span>
+        ${paidAmt>0?`<span style="font-size:13px;color:#059669;font-weight:600">Paid: ৳${paidAmt.toLocaleString()}</span>`:''}
+        ${isOwner&&payStatus!=='paid'?`<button onclick="markPaidFromPayTab(${p.id},${totalAmt})" style="margin-left:auto;background:#059669;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Mark as Paid</button>`:''}
+      </div>
+      ${p.payment_note?`<div style="font-size:12px;color:#9CA3AF;margin-top:8px">${p.payment_note}</div>`:''}
+    </div>`;
+
+  document.getElementById('pdm-pay-invoice-box').innerHTML=`
+    <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:5px"><i class="ti ti-file-invoice" style="font-size:14px;color:#7C3AED"></i> Generate Invoice</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Payment method</label>
+          <input id="inv-method" class="f-inp" type="text" value="${p.payment_method||''}" placeholder="bKash, Bank transfer, Cash..." style="font-size:13px"/>
+        </div>
+        <div><label style="font-size:11px;font-weight:600;color:#9CA3AF;display:block;margin-bottom:4px">Note (optional)</label>
+          <textarea id="inv-note" class="f-inp" rows="2" style="resize:none;font-size:13px" placeholder="Extra work, additional note...">${p.invoice_note||''}</textarea>
+        </div>
+        <button onclick="generateInvoice(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ti ti-download" style="font-size:15px"></i> Download Invoice (HTML)
+        </button>
+      </div>
+    </div>`;
+}
+
+function calcPayment(){
+  const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
+  const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
+  const p=_currentProjects.find(x=>x.id===_currentProjId);
+  const rate=Number(p?.amount_per_minute||0);
+  if(!rate)return;
+  const totalMins=mins+(secs/60);
+  const total=Math.round(rate*totalMins);
+  const el=document.getElementById('pay-calc-result');
+  if(el)el.textContent=`= ৳${total.toLocaleString()}`;
+}
+
+async function saveDuration(projId){
+  const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
+  const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
+  const p=_currentProjects.find(x=>x.id===projId);
+  const rate=Number(p?.amount_per_minute||0);
+  const totalMins=mins+(secs/60);
+  const total=Math.round(rate*totalMins)||Number(p?.amount||0);
+  const {error}=await sb.from('editor_projects').update({
+    video_duration_min:mins,video_duration_sec:secs,
+    total_amount:total,amount:total
+  }).eq('id',projId);
+  if(error){toast('Error: '+error.message);return;}
+  toast('Duration saved ✓');
+  await loadWorkspaceProjects();
+  loadPaymentTab();
+}
+
+async function markPaidFromPayTab(projId,amount){
+  if(!confirm(`৳${Number(amount).toLocaleString()} paid mark করবে?`))return;
+  const {error}=await sb.from('editor_projects').update({
+    payment_status:'paid',paid_amount:amount,
+    payment_date:new Date().toISOString().slice(0,10)
+  }).eq('id',projId);
+  if(error){toast('Error: '+error.message);return;}
+  toast('Marked as paid ✓');
+  await loadWorkspaceProjects();loadPaymentTab();
+}
+
+async function generateInvoice(projId){
+  const method=document.getElementById('inv-method')?.value.trim();
+  const note=document.getElementById('inv-note')?.value.trim();
+  await sb.from('editor_projects').update({
+    payment_method:method||null,invoice_note:note||null,
+    invoice_generated_at:new Date().toISOString()
+  }).eq('id',projId);
+  await loadWorkspaceProjects();
+  const p=_currentProjects.find(x=>x.id===projId);
+  if(!p)return;
+  const ed=editors.find(e=>e.id===p.editor_id);
+  const totalAmt=Number(p.total_amount||p.amount||0);
+  const isPerMin=Number(p.amount_per_minute||0)>0;
+  const invDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const invNo=`INV-${projId}-${Date.now().toString().slice(-6)}`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#fff;color:#111;padding:48px;max-width:680px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:start;margin-bottom:32px;padding-bottom:20px;border-bottom:2.5px solid #7C3AED}.brand{font-size:22px;font-weight:800;color:#7C3AED}.brand-sub{font-size:11px;color:#9CA3AF;margin-top:2px}.inv-meta{text-align:right;font-size:12px;color:#6B7280}.inv-meta strong{font-size:18px;color:#111;display:block;margin-bottom:4px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;padding:16px;background:#F9FAFB;border-radius:8px}.party label{font-size:10px;font-weight:700;text-transform:uppercase;color:#9CA3AF;letter-spacing:.05em;margin-bottom:6px;display:block}.party strong{font-size:15px;color:#111;font-weight:700}.party p{font-size:12px;color:#6B7280;margin-top:3px}table{width:100%;border-collapse:collapse;margin-bottom:24px}th{background:#F5F3FF;color:#7C3AED;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;text-align:left;font-weight:700}td{padding:13px 14px;border-bottom:1px solid #F3F4F6;font-size:13px}.total-box{background:#F5F3FF;border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.total-label{font-size:13px;color:#7C3AED;font-weight:600}.total-amount{font-size:24px;font-weight:800;color:#7C3AED}.badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}.paid{background:#D1FAE5;color:#059669}.unpaid{background:#FEE2E2;color:#EF4444}.partial{background:#FEF3C7;color:#D97706}.footer{margin-top:32px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:11px;color:#9CA3AF;text-align:center}@media print{body{padding:24px}}</style>
+</head><body>
+<div class="header">
+  <div><div class="brand">SA Media Empire</div><div class="brand-sub">Video Production Management</div></div>
+  <div class="inv-meta"><strong>Invoice #${invNo}</strong>Date: ${invDate}</div>
+</div>
+<div class="parties">
+  <div class="party"><label>Bill From</label><strong>${ed?.name||'Editor'}</strong><p>${ed?.email||''}</p><p>${ed?.phone||''}</p></div>
+  <div class="party"><label>Bill To</label><strong>SA Media Empire</strong><p>Management System</p></div>
+</div>
+<table>
+  <thead><tr><th>Project</th><th>Rate</th><th>Duration</th><th style="text-align:right">Amount</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>${p.project_name}</strong>${note?`<br><small style="color:#9CA3AF;font-size:11px">${note}</small>`:''}</td>
+      <td>${isPerMin?`৳${Number(p.amount_per_minute).toLocaleString()}/min`:`৳${Number(p.amount||0).toLocaleString()}/video`}</td>
+      <td>${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`${p.video_duration_min||0}m ${p.video_duration_sec||0}s`:'—'}</td>
+      <td style="text-align:right;font-weight:700;font-size:15px">৳${totalAmt.toLocaleString()}</td>
+    </tr>
+  </tbody>
+</table>
+<div class="total-box"><span class="total-label">Total Amount</span><span class="total-amount">৳${totalAmt.toLocaleString()}</span></div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+  <span style="font-size:13px;color:#6B7280">Payment Status:</span>
+  <span class="badge ${p.payment_status||'unpaid'}">${(p.payment_status||'UNPAID').toUpperCase()}</span>
+  ${method?`<span style="font-size:13px;color:#6B7280">via <strong>${method}</strong></span>`:''}
+</div>
+<div class="footer">Generated by SA Media Empire Management System • ${invDate}</div>
+</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`${invNo}.html`;a.click();
+  URL.revokeObjectURL(url);
+  toast('Invoice downloaded ✓');
 }
 
 // ─ Project detail tabs
@@ -2187,12 +2387,15 @@ function pdmTab(tab, btn){
   }
   document.getElementById('pdm-tab-details').style.display=tab==='details'?'flex':'none';
   const rv=document.getElementById('pdm-tab-review');
+  const pv=document.getElementById('pdm-tab-payment');
   if(tab==='review'){
     rv.style.display='flex';
     loadReviewTab();
-  } else {
-    rv.style.display='none';
-  }
+  } else {rv.style.display='none';}
+  if(tab==='payment'){
+    pv.style.display='flex';
+    loadPaymentTab();
+  } else {pv.style.display='none';}
 }
 
 // ─ Video Review System (Frame.io style)
