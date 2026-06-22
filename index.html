@@ -415,15 +415,15 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <div id="ws-contact" style="display:flex;align-items:center;gap:14px;margin-top:6px;flex-wrap:wrap"></div>
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0">
-            <button onclick="closeWorkspace()" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;display:flex;align-items:center;gap:6px;font-family:inherit"><i class="ti ti-arrow-left"></i> Back</button>
-            <button onclick="openEditorModal(currentEditorId)" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit</button>
-            <button class="btn-p" style="width:auto;padding:8px 14px" onclick="openProjectModal()"><i class="ti ti-plus"></i> New project</button>
+            <button id="ws-back-btn" onclick="closeWorkspace()" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280;display:flex;align-items:center;gap:6px;font-family:inherit"><i class="ti ti-arrow-left"></i> Back</button>
+            <button id="ws-edit-btn" onclick="openEditorModal(currentEditorId)" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit</button>
+            <button id="ws-new-proj-btn" class="btn-p" style="width:auto;padding:8px 14px" onclick="openProjectModal()"><i class="ti ti-plus"></i> New project</button>
           </div>
         </div>
-        <!-- Tabs: Projects + Payment only -->
+        <!-- Tabs: Projects + Payment (Payment hidden for editors) -->
         <div style="display:flex;gap:2px;background:#F3F4F6;padding:3px;border-radius:8px;width:fit-content;margin-bottom:20px">
           <button class="ws-tab on" onclick="wsTab('projects',this)">Projects</button>
-          <button class="ws-tab" onclick="wsTab('payment',this)">Payment</button>
+          <button class="ws-tab" id="ws-payment-tab" onclick="wsTab('payment',this)">Payment</button>
         </div>
         <!-- PROJECTS TAB: Kanban -->
         <div id="ws-projects">
@@ -1804,9 +1804,35 @@ let _dragProjId=null;
 async function loadEditors(){
   document.getElementById('ed-view-list').style.display='block';
   document.getElementById('ed-view-workspace').style.display='none';
+  const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+
+  // Hide "New editor" button for non-owner/manager
+  const newEdBtn=document.querySelector('#ed-view-list .btn-p');
+  if(newEdBtn)newEdBtn.style.display=isOwnerManager?'flex':'none';
+
   const {data,error}=await sb.from('editors').select('*').order('name');
   if(error){toast('Error: '+error.message);return;}
-  editors=data||[];renderEditorCards();
+  editors=data||[];
+
+  // Editor role: auto-open their own workspace if linked by email
+  if(!isOwnerManager){
+    const myEditor=editors.find(e=>e.email===user?.email||e.phone===profile?.phone);
+    if(myEditor){
+      await openWorkspace(myEditor.id);
+      return;
+    } else {
+      // No editor profile linked — show message
+      document.getElementById('editor-list').innerHTML=`
+        <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#9CA3AF">
+          <i class="ti ti-user-off" style="font-size:40px;display:block;margin-bottom:12px;opacity:.25"></i>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">No workspace found</div>
+          <div style="font-size:13px">তোমার account এর সাথে কোনো editor profile link করা নেই।<br>Manager/Owner কে বলো তোমার email দিয়ে editor profile বানাতে।</div>
+        </div>`;
+      return;
+    }
+  }
+
+  renderEditorCards();
 }
 
 function renderEditorCards(){
@@ -1853,6 +1879,17 @@ async function openWorkspace(id){
     ed.email?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-mail" style="font-size:13px"></i>${ed.email}</span>`:'',
     ed.rate_per_video?`<span style="font-size:12px;color:#7C3AED;font-weight:600;display:flex;align-items:center;gap:4px"><i class="ti ti-coin" style="font-size:13px"></i>৳${Number(ed.rate_per_video).toLocaleString()}/video</span>`:''
   ].filter(Boolean).join('');
+  // Show/hide buttons based on role
+  const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+  const backBtn=document.getElementById('ws-back-btn');
+  const editBtn=document.getElementById('ws-edit-btn');
+  const newProjBtn=document.getElementById('ws-new-proj-btn');
+  const payTab=document.getElementById('ws-payment-tab');
+  if(backBtn)backBtn.style.display=isOwnerManager?'flex':'none';
+  if(editBtn)editBtn.style.display=isOwnerManager?'flex':'none';
+  if(newProjBtn)newProjBtn.style.display=isOwnerManager?'flex':'none';
+  if(payTab)payTab.style.display=isOwnerManager?'flex':'none';
+
   // Show projects tab by default
   wsTab('projects',document.querySelector('.ws-tab.on'));
   await loadWorkspaceProjects();
