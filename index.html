@@ -2194,70 +2194,75 @@ async function loadReviewTab(){
   const p=_currentProjects.find(x=>x.id===_currentProjId);
   if(!p)return;
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
-
-  // Hide comment box for editors
   const addCommentBox=document.getElementById('pdm-add-comment');
   if(addCommentBox)addCommentBox.style.display=isOwnerManager?'block':'none';
-
   const videoArea=document.getElementById('pdm-video-area');
   if(p.drive_link){
     const fm=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
     const ym=p.drive_link.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
+    const timerBar=isOwnerManager?`<div style="background:#EDE9FE;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <i class="ti ti-clock-play" style="font-size:16px;color:#7C3AED"></i>
+      <span style="font-size:12px;color:#7C3AED;font-weight:600">Sync timer:</span>
+      <button onclick="syncTimerAction('start')" id="sync-start-btn" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><i class="ti ti-player-play" style="font-size:12px"></i> Start</button>
+      <button onclick="syncTimerAction('pause')" id="sync-pause-btn" style="display:none;background:#F59E0B;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:4px"><i class="ti ti-player-pause" style="font-size:12px"></i> Pause</button>
+      <button onclick="syncTimerAction('reset')" style="background:none;border:1px solid #C4B5FD;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#7C3AED"><i class="ti ti-refresh" style="font-size:12px"></i> Reset</button>
+      <div style="background:#fff;border:1px solid #C4B5FD;border-radius:8px;padding:5px 14px;font-size:16px;font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;min-width:80px;text-align:center" id="sync-timer-display">0:00</div>
+      <span style="font-size:11px;color:#9CA3AF">Video চালু করো → Timer Start → Pause করলে timestamp automatically comment এ আসবে</span>
+    </div>`:'<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-eye" style="font-size:13px;color:#7C3AED"></i> Review comments are shown below</div>';
     if(fm){
-      videoArea.innerHTML=`
-        <div style="border-radius:10px;overflow:hidden;margin-bottom:8px;background:#000;position:relative">
-          <iframe id="review-iframe" src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
-        </div>
-        <div style="font-size:11px;color:#9CA3AF;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-brand-google-drive" style="font-size:13px;color:#10B981"></i> 
-          ${isOwnerManager?'Pause video at any point, then add a timestamped comment below':'View the video — review comments are shown below'}
-          ${isOwnerManager?`<button onclick="captureVideoTime()" style="margin-left:auto;background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><i class="ti ti-clock-play" style="font-size:12px"></i> Capture current time</button>`:''}
-        </div>`;
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px;background:#000"><iframe id="review-iframe" src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div>${timerBar}`;
     } else if(ym){
-      // YouTube — can auto-track time via postMessage
-      videoArea.innerHTML=`
-        <div style="border-radius:10px;overflow:hidden;margin-bottom:8px;position:relative">
-          <iframe id="review-iframe" src="https://www.youtube.com/embed/${ym[1]}?rel=0&enablejsapi=1" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
-        </div>
-        <div style="font-size:11px;color:#9CA3AF;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-brand-youtube" style="font-size:13px;color:#EF4444"></i>
-          ${isOwnerManager?`Pause video to capture timestamp <button onclick="captureVideoTime()" style="margin-left:8px;background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><i class="ti ti-clock-play" style="font-size:12px"></i> Capture time</button>`:'View the video'}
-        </div>`;
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px"><iframe id="review-iframe" src="https://www.youtube.com/embed/${ym[1]}?rel=0" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div>${timerBar}`;
     } else {
-      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><i class="ti ti-link" style="color:#7C3AED"></i><a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED;text-decoration:none">Open video link</a></div>`;
+      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><i class="ti ti-link" style="color:#7C3AED"></i><a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED">Open video link</a></div>`;
     }
   } else {
-    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:8px;text-align:center"><div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div><div style="font-size:11px;color:#92400E;margin-top:4px">Editor এ Drive link submit করলে এখানে video দেখাবে</div></div>`;
+    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:8px;text-align:center"><div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div></div>`;
   }
-
-  // Start timestamp tracker
-  startTimestampTracker();
+  _syncTimerSec=0;_syncTimerRunning=false;
+  if(_syncTimerInterval)clearInterval(_syncTimerInterval);
+  updateTsDisplay(0);
   await loadReviewComments();
 }
 
-// Timestamp auto-capture
-let _tsInterval=null;
-function startTimestampTracker(){
-  if(_tsInterval)clearInterval(_tsInterval);
-  _tsInterval=setInterval(()=>{
-    // Try to get time from YouTube iframe via postMessage
-    const iframe=document.getElementById('review-iframe');
-    if(iframe&&iframe.src.includes('youtube')){
-      try{iframe.contentWindow.postMessage('{"event":"listening"}','*');}catch(e){}
-    }
-  },1000);
-}
+// Sync timer — video এর সাথে manually sync করা যাবে
+let _syncTimerSec=0,_syncTimerRunning=false,_syncTimerInterval=null;
 
-// Manually capture timestamp (since Drive iframes don't expose time)
-let _manualTs=0;
-function captureVideoTime(){
-  // Ask user to enter time manually with a nice prompt
-  const input=prompt('Video এর কত সেকেন্ডে আছো? (seconds):','0');
-  if(input===null)return;
-  const sec=parseFloat(input)||0;
-  _manualTs=sec;
-  updateTsDisplay(sec);
-  toast(`Timestamp captured: ${fmtTs(sec)}`);
+function syncTimerAction(action){
+  const startBtn=document.getElementById('sync-start-btn');
+  const pauseBtn=document.getElementById('sync-pause-btn');
+  if(action==='start'){
+    _syncTimerRunning=true;
+    if(startBtn)startBtn.style.display='none';
+    if(pauseBtn)pauseBtn.style.display='flex';
+    clearInterval(_syncTimerInterval);
+    _syncTimerInterval=setInterval(()=>{
+      _syncTimerSec+=0.1;
+      const d=document.getElementById('sync-timer-display');
+      if(d)d.textContent=fmtTs(_syncTimerSec);
+    },100);
+  } else if(action==='pause'){
+    _syncTimerRunning=false;
+    clearInterval(_syncTimerInterval);
+    if(startBtn)startBtn.style.display='flex';
+    if(pauseBtn)pauseBtn.style.display='none';
+    // AUTO SET TIMESTAMP IN COMMENT BOX
+    updateTsDisplay(_syncTimerSec);
+    setTimeout(()=>{
+      document.getElementById('rc-text')?.focus();
+      const d=document.getElementById('rc-ts-display');
+      if(d){d.style.transition='transform .2s';d.style.transform='scale(1.3)';setTimeout(()=>d.style.transform='',400);}
+    },100);
+    toast(`⏱ Timestamp set: ${fmtTs(_syncTimerSec)}`);
+  } else if(action==='reset'){
+    clearInterval(_syncTimerInterval);
+    _syncTimerSec=0;_syncTimerRunning=false;
+    if(startBtn)startBtn.style.display='flex';
+    if(pauseBtn)pauseBtn.style.display='none';
+    const d=document.getElementById('sync-timer-display');
+    if(d)d.textContent='0:00';
+    updateTsDisplay(0);
+  }
 }
 
 function updateTsDisplay(sec){
@@ -2270,61 +2275,6 @@ function updateTsDisplay(sec){
 function fmtTs(sec){
   const m=Math.floor(sec/60),s=Math.floor(sec%60);
   return `${m}:${String(s).padStart(2,'0')}`;
-}
-
-// Audio recording
-let _mediaRec=null, _audioChunks=[], _recTimer=null, _recSec=0;
-
-async function toggleAudioRecord(){
-  if(_mediaRec&&_mediaRec.state==='recording'){
-    stopAudioRecord(true);return;
-  }
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    _mediaRec=new MediaRecorder(stream);
-    _audioChunks=[];
-    _mediaRec.ondataavailable=e=>{if(e.data.size>0)_audioChunks.push(e.data);};
-    _mediaRec.start();
-    _recSec=0;
-    const btn=document.getElementById('rc-rec-btn');
-    const status=document.getElementById('rc-rec-status');
-    if(btn){btn.style.background='#FEE2E2';btn.style.color='#EF4444';btn.innerHTML='<i class="ti ti-microphone-off" style="font-size:13px"></i> Stop recording';}
-    if(status){status.style.display='flex';}
-    _recTimer=setInterval(()=>{
-      _recSec++;
-      const t=document.getElementById('rc-rec-timer');
-      if(t)t.textContent=`${_recSec}s`;
-    },1000);
-  } catch(e){
-    toast('Microphone access denied');
-  }
-}
-
-async function stopAudioRecord(use){
-  if(!_mediaRec)return;
-  clearInterval(_recTimer);
-  const btn=document.getElementById('rc-rec-btn');
-  const status=document.getElementById('rc-rec-status');
-  if(btn){btn.style.background='#DBEAFE';btn.style.color='#1D4ED8';btn.innerHTML='<i class="ti ti-microphone" style="font-size:13px"></i> Record voice';}
-  if(status)status.style.display='none';
-
-  _mediaRec.stop();
-  _mediaRec.stream.getTracks().forEach(t=>t.stop());
-
-  if(use){
-    await new Promise(r=>setTimeout(r,200));
-    const blob=new Blob(_audioChunks,{type:'audio/webm'});
-    const file=new File([blob],`voice-${Date.now()}.webm`,{type:'audio/webm'});
-    const path=`review-audio/${_currentProjId}-${Date.now()}.webm`;
-    const {error}=await sb.storage.from('invoices').upload(path,file,{upsert:true});
-    if(error){toast('Upload failed');return;}
-    const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
-    _rcAttachUrl=publicUrl;_rcAttachType='audio';_rcAttachName=`voice-${_recSec}s.webm`;
-    const prev=document.getElementById('rc-attachment-preview');
-    if(prev)prev.innerHTML=`<div style="margin-top:8px"><audio controls style="width:100%;height:36px"><source src="${publicUrl}"/></audio><button onclick="_rcAttachUrl=null;_rcAttachType=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:14px;vertical-align:middle"><i class="ti ti-x"></i></button></div>`;
-    toast(`Voice recorded (${_recSec}s) ✓`);
-  }
-  _mediaRec=null;_audioChunks=[];
 }
 
 async function loadReviewComments(){
