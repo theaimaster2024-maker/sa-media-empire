@@ -625,12 +625,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:10px;display:flex;align-items:center;gap:6px">
                 <i class="ti ti-message-plus" style="font-size:14px;color:#7C3AED"></i> Add review comment
               </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:#EDE9FE;border-radius:8px;padding:8px 12px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:#EDE9FE;border-radius:8px;padding:8px 12px;flex-wrap:wrap">
                 <i class="ti ti-clock" style="font-size:15px;color:#7C3AED"></i>
                 <span style="font-size:12px;color:#7C3AED;font-weight:600">Timestamp:</span>
-                <span id="rc-ts-display" style="font-size:14px;font-weight:700;color:#7C3AED;min-width:50px">0:00</span>
-                <input id="rc-timestamp" type="hidden" value="0"/>
-                <span style="font-size:11px;color:#9CA3AF">— auto captured from video</span>
+                <input id="rc-timestamp" type="number" min="0" step="1" value="0"
+                  style="width:70px;border:1.5px solid #C4B5FD;border-radius:6px;padding:3px 8px;font-size:14px;font-weight:700;color:#7C3AED;font-family:inherit;outline:none;background:#fff;text-align:center"
+                  oninput="document.getElementById('rc-ts-display').textContent=fmtTs(this.value||0)"/>
+                <span id="rc-ts-display" style="font-size:13px;font-weight:600;color:#7C3AED">0:00</span>
+                <span style="font-size:11px;color:#9CA3AF">seconds — manually enter the video timestamp</span>
               </div>
               <textarea id="rc-text" class="f-inp" rows="2" style="resize:none;font-size:13px;line-height:1.6;margin-bottom:10px" placeholder="Describe the change needed at this timestamp..."></textarea>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -2062,22 +2064,9 @@ async function kanbanDrop(event,newStatus){
   const role=profile?.role||'employee';
   const p=_currentProjects.find(x=>x.id===_dragProjId);
   if(!p){_dragProjId=null;return;}
-
-  // Editor/employee: strict rules
-  if(role!=='owner'&&role!=='manager'){
-    const allowed={assigned:['in_progress'],in_progress:['review']};
-    if(!(allowed[p.status]||[]).includes(newStatus)){
-      if(newStatus==='done'){
-        toast('🔒 Done করার permission নেই — Manager/Owner করবে');
-      } else {
-        toast('🔒 তুমি শুধু Assigned→In Progress এবং In Progress→Review করতে পারবে');
-      }
-      _dragProjId=null;return;
-    }
-  }
-  // Extra: no one except owner/manager can move to done
-  if(newStatus==='done'&&role!=='owner'&&role!=='manager'){
-    toast('🔒 Done করার permission শুধু Owner/Manager এর');
+  // Editor: can drag to assigned/in_progress/review freely — only Done is blocked
+  if(role!=='owner'&&role!=='manager'&&newStatus==='done'){
+    toast('🔒 Done করার permission নেই — Manager/Owner করবে');
     _dragProjId=null;return;
   }
   if(p.status===newStatus){_dragProjId=null;return;}
@@ -2200,69 +2189,32 @@ async function loadReviewTab(){
   if(p.drive_link){
     const fm=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
     const ym=p.drive_link.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
-    const timerBar=isOwnerManager?`<div style="background:#EDE9FE;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <i class="ti ti-clock-play" style="font-size:16px;color:#7C3AED"></i>
-      <span style="font-size:12px;color:#7C3AED;font-weight:600">Sync timer:</span>
-      <button onclick="syncTimerAction('start')" id="sync-start-btn" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><i class="ti ti-player-play" style="font-size:12px"></i> Start</button>
-      <button onclick="syncTimerAction('pause')" id="sync-pause-btn" style="display:none;background:#F59E0B;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:4px"><i class="ti ti-player-pause" style="font-size:12px"></i> Pause</button>
-      <button onclick="syncTimerAction('reset')" style="background:none;border:1px solid #C4B5FD;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#7C3AED"><i class="ti ti-refresh" style="font-size:12px"></i> Reset</button>
-      <div style="background:#fff;border:1px solid #C4B5FD;border-radius:8px;padding:5px 14px;font-size:16px;font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;min-width:80px;text-align:center" id="sync-timer-display">0:00</div>
-      <span style="font-size:11px;color:#9CA3AF">Video চালু করো → Timer Start → Pause করলে timestamp automatically comment এ আসবে</span>
-    </div>`:'<div style="font-size:11px;color:#9CA3AF;margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-eye" style="font-size:13px;color:#7C3AED"></i> Review comments are shown below</div>';
     if(fm){
-      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px;background:#000"><iframe id="review-iframe" src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div>${timerBar}`;
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px;background:#000">
+        <iframe id="review-iframe" src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
+      </div>
+      <div style="font-size:11px;color:#9CA3AF;margin-bottom:4px;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-brand-google-drive" style="font-size:13px;color:#10B981"></i>
+        Google Drive video — timestamp এ click করলে video সেই second এ যাবে
+      </div>`;
     } else if(ym){
-      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px"><iframe id="review-iframe" src="https://www.youtube.com/embed/${ym[1]}?rel=0" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe></div>${timerBar}`;
+      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px">
+        <iframe id="review-iframe" src="https://www.youtube.com/embed/${ym[1]}?rel=0&enablejsapi=1" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
+      </div>`;
     } else {
-      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><i class="ti ti-link" style="color:#7C3AED"></i><a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED">Open video link</a></div>`;
+      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-link" style="color:#7C3AED"></i>
+        <a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED">Open video link</a>
+      </div>`;
     }
   } else {
-    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:8px;text-align:center"><div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div></div>`;
+    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:8px;text-align:center">
+      <div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div>
+      <div style="font-size:11px;color:#92400E;margin-top:4px">Editor Drive link submit করলে এখানে video দেখাবে</div>
+    </div>`;
   }
-  _syncTimerSec=0;_syncTimerRunning=false;
-  if(_syncTimerInterval)clearInterval(_syncTimerInterval);
   updateTsDisplay(0);
   await loadReviewComments();
-}
-
-// Sync timer — video এর সাথে manually sync করা যাবে
-let _syncTimerSec=0,_syncTimerRunning=false,_syncTimerInterval=null;
-
-function syncTimerAction(action){
-  const startBtn=document.getElementById('sync-start-btn');
-  const pauseBtn=document.getElementById('sync-pause-btn');
-  if(action==='start'){
-    _syncTimerRunning=true;
-    if(startBtn)startBtn.style.display='none';
-    if(pauseBtn)pauseBtn.style.display='flex';
-    clearInterval(_syncTimerInterval);
-    _syncTimerInterval=setInterval(()=>{
-      _syncTimerSec+=0.1;
-      const d=document.getElementById('sync-timer-display');
-      if(d)d.textContent=fmtTs(_syncTimerSec);
-    },100);
-  } else if(action==='pause'){
-    _syncTimerRunning=false;
-    clearInterval(_syncTimerInterval);
-    if(startBtn)startBtn.style.display='flex';
-    if(pauseBtn)pauseBtn.style.display='none';
-    // AUTO SET TIMESTAMP IN COMMENT BOX
-    updateTsDisplay(_syncTimerSec);
-    setTimeout(()=>{
-      document.getElementById('rc-text')?.focus();
-      const d=document.getElementById('rc-ts-display');
-      if(d){d.style.transition='transform .2s';d.style.transform='scale(1.3)';setTimeout(()=>d.style.transform='',400);}
-    },100);
-    toast(`⏱ Timestamp set: ${fmtTs(_syncTimerSec)}`);
-  } else if(action==='reset'){
-    clearInterval(_syncTimerInterval);
-    _syncTimerSec=0;_syncTimerRunning=false;
-    if(startBtn)startBtn.style.display='flex';
-    if(pauseBtn)pauseBtn.style.display='none';
-    const d=document.getElementById('sync-timer-display');
-    if(d)d.textContent='0:00';
-    updateTsDisplay(0);
-  }
 }
 
 function updateTsDisplay(sec){
@@ -2275,6 +2227,30 @@ function updateTsDisplay(sec){
 function fmtTs(sec){
   const m=Math.floor(sec/60),s=Math.floor(sec%60);
   return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// Seek video to timestamp when comment timestamp is clicked
+function seekVideo(sec){
+  const iframe=document.getElementById('review-iframe');
+  if(!iframe){toast(`Timestamp: ${fmtTs(sec)}`);return;}
+  const src=iframe.src;
+  // YouTube seek via postMessage
+  if(src.includes('youtube')){
+    iframe.contentWindow.postMessage(JSON.stringify({
+      event:'command',func:'seekTo',args:[sec,true]
+    }),'*');
+    toast(`▶ Seeking to ${fmtTs(sec)}`);
+  } else if(src.includes('drive.google')){
+    // Drive: reload iframe with time param
+    const fm=src.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(fm){
+      iframe.src=`https://drive.google.com/file/d/${fm[1]}/preview#t=${Math.floor(sec)}`;
+      toast(`▶ Seeking to ${fmtTs(sec)}`);
+    }
+  }
+  // Also update timestamp input
+  updateTsDisplay(sec);
+  document.getElementById('pdm-video-area')?.scrollIntoView({behavior:'smooth'});
 }
 
 async function loadReviewComments(){
@@ -2300,7 +2276,7 @@ function renderReviewComments(comments){
     }
     return `<div style="background:${c.resolved?'#F0FDF4':'#F9FAFB'};border:1px solid ${c.resolved?'#A7F3D0':'#E5E7EB'};border-radius:10px;padding:12px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        <button onclick="document.getElementById('rc-timestamp').value=${c.timestamp_sec}" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px"><i class="ti ti-clock" style="font-size:11px"></i> ${ts}</button>
+        <button onclick="seekVideo(${c.timestamp_sec})" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px;transition:.12s" onmouseover="this.style.background='#6D28D9'" onmouseout="this.style.background='#7C3AED'" title="Click to seek video to ${ts}"><i class="ti ti-clock" style="font-size:11px"></i> ${ts}</button>
         <span style="font-size:12px;font-weight:600;color:${rc}">${c.created_by_name||'?'}</span>
         <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${rc}18;color:${rc};font-weight:600">${c.created_by_role||'?'}</span>
         <span style="font-size:11px;color:#9CA3AF;margin-left:auto">${new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
@@ -2311,12 +2287,6 @@ function renderReviewComments(comments){
       ${attach}
     </div>`;
   }).join('');
-}
-
-function seekVideo(sec){
-  const inp=document.getElementById('rc-timestamp');
-  if(inp)inp.value=sec;
-  document.getElementById('pdm-video-area')?.scrollIntoView({behavior:'smooth'});
 }
 
 async function rcAttach(inp,type){
