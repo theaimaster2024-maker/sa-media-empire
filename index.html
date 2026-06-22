@@ -425,9 +425,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <button class="ws-tab on" onclick="wsTab('projects',this)">Projects</button>
           <button class="ws-tab" id="ws-payment-tab" onclick="wsTab('payment',this)">Payment</button>
           <button class="ws-tab" onclick="wsTab('ednotes',this)">Notes</button>
-          <button class="ws-tab" onclick="wsTab('messages',this)" id="ws-msg-tab" style="display:flex;align-items:center;gap:5px">
-            Messages <span id="ws-msg-badge" style="display:none;background:#EF4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center"></span>
-          </button>
         </div>
         <!-- PROJECTS TAB: Kanban -->
         <div id="ws-projects">
@@ -510,42 +507,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
         </div>
 
-        <!-- MESSAGES TAB -->
-        <div id="ws-messages" style="display:none">
-          <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
-            <!-- Chat window -->
-            <div class="panel" style="padding:0;overflow:hidden">
-              <div style="padding:14px 16px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:8px">
-                <i class="ti ti-message-circle" style="color:#7C3AED;font-size:18px"></i>
-                <div id="msg-thread-title" style="font-size:14px;font-weight:700;color:#111827"></div>
-                <div id="msg-unread-badge" style="display:none;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto"></div>
-              </div>
-              <!-- Messages list -->
-              <div id="msg-list" style="height:380px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:#F9FAFB"></div>
-              <!-- Input -->
-              <div style="padding:12px 14px;border-top:1px solid #E5E7EB;background:#fff;display:flex;gap:8px;align-items:flex-end">
-                <textarea id="msg-input" class="f-inp" rows="2"
-                  style="resize:none;font-size:13px;flex:1;line-height:1.6"
-                  placeholder="Message লিখুন..."
-                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
-                <button onclick="sendMessage()" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-family:inherit;flex-shrink:0;display:flex;align-items:center;gap:5px">
-                  <i class="ti ti-send" style="font-size:15px"></i>
-                </button>
-              </div>
-            </div>
-            <!-- Info panel -->
-            <div>
-              <div class="panel" style="background:rgba(124,58,237,.03);border-color:rgba(124,58,237,.12)">
-                <div class="p-ti" style="color:#7C3AED;margin-bottom:10px"><i class="ti ti-info-circle"></i> Messages</div>
-                <div style="font-size:13px;color:#6B7280;line-height:1.8">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-check" style="color:#10B981;font-size:14px"></i> Owner ও Manager message করতে পারবে</div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-check" style="color:#10B981;font-size:14px"></i> Editor দেখতে ও reply করতে পারবে</div>
-                  <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-bell" style="color:#F59E0B;font-size:14px"></i> Login করলে unread notification আসবে</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- MESSAGES TAB removed - now floating bubble -->
       </div>
     </div>
     <div id="editor-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
@@ -2076,6 +2038,9 @@ async function openWorkspace(id){
   // Show projects tab by default
   wsTab('projects',document.querySelector('.ws-tab.on'));
   await loadWorkspaceProjects();
+  // Init floating chat bubble
+  initChatBubble();
+  showChatBubble(id, ed.name);
   // Show welcome popup for editors
   const isEditorRole=(profile?.role==='editor'||profile?.role==='employee');
   if(isEditorRole){
@@ -2087,6 +2052,7 @@ function closeWorkspace(){
   document.getElementById('ed-view-workspace').style.display='none';
   document.getElementById('ed-view-list').style.display='block';
   currentEditorId=null;
+  hideChatBubble();
 }
 
 function wsTab(tab,btn){
@@ -2095,10 +2061,8 @@ function wsTab(tab,btn){
   document.getElementById('ws-projects').style.display=tab==='projects'?'block':'none';
   document.getElementById('ws-payment').style.display=tab==='payment'?'block':'none';
   document.getElementById('ws-ednotes').style.display=tab==='ednotes'?'block':'none';
-  document.getElementById('ws-messages').style.display=tab==='messages'?'block':'none';
   if(tab==='payment')renderPaymentTab();
   if(tab==='ednotes')loadEditorNote();
-  if(tab==='messages')loadMessages();
 }
 
 // ─ Load & render kanban
@@ -2218,94 +2182,264 @@ function openProjDetail(id){
   document.getElementById('proj-detail-modal').style.display='flex';
 }
 
-// ── MESSAGES SYSTEM
-let _msgSubscription=null;
+// ── FLOATING CHAT SYSTEM (Realtime)
+let _chatEditorId=null, _chatSubscription=null, _chatOpen=false, _lastMsgId=null;
 
-async function loadMessages(){
-  const ed=editors.find(e=>e.id===currentEditorId);
-  const title=document.getElementById('msg-thread-title');
-  if(title)title.textContent=`Chat with ${ed?.name||'Editor'}`;
-  // Mark all as read
-  await sb.from('editor_messages').update({is_read:true})
-    .eq('editor_id',currentEditorId).eq('is_read',false);
-  // Update badge
-  updateMsgBadge(0);
-  await fetchAndRenderMessages();
-  // Subscribe to realtime
-  if(_msgSubscription)_msgSubscription.unsubscribe();
-  _msgSubscription=sb.channel(`messages-${currentEditorId}`)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'editor_messages',filter:`editor_id=eq.${currentEditorId}`},
-      async()=>{await fetchAndRenderMessages();})
+// Inject floating chat bubble into DOM
+function initChatBubble(){
+  if(document.getElementById('chat-bubble'))return;
+  const el=document.createElement('div');
+  el.id='chat-bubble-root';
+  el.innerHTML=`
+    <!-- Floating bubble button -->
+    <div id="chat-bubble" onclick="toggleChat()"
+      style="position:fixed;bottom:24px;right:24px;z-index:900;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#0EA5E9);box-shadow:0 4px 16px rgba(124,58,237,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;display:none">
+      <i class="ti ti-message-circle" style="font-size:24px;color:#fff"></i>
+      <div id="chat-notif-badge"
+        style="display:none;position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;min-width:20px;height:20px;border-radius:10px;padding:0 5px;display:none;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.2);animation:pulse-badge 1s infinite"></div>
+    </div>
+
+    <!-- Chat popup -->
+    <div id="chat-popup"
+      style="display:none;position:fixed;bottom:88px;right:24px;z-index:900;width:360px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;flex-direction:column;animation:slideUpChat .2s">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#7C3AED,#0EA5E9);padding:14px 16px;display:flex;align-items:center;gap:10px">
+        <div id="chat-avatar" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div id="chat-title" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="chat-online" style="font-size:11px;color:rgba(255,255,255,.7)">SA Media Empire</div>
+        </div>
+        <button onclick="toggleChat()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0"><i class="ti ti-x"></i></button>
+      </div>
+      <!-- Messages area -->
+      <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;background:#F9FAFB;min-height:280px;max-height:320px"></div>
+      <!-- Input area -->
+      <div style="padding:10px 12px;border-top:1px solid #E5E7EB;background:#fff;display:flex;gap:8px;align-items:flex-end">
+        <textarea id="chat-input" rows="2"
+          style="flex:1;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;transition:.15s"
+          placeholder="Type a message..."
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"
+          onfocus="this.style.borderColor='#7C3AED'"
+          onblur="this.style.borderColor='#E5E7EB'"></textarea>
+        <button onclick="chatSend()" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s" onmouseover="this.style.background='#6D28D9'" onmouseout="this.style.background='#7C3AED'">
+          <i class="ti ti-send" style="font-size:16px"></i>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+
+  // Inject CSS
+  const style=document.createElement('style');
+  style.textContent=`
+    @keyframes slideUpChat{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse-badge{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    #chat-bubble:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(124,58,237,.5)}
+    #chat-messages::-webkit-scrollbar{width:4px}
+    #chat-messages::-webkit-scrollbar-thumb{background:#E5E7EB;border-radius:4px}
+  `;
+  document.head.appendChild(style);
+}
+
+function toggleChat(){
+  _chatOpen=!_chatOpen;
+  const popup=document.getElementById('chat-popup');
+  if(!popup)return;
+  popup.style.display=_chatOpen?'flex':'none';
+  if(_chatOpen){
+    // Mark as read
+    markChatRead();
+    setTimeout(()=>{
+      const inp=document.getElementById('chat-input');
+      if(inp)inp.focus();
+      scrollChatBottom();
+    },100);
+  }
+}
+
+function showChatBubble(editorId, editorName){
+  _chatEditorId=editorId;
+  const bubble=document.getElementById('chat-bubble');
+  if(bubble)bubble.style.display='flex';
+  const av=document.getElementById('chat-avatar');
+  const title=document.getElementById('chat-title');
+  if(av)av.textContent=editorName.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  if(title)title.textContent=editorName;
+  // Start realtime subscription
+  startChatSubscription(editorId);
+  // Load messages
+  loadChatMessages();
+}
+
+function hideChatBubble(){
+  _chatEditorId=null;
+  const bubble=document.getElementById('chat-bubble');
+  const popup=document.getElementById('chat-popup');
+  if(bubble)bubble.style.display='none';
+  if(popup)popup.style.display='none';
+  _chatOpen=false;
+  if(_chatSubscription){_chatSubscription.unsubscribe();_chatSubscription=null;}
+}
+
+function startChatSubscription(editorId){
+  if(_chatSubscription){_chatSubscription.unsubscribe();}
+  _chatSubscription=sb.channel(`chat-${editorId}`)
+    .on('postgres_changes',{
+      event:'INSERT',schema:'public',
+      table:'editor_messages',
+      filter:`editor_id=eq.${editorId}`
+    },async(payload)=>{
+      const msg=payload.new;
+      // Only notify if not sent by me
+      if(msg.sender_id!==user?.id){
+        appendChatMessage(msg);
+        if(!_chatOpen){
+          showChatNotif(msg);
+          playChatSound();
+          updateChatBadge(true);
+        } else {
+          markChatRead();
+          scrollChatBottom();
+        }
+      } else {
+        appendChatMessage(msg);
+        scrollChatBottom();
+      }
+    })
     .subscribe();
 }
 
-async function fetchAndRenderMessages(){
+async function loadChatMessages(){
+  if(!_chatEditorId)return;
   const {data}=await sb.from('editor_messages').select('*')
-    .eq('editor_id',currentEditorId).order('created_at');
-  renderMessages(data||[]);
-  // Scroll to bottom
-  const list=document.getElementById('msg-list');
-  if(list)setTimeout(()=>list.scrollTop=list.scrollHeight,50);
+    .eq('editor_id',_chatEditorId).order('created_at').limit(100);
+  renderChatMessages(data||[]);
+  if(_chatOpen)markChatRead();
 }
 
-function renderMessages(msgs){
-  const list=document.getElementById('msg-list');
-  if(!list)return;
+function renderChatMessages(msgs){
+  const el=document.getElementById('chat-messages');
+  if(!el)return;
   if(!msgs.length){
-    list.innerHTML=`<div style="text-align:center;padding:40px 20px;color:#9CA3AF">
-      <i class="ti ti-message-circle" style="font-size:36px;display:block;margin-bottom:10px;opacity:.3"></i>
+    el.innerHTML=`<div style="text-align:center;padding:30px 16px;color:#9CA3AF">
+      <i class="ti ti-message-circle" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>
       <div style="font-size:13px">No messages yet</div>
-      <div style="font-size:12px;margin-top:4px">Start the conversation!</div>
     </div>`;
     return;
   }
-  const roleColors={owner:'#7C3AED',manager:'#10B981',editor:'#0EA5E9',employee:'#0EA5E9'};
-  list.innerHTML=msgs.map(m=>{
-    const isMe=m.sender_id===user?.id;
-    const rc=roleColors[m.sender_role]||'#6B7280';
-    const time=new Date(m.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    const date=new Date(m.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-    return `<div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px">
-      <div style="font-size:10px;color:#9CA3AF;padding:0 4px">${isMe?'You':m.sender_name} · ${date} ${time}</div>
-      <div style="max-width:80%;background:${isMe?'#7C3AED':'#fff'};color:${isMe?'#fff':'#111827'};padding:9px 13px;border-radius:${isMe?'12px 12px 2px 12px':'12px 12px 12px 2px'};font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.06);white-space:pre-wrap;word-break:break-word">${m.message}</div>
-    </div>`;
-  }).join('');
+  el.innerHTML='';
+  msgs.forEach(m=>appendChatMessage(m,false));
+  scrollChatBottom();
+  // Track last msg id
+  if(msgs.length)_lastMsgId=msgs[msgs.length-1].id;
 }
 
-async function sendMessage(){
-  const inp=document.getElementById('msg-input');
+function appendChatMessage(m, scroll=true){
+  const el=document.getElementById('chat-messages');
+  if(!el)return;
+  const isMe=m.sender_id===user?.id;
+  const time=new Date(m.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const roleLabel={owner:'Owner',manager:'Manager',editor:'Editor',employee:'Editor'}[m.sender_role]||'';
+  const div=document.createElement('div');
+  div.style.cssText=`display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px;margin-bottom:2px`;
+  div.innerHTML=`
+    <div style="font-size:10px;color:#9CA3AF;padding:0 4px">${isMe?'You':m.sender_name} ${roleLabel?`(${roleLabel})`:''} · ${time}</div>
+    <div style="max-width:85%;background:${isMe?'linear-gradient(135deg,#7C3AED,#6D28D9)':'#fff'};color:${isMe?'#fff':'#111827'};padding:8px 12px;border-radius:${isMe?'12px 2px 12px 12px':'2px 12px 12px 12px'};font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.07);word-break:break-word;white-space:pre-wrap">${m.message}</div>`;
+  // Remove empty state if present
+  const empty=el.querySelector('[style*="No messages"]');
+  if(empty)empty.remove();
+  el.appendChild(div);
+  if(scroll)scrollChatBottom();
+}
+
+function scrollChatBottom(){
+  const el=document.getElementById('chat-messages');
+  if(el)setTimeout(()=>el.scrollTop=el.scrollHeight,30);
+}
+
+async function chatSend(){
+  const inp=document.getElementById('chat-input');
   const text=inp?.value.trim();
-  if(!text||!currentEditorId)return;
+  if(!text||!_chatEditorId)return;
+  inp.value='';
   const {error}=await sb.from('editor_messages').insert({
-    editor_id:currentEditorId,
+    editor_id:_chatEditorId,
     sender_id:user?.id,
     sender_name:profile?.name||user?.email?.split('@')[0],
     sender_role:profile?.role,
     message:text,
     is_read:false
   });
-  if(error){toast('Error: '+error.message);return;}
-  if(inp)inp.value='';
-  await fetchAndRenderMessages();
+  if(error){toast('Send failed');inp.value=text;}
 }
 
-function updateMsgBadge(count){
-  const badge=document.getElementById('ws-msg-badge');
+async function markChatRead(){
+  if(!_chatEditorId)return;
+  await sb.from('editor_messages').update({is_read:true})
+    .eq('editor_id',_chatEditorId)
+    .eq('is_read',false)
+    .neq('sender_id',user?.id||'');
+  updateChatBadge(false);
+}
+
+function updateChatBadge(hasNew){
+  const badge=document.getElementById('chat-notif-badge');
   if(!badge)return;
-  if(count>0){badge.style.display='inline-block';badge.textContent=count;}
-  else badge.style.display='none';
-  // Also update tab badge
-  const tabBadge=document.getElementById('ws-msg-badge');
-  if(tabBadge&&count>0){tabBadge.style.display='inline';tabBadge.textContent=count;}
+  badge.style.display=hasNew?'flex':'none';
+}
+
+// Toast-style popup notification
+let _notifTimer=null;
+function showChatNotif(msg){
+  let notif=document.getElementById('chat-notif-popup');
+  if(!notif){
+    notif=document.createElement('div');
+    notif.id='chat-notif-popup';
+    notif.style.cssText='position:fixed;bottom:90px;right:24px;z-index:901;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:12px 14px;max-width:280px;cursor:pointer;animation:slideUpChat .25s;border:1px solid #E5E7EB';
+    notif.onclick=()=>{notif.remove();if(!_chatOpen)toggleChat();};
+    document.body.appendChild(notif);
+  }
+  const roleLabel={owner:'Owner',manager:'Manager',editor:'Editor',employee:'Editor'}[msg.sender_role]||'';
+  notif.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${msg.sender_name?.charAt(0)||'?'}</div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#111827">${msg.sender_name} <span style="font-weight:400;color:#9CA3AF">${roleLabel}</span></div>
+        <div style="font-size:13px;color:#374151;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${msg.message}</div>
+      </div>
+    </div>`;
+  if(_notifTimer)clearTimeout(_notifTimer);
+  _notifTimer=setTimeout(()=>{if(notif.parentNode)notif.remove();},5000);
+}
+
+// Notification sound using Web Audio API
+function playChatSound(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.setValueAtTime(880,ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(440,ctx.currentTime+0.1);
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime+0.3);
+  }catch(e){}
 }
 
 async function checkUnreadMessages(editorId){
   const {count}=await sb.from('editor_messages')
     .select('id',{count:'exact',head:true})
-    .eq('editor_id',editorId).eq('is_read',false)
-    .neq('sender_id',user?.id);
+    .eq('editor_id',editorId)
+    .eq('is_read',false)
+    .neq('sender_id',user?.id||'');
   return count||0;
 }
+
+// Old sendMessage/loadMessages wrappers (keep for compat)
+async function sendMessage(){chatSend();}
+async function loadMessages(){loadChatMessages();}
+function updateMsgBadge(c){updateChatBadge(c>0);}
 
 // Editor welcome popup on login
 async function showEditorWelcome(){
