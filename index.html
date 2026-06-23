@@ -2489,21 +2489,22 @@ async function chatSend(){
   const text=inp?.value.trim();
   if(!text||!_chatEditorId)return;
   inp.value='';
-  inp.style.borderColor='#E5E7EB';
+  inp.focus(); // keep focus for next message
 
-  // Optimistic UI — show message immediately
-  const tempMsg={
-    id:'temp-'+Date.now(),
+  // Instant optimistic UI
+  const now=new Date();
+  appendMsg({
+    id:'temp-'+now.getTime(),
     editor_id:_chatEditorId,
     sender_id:user?.id,
     sender_name:profile?.name||user?.email?.split('@')[0],
     sender_role:profile?.role,
     message:text,
-    is_read:false,
-    created_at:new Date().toISOString()
-  };
-  appendMsg(tempMsg, true);
+    is_read:true,
+    created_at:now.toISOString()
+  }, true);
 
+  // Send to DB in background
   const {error}=await sb.from('editor_messages').insert({
     editor_id:_chatEditorId,
     sender_id:user?.id,
@@ -2514,7 +2515,8 @@ async function chatSend(){
   });
   if(error){
     console.error('Send error:',error);
-    toast('Message send failed: '+error.message);
+    toast('⚠️ Message send failed');
+    // Re-put text in input so user can retry
     inp.value=text;
   }
 }
@@ -2536,6 +2538,9 @@ function startMsgSubscription(editorId){
       const chatVisible=_chatOpen&&_chatEditorId===editorId&&
         document.getElementById('chat-msg-view')?.style.display!=='none';
 
+      // Always play sound for incoming messages
+      playNotifSound();
+
       if(chatVisible){
         appendMsg(m,true);
         await markMsgsRead(editorId);
@@ -2543,7 +2548,6 @@ function startMsgSubscription(editorId){
         _unreadCounts[editorId]=(_unreadCounts[editorId]||0)+1;
         updateBubbleBadge();
         showMsgToast(m);
-        playNotifSound();
       }
     })
     .subscribe((status,err)=>{
@@ -2561,12 +2565,14 @@ function startGlobalSubscription(){
     },
     async(payload)=>{
       const m=payload.new;
-      // Skip own messages
       if(m.sender_id===user?.id)return;
       const edId=m.editor_id;
-      // If currently viewing this chat and it's open, don't show toast
       const chatVisible=_chatOpen&&_chatEditorId===edId&&
         document.getElementById('chat-msg-view')?.style.display!=='none';
+
+      // Always play sound
+      playNotifSound();
+
       if(chatVisible){
         appendMsg(m,true);
         await markMsgsRead(edId);
@@ -2574,8 +2580,6 @@ function startGlobalSubscription(){
         _unreadCounts[edId]=(_unreadCounts[edId]||0)+1;
         updateBubbleBadge();
         showMsgToast(m);
-        playNotifSound();
-        // Refresh list if showing
         if(document.getElementById('chat-list-view')?.style.display!=='none'){
           await renderChatList();
         }
