@@ -1897,10 +1897,10 @@ async function loadHomePage(){
         <div style="width:38px;height:38px;background:#D1FAE5;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-circle-check" style="font-size:19px;color:#10B981"></i></div>
         <div><div style="font-size:22px;font-weight:800;color:#10B981;line-height:1">${done}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">Completed</div></div>
       </div>
-      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      ${role!=='manager'?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
         <div style="width:38px;height:38px;background:#FEE2E2;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-coin-off" style="font-size:19px;color:#EF4444"></i></div>
         <div><div style="font-size:22px;font-weight:800;color:#EF4444;line-height:1">৳${unpaid>9999?Math.round(unpaid/1000)+'k':unpaid.toLocaleString()}</div><div style="font-size:11px;color:#EF4444;margin-top:2px;opacity:.7">Unpaid</div></div>
-      </div>
+      </div>`:''}
     </div>
 
     <div class="two-col" style="align-items:start">
@@ -2197,6 +2197,7 @@ async function openWorkspace(id){
   ].filter(Boolean).join('');
   // Show/hide buttons based on role
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+  const isOwner2=profile?.role==='owner';
   const backBtn=document.getElementById('ws-back-btn');
   const editBtn=document.getElementById('ws-edit-btn');
   const newProjBtn=document.getElementById('ws-new-proj-btn');
@@ -2204,7 +2205,7 @@ async function openWorkspace(id){
   if(backBtn)backBtn.style.display=isOwnerManager?'flex':'none';
   if(editBtn)editBtn.style.display=isOwnerManager?'flex':'none';
   if(newProjBtn)newProjBtn.style.display=isOwnerManager?'flex':'none';
-  if(payTab)payTab.style.display=isOwnerManager?'flex':'none';
+  if(payTab)payTab.style.display=isOwner2?'flex':'none'; // Only owner sees payment tab
 
   // Show projects tab by default
   wsTab('projects',document.querySelector('.ws-tab.on'));
@@ -2254,6 +2255,7 @@ function renderKanban(){
     if(!cols[st].length){col.innerHTML=`<div style="border:1.5px dashed #E5E7EB;border-radius:8px;padding:16px;text-align:center;color:#D1D5DB;font-size:12px">Drop here</div>`;return;}
     const pc=PROJ_COL[st];
     const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+    const isOwner=profile?.role==='owner';
     col.innerHTML=cols[st].map(p=>{
       const overdue=p.deadline&&p.status!=='done'&&new Date(p.deadline)<new Date();
       const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
@@ -2262,7 +2264,7 @@ function renderKanban(){
         onmouseover="this.style.borderColor='${pc.text}';this.style.boxShadow='0 3px 10px rgba(0,0,0,.08)'"
         onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
         <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:10px;line-height:1.4">${p.project_name}</div>
-        ${isOwnerManager?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        ${isOwner?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
           <span style="font-size:13px;font-weight:700;color:#111827">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</span>
         </div>`:''}
@@ -2357,7 +2359,7 @@ function openProjDetail(id){
   `;
   // Payment tab — hidden from manager
   const payTab=document.getElementById('pdm-payment-tab');
-  if(payTab)payTab.style.display=(profile?.role==='manager')?'none':'flex';
+  if(payTab)payTab.style.display=(profile?.role==='owner'||profile?.role==='editor'||profile?.role==='employee')?'flex':'none';
 
   // Switch to details tab by default
   pdmTab('details', document.querySelector('.pdm-tab.on'));
@@ -3769,10 +3771,10 @@ function calcTotalAmount(){
 }
 
 function openProjectModal(id=null){
-  // Only owner/manager can open project modal
   if(profile?.role!=='owner'&&profile?.role!=='manager'){toast('🔒 শুধু Owner/Manager project edit করতে পারবে');return;}
   _currentProjId=id;
   const p=id?_currentProjects.find(x=>x.id===id):null;
+  const isOwner=profile?.role==='owner';
   document.getElementById('proj-modal-title').textContent=p?'Edit Project':'New Project';
   document.getElementById('proj-title').value=p?.project_name||'';
   document.getElementById('proj-assigned').value=p?.assigned_date||new Date().toISOString().slice(0,10);
@@ -3791,6 +3793,11 @@ function openProjectModal(id=null){
   document.getElementById('proj-feedback').value=p?.feedback||'';
   document.getElementById('proj-refs').value=(p?.reference_urls||[]).join(', ');
   document.getElementById('proj-del-btn').style.display=p?'flex':'none';
+  // Hide payment section for manager
+  const payBlock=document.querySelector('#project-modal [style*="Payment Details"]')?.closest('[style*="border:1px solid"]');
+  if(payBlock)payBlock.style.display=isOwner?'block':'none';
+  const payStatusRow=document.getElementById('proj-pay-status')?.closest('.r2');
+  if(payStatusRow)payStatusRow.style.display=isOwner?'grid':'none';
   document.getElementById('project-modal').style.display='flex';
 }
 function closeProjectModal(){document.getElementById('project-modal').style.display='none';}
