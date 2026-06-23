@@ -1247,49 +1247,39 @@ async function addMember(){
   if(pass.length<6){toast('Password কমপক্ষে 6 character');return;}
 
   const btn=document.querySelector('[onclick="addMember()"]');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 ti-spin"></i> Adding...';}
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Adding...';}
 
   try{
-    // Use signUp — works even with email confirmation enabled
-    const {data,error}=await sb.auth.signUp({
-      email, password:pass,
-      options:{
-        data:{name,role},
-        emailRedirectTo:window.location.href
-      }
+    // Get current session token
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not logged in');
+
+    const resp=await fetch(`https://uftyyfrnqbeoyteafhxj.supabase.co/functions/v1/create-user`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+session.access_token,
+        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdHl5ZnJucWJlb3l0ZWFmaHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTM5MDEsImV4cCI6MjA5NjcyOTkwMX0.y7WgJABO_QijcghWPKYPRiGlUZycXGuJMRQ5-XPv4d8'
+      },
+      body:JSON.stringify({email,password:pass,name,role})
     });
 
-    if(error){
-      // Handle "User already registered" 
-      if(error.message?.includes('already registered')||error.message?.includes('already been registered')){
+    const result=await resp.json();
+
+    if(result.error){
+      if(result.error.includes('already been registered')||result.error.includes('already exists')){
         toast('⚠️ এই email এ আগেই account আছে');
       } else {
-        toast('Error: '+error.message);
+        toast('Error: '+result.error);
       }
       if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
       return;
     }
 
-    // data.user can be null if email confirmation is required
-    // Try to get user id from identities or use email to find
-    const userId=data?.user?.id||data?.session?.user?.id;
-
-    if(userId){
-      // Immediately upsert profile with correct role
-      await new Promise(r=>setTimeout(r,500));
-      await sb.from('profiles').upsert({
-        id:userId, email, name, role
-      },{onConflict:'id'});
-      toast(`✅ ${name} (${role}) added! ওরা এই email ও password দিয়ে login করতে পারবে।`);
-    } else {
-      // Email confirmation required — profile will be created on first login
-      // But we can try to insert manually
-      toast(`✅ ${name} added! Email confirm করার পর login করতে পারবে।\n\nNote: Supabase Dashboard → Authentication → Email Confirmations OFF করলে instantly login করতে পারবে।`);
-    }
-
+    toast(`✅ ${name} (${role}) successfully added!`);
     ['n-email','n-pass','n-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
-    setTimeout(loadUsers,1500);
+    setTimeout(loadUsers,800);
 
   } catch(e){
     console.error('addMember error:',e);
