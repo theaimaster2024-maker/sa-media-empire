@@ -224,7 +224,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
       <div class="nav-it on" id="nav-home" onclick="showPg('home')" data-pg="home"><i class="ti ti-home"></i> Home</div>
-      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" onclick="showPg('editors')" data-pg="editors"><i class="ti ti-users"></i> Editors</div>
@@ -232,6 +231,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
       <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
+      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" id="nav-users" onclick="showPg('users')" data-pg="users" style="display:none"><i class="ti ti-users"></i> Team Members</div>
     </nav>
     <div class="sb-user">
@@ -1199,23 +1199,41 @@ async function loadUsers(){
   if(!data){return;}
   const list=document.getElementById('users-list');
   if(!data.length){list.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>No members yet</p></div>';return;}
+  const roleColors={owner:'#7C3AED',manager:'#10B981',employee:'#0EA5E9',editor:'#0EA5E9'};
+  const roleBg={owner:'#F5F3FF',manager:'#D1FAE5',employee:'#DBEAFE',editor:'#DBEAFE'};
   list.innerHTML=data.map(u=>`
-    <div class="u-item">
-      <div class="u-av">${(u.name||u.email).charAt(0).toUpperCase()}</div>
+    <div class="u-item" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F3F4F6">
+      <div class="u-av" style="background:${roleBg[u.role]||'#F3F4F6'};color:${roleColors[u.role]||'#6B7280'}">${(u.name||u.email).charAt(0).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:#111827">${u.name||'—'}</div>
         <div style="font-size:11px;color:#9CA3AF">${u.email}</div>
       </div>
-      <select class="role-sel" onchange="updateRole('${u.id}',this.value)" ${u.id===user?.id?'disabled':''}>
-        <option value="owner" ${u.role==='owner'?'selected':''}>Owner</option>
-        <option value="manager" ${u.role==='manager'?'selected':''}>Manager</option>
-        <option value="employee" ${u.role==='employee'?'selected':''}>Employee</option>
-      </select>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select class="role-sel" onchange="updateRole('${u.id}',this.value)" ${u.id===user?.id?'disabled':''}
+          style="border:1.5px solid ${roleColors[u.role]||'#E5E7EB'};color:${roleColors[u.role]||'#6B7280'};background:${roleBg[u.role]||'#F9FAFB'};border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;outline:none">
+          <option value="owner" ${u.role==='owner'?'selected':''}>Owner</option>
+          <option value="manager" ${u.role==='manager'?'selected':''}>Manager</option>
+          <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+          <option value="employee" ${u.role==='employee'?'selected':''}>Employee</option>
+        </select>
+        ${u.id!==user?.id?`<button onclick="deleteMember('${u.id}','${u.name||u.email}')"
+          style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:5px 9px;cursor:pointer;color:#EF4444;font-size:13px;transition:.12s"
+          onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='#FEF2F2'"
+          title="Remove member"><i class="ti ti-trash" style="font-size:14px"></i></button>`:''}
+      </div>
     </div>`).join('');
 }
 async function updateRole(id,role){
   await sb.from('profiles').update({role}).eq('id',id);
-  toast('Role updated ✓');loadUsers();
+  await sb.auth.admin?.updateUserById(id,{user_metadata:{role}}).catch(()=>{});
+  toast('Role updated ✓');
+  setTimeout(loadUsers,300);
+}
+async function deleteMember(id,name){
+  if(!confirm(`"${name}" কে remove করবে?`))return;
+  await sb.from('profiles').delete().eq('id',id);
+  toast(`${name} removed`);
+  loadUsers();
 }
 async function addMember(){
   const email=document.getElementById('n-email').value.trim();
