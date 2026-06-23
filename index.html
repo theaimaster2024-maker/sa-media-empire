@@ -216,6 +216,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
+      <div class="nav-it on" id="nav-home" onclick="showPg('home')" data-pg="home"><i class="ti ti-home"></i> Home</div>
       <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
@@ -308,6 +309,11 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="pg" id="pg-home">
+      <div id="home-content"></div>
     </div>
 
     <!-- DASHBOARD -->
@@ -912,7 +918,23 @@ function showApp(){
     if(role==='editor'||role==='employee'){
       showPg('editors');
     } else {
-      showPg('notes');
+      showPg('home');
+      // Init global chat bubble for owner/manager right away
+      setTimeout(async()=>{
+        const {data}=await sb.from('editors').select('*').order('name');
+        if(data?.length){
+          editors=data;
+          initChatBubble();
+          const bubble=document.getElementById('chat-bubble');
+          if(bubble)bubble.style.display='flex';
+          startGlobalSubscription();
+          for(const ed of data){
+            const c=await checkUnreadMessages(ed.id);
+            if(c>0)_unreadCounts[ed.id]=c;
+          }
+          updateBubbleBadge();
+        }
+      },800);
     }
     const fd=document.getElementById('f-date');
     if(fd)fd.value=now.toISOString().slice(0,10);
@@ -996,6 +1018,7 @@ function showPg(pg){
   if(pg==='finance'&&profile?.role==='owner')loadNotes();
   if(pg==='notes')loadSharedNote();
   if(pg==='editors')loadEditors();
+  if(pg==='home')loadHomePage();
   if(pg==='private-notes'){
     if(profile?.role!=='owner'){toast('🔒 শুধু Owner দেখতে পারবে');return;}
     loadPrivateNote();
@@ -1811,6 +1834,135 @@ function bClear(){
 
 // Auto-save every 30 seconds
 setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
+
+// ── HOME PAGE
+async function loadHomePage(){
+  const el=document.getElementById('home-content');
+  if(!el)return;
+  const role=profile?.role||'owner';
+  const name=profile?.name||user?.email?.split('@')[0]||'there';
+  const hr=new Date().getHours();
+  const greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const day=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Show skeleton first
+  el.innerHTML=`<div style="text-align:center;padding:60px;color:#9CA3AF"><div class="spinner" style="margin:0 auto 12px"></div>Loading...</div>`;
+
+  const [{data:editorData},{data:projData},{data:expData}]=await Promise.all([
+    sb.from('editors').select('id,name,status,photo_url,skills,email'),
+    sb.from('editor_projects').select('id,editor_id,status,payment_status,total_amount,amount,paid_amount'),
+    sb.from('expenses').select('amount,date')
+  ]);
+
+  const eds=editorData||[];
+  const projs=projData||[];
+  const exps=expData||[];
+
+  const activeEditors=eds.filter(e=>e.status==='active').length;
+  const totalProjs=projs.length;
+  const inProgress=projs.filter(p=>p.status==='in_progress').length;
+  const inReview=projs.filter(p=>p.status==='review').length;
+  const done=projs.filter(p=>p.status==='done').length;
+  const unpaid=projs.filter(p=>p.payment_status!=='paid')
+    .reduce((s,p)=>s+Math.max(0,Number(p.total_amount||p.amount||0)-Number(p.paid_amount||0)),0);
+  const thisMonth=new Date().toISOString().slice(0,7);
+  const monthExpense=exps.filter(e=>e.date?.startsWith(thisMonth)).reduce((s,e)=>s+Number(e.amount||0),0);
+
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,#7C3AED 0%,#0EA5E9 100%);border-radius:16px;padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+      <div style="position:absolute;bottom:-50px;right:80px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+      <div style="position:relative">
+        <div style="font-size:12px;color:rgba(255,255,255,.7);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="font-size:13px"></i>${day}</div>
+        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:4px">${greeting}, ${name.split(' ')[0]}! 👋</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.75);margin-bottom:16px">Welcome back to SA Media Empire Management System</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-shield-check" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${role.charAt(0).toUpperCase()+role.slice(1)}</span>
+          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-users" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${activeEditors} Active Editor${activeEditors!==1?'s':''}</span>
+          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-video" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${totalProjs} Project${totalProjs!==1?'s':''}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#C4B5FD';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
+        <div style="width:40px;height:40px;background:#EDE9FE;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-loader" style="font-size:20px;color:#7C3AED"></i></div>
+        <div style="font-size:28px;font-weight:800;color:#7C3AED">${inProgress}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">In Progress</div>
+      </div>
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#BFDBFE';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(59,130,246,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
+        <div style="width:40px;height:40px;background:#DBEAFE;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-eye" style="font-size:20px;color:#3B82F6"></i></div>
+        <div style="font-size:28px;font-weight:800;color:#3B82F6">${inReview}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">In Review</div>
+      </div>
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#A7F3D0';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
+        <div style="width:40px;height:40px;background:#D1FAE5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-circle-check" style="font-size:20px;color:#10B981"></i></div>
+        <div style="font-size:28px;font-weight:800;color:#10B981">${done}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">Completed</div>
+      </div>
+      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px">
+        <div style="width:40px;height:40px;background:#FEE2E2;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-coin-off" style="font-size:20px;color:#EF4444"></i></div>
+        <div style="font-size:28px;font-weight:800;color:#EF4444">৳${unpaid>9999?Math.round(unpaid/1000)+'k':unpaid.toLocaleString()}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">Unpaid</div>
+      </div>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+      <div class="panel">
+        <div class="p-hd" style="margin-bottom:16px">
+          <div class="p-ti"><i class="ti ti-users"></i> Team</div>
+          <button onclick="showPg('editors')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 10px;font-size:12px;color:#6B7280;cursor:pointer;font-family:inherit;transition:.12s" onmouseover="this.style.borderColor='#7C3AED';this.style.color='#7C3AED'" onmouseout="this.style.borderColor='#E5E7EB';this.style.color='#6B7280'">View all →</button>
+        </div>
+        ${eds.length?eds.map(ed=>{
+          const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+          const edActive=projs.filter(p=>p.editor_id===ed.id&&(p.status==='in_progress'||p.status==='review')).length;
+          return `<div onclick="showPg('editors')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;transition:.12s;margin-bottom:2px" onmouseover="this.style.background='#F5F3FF'" onmouseout="this.style.background='transparent'">
+            <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0;overflow:hidden">
+              ${ed.photo_url?`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:ini}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:#111827">${ed.name}</div>
+              <div style="font-size:11px;color:#9CA3AF;margin-top:1px">${(ed.skills||[]).slice(0,2).join(' · ')||'Editor'}</div>
+            </div>
+            <div style="text-align:right">
+              ${edActive>0?`<span style="font-size:10px;background:#EDE9FE;color:#7C3AED;padding:2px 8px;border-radius:20px;font-weight:600">${edActive} active</span>`:'<span style="font-size:10px;color:#D1D5DB;font-weight:500">idle</span>'}
+            </div>
+          </div>`;
+        }).join(''):`<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:13px">No editors yet. <span onclick="showPg('editors')" style="color:#7C3AED;cursor:pointer">Add one →</span></div>`}
+      </div>
+
+      <div>
+        ${role==='owner'?`<div class="panel" style="margin-bottom:14px">
+          <div class="p-ti" style="margin-bottom:14px"><i class="ti ti-chart-bar"></i> This Month</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:#FEF2F2;border-radius:8px;margin-bottom:8px;border:1px solid #FECACA">
+            <span style="font-size:13px;color:#991B1B;font-weight:500">Expenses</span>
+            <span style="font-size:16px;font-weight:700;color:#EF4444">৳${monthExpense.toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:#F0FDF4;border-radius:8px;border:1px solid #A7F3D0">
+            <span style="font-size:13px;color:#065F46;font-weight:500">Projects done</span>
+            <span style="font-size:16px;font-weight:700;color:#059669">${done}</span>
+          </div>
+        </div>`:''}
+        <div class="panel">
+          <div class="p-ti" style="margin-bottom:14px"><i class="ti ti-bolt"></i> Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button onclick="showPg('editors')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F5F3FF;border:1px solid #EDE9FE;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7C3AED;text-align:left;width:100%" onmouseover="this.style.background='#EDE9FE'" onmouseout="this.style.background='#F5F3FF'">
+              <i class="ti ti-users" style="font-size:15px"></i> Editor Workspaces
+            </button>
+            <button onclick="showPg('notes')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#0284C7;text-align:left;width:100%" onmouseover="this.style.background='#E0F2FE'" onmouseout="this.style.background='#F0F9FF'">
+              <i class="ti ti-notebook" style="font-size:15px"></i> Shared Notes
+            </button>
+            <button onclick="showPg('board')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#059669;text-align:left;width:100%" onmouseover="this.style.background='#D1FAE5'" onmouseout="this.style.background='#F0FDF4'">
+              <i class="ti ti-layout-board" style="font-size:15px"></i> Script Board
+            </button>
+            ${role==='owner'?`<button onclick="showPg('expenses')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#EA580C;text-align:left;width:100%" onmouseover="this.style.background='#FFEDD5'" onmouseout="this.style.background='#FFF7ED'">
+              <i class="ti ti-wallet" style="font-size:15px"></i> Expense Tracker
+            </button>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
 
 // ── SHARED NOTES
 let _noteChanged=false, _pvtNoteChanged=false;
