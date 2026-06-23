@@ -2484,40 +2484,48 @@ function scrollMsgsBottom(){
   if(el)setTimeout(()=>el.scrollTop=el.scrollHeight,30);
 }
 
+// Track temp message IDs to prevent duplicates
+let _sentMsgTexts=new Set();
+
 async function chatSend(){
   const inp=document.getElementById('chat-inp');
   const text=inp?.value.trim();
   if(!text||!_chatEditorId)return;
   inp.value='';
-  inp.focus(); // keep focus for next message
+  inp.focus();
 
   // Instant optimistic UI
-  const now=new Date();
+  const tempId='temp-'+Date.now();
+  _sentMsgTexts.add(tempId);
   appendMsg({
-    id:'temp-'+now.getTime(),
+    id:tempId,
     editor_id:_chatEditorId,
     sender_id:user?.id,
     sender_name:profile?.name||user?.email?.split('@')[0],
     sender_role:profile?.role,
     message:text,
     is_read:true,
-    created_at:now.toISOString()
+    created_at:new Date().toISOString()
   }, true);
 
-  // Send to DB in background
-  const {error}=await sb.from('editor_messages').insert({
+  const {data,error}=await sb.from('editor_messages').insert({
     editor_id:_chatEditorId,
     sender_id:user?.id,
     sender_name:profile?.name||user?.email?.split('@')[0],
     sender_role:profile?.role,
     message:text,
     is_read:false
-  });
+  }).select().single();
+
   if(error){
     console.error('Send error:',error);
     toast('⚠️ Message send failed');
-    // Re-put text in input so user can retry
     inp.value=text;
+  } else if(data){
+    // Track real ID so realtime doesn't duplicate
+    _sentMsgTexts.add(data.id);
+    // Remove temp after short delay
+    setTimeout(()=>_sentMsgTexts.delete(tempId),5000);
   }
 }
 
