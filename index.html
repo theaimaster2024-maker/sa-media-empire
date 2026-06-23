@@ -3381,6 +3381,65 @@ function pdmTab(tab, btn){
 
 // ─ Video Review System (Frame.io style)
 let _rcAttachUrl=null,_rcAttachType=null,_rcAttachName=null;
+let _mediaRecorder=null,_audioChunks=[],_recTimerInterval=null,_recSeconds=0;
+
+async function toggleAudioRecord(){
+  if(_mediaRecorder&&_mediaRecorder.state==='recording'){
+    stopAudioRecord(true);
+    return;
+  }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    _audioChunks=[];_recSeconds=0;
+    _mediaRecorder=new MediaRecorder(stream);
+    _mediaRecorder.ondataavailable=e=>{if(e.data.size>0)_audioChunks.push(e.data);};
+    _mediaRecorder.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      if(!_mediaRecorder._useRecording)return;
+      const blob=new Blob(_audioChunks,{type:'audio/webm'});
+      if(blob.size>5*1024*1024){toast('Recording too large (max 5MB)');return;}
+      const path=`review-attachments/${_currentProjId}-voice-${Date.now()}.webm`;
+      const {error}=await sb.storage.from('invoices').upload(path,blob,{upsert:true,contentType:'audio/webm'});
+      if(error){toast('Upload failed: '+error.message);return;}
+      const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
+      _rcAttachUrl=publicUrl;_rcAttachType='audio';_rcAttachName='Voice recording ('+_fmtRecTime(_recSeconds)+')';
+      const prev=document.getElementById('rc-attachment-preview');
+      if(prev) prev.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-top:6px;background:#EFF6FF;border-radius:8px;padding:6px 10px"><i class="ti ti-microphone" style="color:#1D4ED8;font-size:16px"></i><audio controls src="${publicUrl}" style="height:32px;flex:1"></audio><button onclick="_rcAttachUrl=null;_rcAttachType=null;_rcAttachName=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px"><i class="ti ti-x"></i></button></div>`;
+      toast('Voice recorded ✓');
+    };
+    _mediaRecorder.start();
+    // UI
+    const btn=document.getElementById('rc-rec-btn');
+    const status=document.getElementById('rc-rec-status');
+    if(btn){btn.style.background='#FEE2E2';btn.style.color='#EF4444';btn.innerHTML='<i class="ti ti-microphone" style="font-size:13px"></i> Stop';}
+    if(status)status.style.display='flex';
+    _recTimerInterval=setInterval(()=>{
+      _recSeconds++;
+      const t=document.getElementById('rc-rec-timer');
+      if(t)t.textContent=_fmtRecTime(_recSeconds);
+    },1000);
+  }catch(err){
+    if(err.name==='NotAllowedError') toast('Microphone permission denied');
+    else toast('Microphone error: '+err.message);
+  }
+}
+
+function _fmtRecTime(s){return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');}
+
+function stopAudioRecord(use){
+  if(!_mediaRecorder)return;
+  clearInterval(_recTimerInterval);_recTimerInterval=null;
+  _mediaRecorder._useRecording=use;
+  _mediaRecorder.stop();
+  _mediaRecorder=null;
+  // Reset UI
+  const btn=document.getElementById('rc-rec-btn');
+  const status=document.getElementById('rc-rec-status');
+  if(btn){btn.style.background='#DBEAFE';btn.style.color='#1D4ED8';btn.innerHTML='<i class="ti ti-microphone" style="font-size:13px"></i> Record voice';}
+  if(status)status.style.display='none';
+  const t=document.getElementById('rc-rec-timer');if(t)t.textContent='0s';
+  if(!use)toast('Recording cancelled');
+}
 
 async function loadReviewTab(){
   const p=_currentProjects.find(x=>x.id===_currentProjId);
