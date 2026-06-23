@@ -197,7 +197,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       </div>
     </div>
     <div class="f-grp"><label class="f-lbl">Email</label><input class="f-inp" type="email" id="a-email" placeholder="your@email.com"/></div>
-    <div class="f-grp"><label class="f-lbl">Password</label><input class="f-inp" type="password" id="a-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"/></div>
+    <div class="f-grp"><label class="f-lbl">Password</label>
+      <div style="position:relative">
+        <input class="f-inp" type="password" id="a-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" style="padding-right:40px"/>
+        <button type="button" onclick="togglePass('a-pass','a-pass-eye')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:0;line-height:1">
+          <i id="a-pass-eye" class="ti ti-eye"></i>
+        </button>
+      </div>
+    </div>
     <div class="auth-err" id="a-err"></div>
     <button class="btn-main" id="a-btn" onclick="login()"><i class="ti ti-login"></i> Sign in</button>
     <div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:12px">Admin দ্বারা দেওয়া account দিয়ে login করুন</div>
@@ -733,7 +740,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div class="form-g" style="margin-top:14px">
           <div class="r2">
             <div><label class="f-lbl">Email</label><input class="f-inp" type="email" id="n-email" placeholder="email@example.com"/></div>
-            <div><label class="f-lbl">Password</label><input class="f-inp" type="password" id="n-pass" placeholder="min 6 chars"/></div>
+            <div><label class="f-lbl">Password</label>
+              <div style="position:relative">
+                <input class="f-inp" type="password" id="n-pass" placeholder="min 6 chars" style="padding-right:40px"/>
+                <button type="button" onclick="togglePass('n-pass','n-pass-eye')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:0;line-height:1" title="Show/hide password">
+                  <i id="n-pass-eye" class="ti ti-eye"></i>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="r2">
             <div><label class="f-lbl">Name</label><input class="f-inp" type="text" id="n-name" placeholder="Full name"/></div>
@@ -1834,6 +1848,19 @@ function bClear(){
 
 // Auto-save every 30 seconds
 setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
+
+function togglePass(inputId, iconId){
+  const inp=document.getElementById(inputId);
+  const ico=document.getElementById(iconId);
+  if(!inp)return;
+  if(inp.type==='password'){
+    inp.type='text';
+    if(ico){ico.classList.remove('ti-eye');ico.classList.add('ti-eye-off');}
+  } else {
+    inp.type='password';
+    if(ico){ico.classList.remove('ti-eye-off');ico.classList.add('ti-eye');}
+  }
+}
 
 // ── HOME PAGE
 async function loadHomePage(){
