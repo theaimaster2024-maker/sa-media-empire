@@ -2426,12 +2426,15 @@ async function openChatWith(editorId){
   document.getElementById('chat-input-area').style.display='flex';
 
   await fetchAndRenderMsgs();
-  // Mark read
   await markMsgsRead(editorId);
   _unreadCounts[editorId]=0;
   updateBubbleBadge();
-  // Subscribe
-  startMsgSubscription(editorId);
+
+  // Editor role: start per-editor subscription
+  // Owner/manager: global subscription already handles all editors
+  if(!isOwnerManager){
+    startMsgSubscription(editorId);
+  }
 }
 
 async function fetchAndRenderMsgs(){
@@ -2675,15 +2678,16 @@ function showChatBubble(editorId, editorName){
   if(bubble)bubble.style.display='flex';
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
   if(isOwnerManager){
-    // Owner/manager: start global subscription
+    // Owner/manager: use ONLY global subscription (covers all editors)
     startGlobalSubscription();
-    // Also subscribe to current editor
-    startMsgSubscription(editorId);
+    // Check unread for badge
+    checkUnreadMessages(editorId).then(c=>{
+      if(c>0){_unreadCounts[editorId]=c;updateBubbleBadge();}
+    });
   } else {
-    // Editor: only their own chat
+    // Editor: only their own chat subscription
     _chatEditorId=editorId;
     startMsgSubscription(editorId);
-    // Check unread for badge
     checkUnreadMessages(editorId).then(c=>{
       if(c>0){_unreadCounts[editorId]=c;updateBubbleBadge();}
     });
