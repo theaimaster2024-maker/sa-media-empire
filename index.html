@@ -1884,26 +1884,22 @@ async function loadHomePage(){
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#C4B5FD';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
-        <div style="width:40px;height:40px;background:#EDE9FE;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-loader" style="font-size:20px;color:#7C3AED"></i></div>
-        <div style="font-size:28px;font-weight:800;color:#7C3AED">${inProgress}</div>
-        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">In Progress</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#C4B5FD';this.style.boxShadow='0 3px 10px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+        <div style="width:38px;height:38px;background:#EDE9FE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-loader" style="font-size:19px;color:#7C3AED"></i></div>
+        <div><div style="font-size:22px;font-weight:800;color:#7C3AED;line-height:1">${inProgress}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">In Progress</div></div>
       </div>
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#BFDBFE';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(59,130,246,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
-        <div style="width:40px;height:40px;background:#DBEAFE;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-eye" style="font-size:20px;color:#3B82F6"></i></div>
-        <div style="font-size:28px;font-weight:800;color:#3B82F6">${inReview}</div>
-        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">In Review</div>
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#BFDBFE';this.style.boxShadow='0 3px 10px rgba(59,130,246,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+        <div style="width:38px;height:38px;background:#DBEAFE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-eye" style="font-size:19px;color:#3B82F6"></i></div>
+        <div><div style="font-size:22px;font-weight:800;color:#3B82F6;line-height:1">${inReview}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">In Review</div></div>
       </div>
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#A7F3D0';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.transform='none';this.style.boxShadow='none'">
-        <div style="width:40px;height:40px;background:#D1FAE5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-circle-check" style="font-size:20px;color:#10B981"></i></div>
-        <div style="font-size:28px;font-weight:800;color:#10B981">${done}</div>
-        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">Completed</div>
+      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#A7F3D0';this.style.boxShadow='0 3px 10px rgba(16,185,129,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+        <div style="width:38px;height:38px;background:#D1FAE5;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-circle-check" style="font-size:19px;color:#10B981"></i></div>
+        <div><div style="font-size:22px;font-weight:800;color:#10B981;line-height:1">${done}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">Completed</div></div>
       </div>
-      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px">
-        <div style="width:40px;height:40px;background:#FEE2E2;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-coin-off" style="font-size:20px;color:#EF4444"></i></div>
-        <div style="font-size:28px;font-weight:800;color:#EF4444">৳${unpaid>9999?Math.round(unpaid/1000)+'k':unpaid.toLocaleString()}</div>
-        <div style="font-size:12px;color:#6B7280;margin-top:4px;font-weight:500">Unpaid</div>
+      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;background:#FEE2E2;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-coin-off" style="font-size:19px;color:#EF4444"></i></div>
+        <div><div style="font-size:22px;font-weight:800;color:#EF4444;line-height:1">৳${unpaid>9999?Math.round(unpaid/1000)+'k':unpaid.toLocaleString()}</div><div style="font-size:11px;color:#EF4444;margin-top:2px;opacity:.7">Unpaid</div></div>
       </div>
     </div>
 
@@ -2261,14 +2257,25 @@ function renderKanban(){
     col.innerHTML=cols[st].map(p=>{
       const overdue=p.deadline&&p.status!=='done'&&new Date(p.deadline)<new Date();
       const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
-      return `<div draggable="true" ondragstart="kanbanDragStart(event,${p.id})" onclick="openProjDetail(${p.id})" style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${pc.text}';this.style.boxShadow='0 2px 8px rgba(0,0,0,.07)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
-        <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:8px;line-height:1.4">${p.project_name}</div>
-        ${isOwnerManager?`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
-          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
-          <span style="font-size:12px;font-weight:700;color:#111827">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</span>
+      return `<div draggable="true" ondragstart="kanbanDragStart(event,${p.id})" onclick="openProjDetail(${p.id})"
+        style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='${pc.text}';this.style.boxShadow='0 3px 10px rgba(0,0,0,.08)'"
+        onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:10px;line-height:1.4">${p.project_name}</div>
+        ${isOwnerManager?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
+          <span style="font-size:13px;font-weight:700;color:#111827">৳${Number(p.total_amount||p.amount||0).toLocaleString()}</span>
         </div>`:''}
-        ${p.deadline?`<div style="font-size:11px;margin-top:7px;color:${overdue?'#EF4444':'#9CA3AF'};display:flex;align-items:center;gap:4px"><i class="ti ti-calendar" style="font-size:12px"></i>${new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}${overdue?' <span style="color:#EF4444;font-weight:600;margin-left:4px">Overdue</span>':''}</div>`:''}
-        ${p.instructions?`<div style="font-size:11px;color:#6B7280;margin-top:6px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
+        ${p.deadline?`<div style="font-size:11px;color:${overdue?'#EF4444':'#9CA3AF'};display:flex;align-items:center;gap:4px;margin-bottom:6px">
+          <i class="ti ti-calendar" style="font-size:12px"></i>
+          ${new Date(p.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
+          ${overdue?'<span style="color:#EF4444;font-weight:700;margin-left:2px">⚠ Overdue</span>':''}
+        </div>`:''}
+        ${p.instructions?`<div style="font-size:11px;color:#6B7280;line-height:1.5;padding:8px;background:#F9FAFB;border-radius:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div style="font-size:10px;color:#D1D5DB;display:flex;align-items:center;gap:3px"><i class="ti ti-grip-horizontal" style="font-size:11px"></i> drag to move</div>
+          <i class="ti ti-chevron-right" style="font-size:13px;color:#D1D5DB"></i>
+        </div>
       </div>`;
     }).join('');
   });
@@ -2884,77 +2891,81 @@ async function showEditorWelcome(){
     const done=_currentProjects.filter(p=>p.status==='done').length;
     const total=_currentProjects.length;
 
-    // Build dashboard above workspace tabs
+    // Payment info (editor can see their own)
+    const totalEarned=_currentProjects.reduce((s,p)=>s+Number(p.total_amount||p.amount||0),0);
+    const totalPaid=_currentProjects.reduce((s,p)=>s+Number(p.paid_amount||0),0);
+    const totalUnpaid=Math.max(0,totalEarned-totalPaid);
+
     let dash=document.getElementById('editor-dashboard');
     if(!dash){
       dash=document.createElement('div');
       dash.id='editor-dashboard';
-      // Insert before tab switcher
       const tabSwitcher=document.querySelector('.ws-tab.on')?.parentElement;
       if(tabSwitcher?.parentElement){
-        tabSwitcher.parentElement.insertBefore(dash, tabSwitcher);
+        tabSwitcher.parentElement.insertBefore(dash,tabSwitcher);
       }
     }
 
     const day=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
     dash.innerHTML=`
       <!-- Greeting banner -->
-      <div style="background:linear-gradient(135deg,#7C3AED 0%,#0EA5E9 100%);border-radius:14px;padding:22px 26px;margin-bottom:20px;position:relative;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#7C3AED 0%,#0EA5E9 100%);border-radius:14px;padding:20px 24px;margin-bottom:16px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.06);border-radius:50%"></div>
         <div style="position:absolute;bottom:-30px;right:50px;width:80px;height:80px;background:rgba(255,255,255,.04);border-radius:50%"></div>
-        <div style="position:relative;display:flex;align-items:center;gap:16px">
-          <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden">
+        <div style="position:relative;display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden">
             ${ed.photo_url?`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:`<span>${ini}</span>`}
           </div>
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px;display:flex;align-items:center;gap:5px"><i class="ti ti-calendar" style="font-size:12px"></i>${day}</div>
-            <div style="font-size:22px;font-weight:800;color:#fff">${greeting}, ${ed.name.split(' ')[0]}! 👋</div>
-            <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:2px">${(ed.skills||[]).join(' · ')||'Video Editor'} — SA Media Empire</div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">${day}</div>
+            <div style="font-size:20px;font-weight:800;color:#fff">${greeting}, ${ed.name.split(' ')[0]}! 👋</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">${(ed.skills||[]).join(' · ')||'Video Editor'}</div>
           </div>
-          ${unread>0?`<div onclick="openChatPanel()" style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <div style="position:relative">
-              <i class="ti ti-message-circle" style="font-size:20px;color:#fff"></i>
-              <span style="position:absolute;top:-6px;right:-6px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center">${unread}</span>
+          ${unread>0?`<div onclick="openChatPanel()" style="background:rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;flex-shrink:0">
+            <div style="position:relative"><i class="ti ti-message-circle" style="font-size:19px;color:#fff"></i>
+              <span style="position:absolute;top:-5px;right:-5px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center">${unread}</span>
             </div>
             <span style="font-size:12px;color:#fff;font-weight:600">${unread} new</span>
           </div>`:''}
         </div>
       </div>
 
-      <!-- Stats row -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center">
-          <div style="width:36px;height:36px;background:#FEF3C7;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="ti ti-clipboard-list" style="font-size:17px;color:#D97706"></i></div>
-          <div style="font-size:24px;font-weight:800;color:#D97706">${assigned}</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:3px;font-weight:500">Assigned</div>
+      <!-- Stats: projects + payment in one row -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#D97706">${assigned}</div>
+          <div style="font-size:10px;color:#9CA3AF;margin-top:2px;font-weight:500">Assigned</div>
         </div>
-        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center">
-          <div style="width:36px;height:36px;background:#EDE9FE;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="ti ti-loader" style="font-size:17px;color:#7C3AED"></i></div>
-          <div style="font-size:24px;font-weight:800;color:#7C3AED">${inprog}</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:3px;font-weight:500">In Progress</div>
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#7C3AED">${inprog}</div>
+          <div style="font-size:10px;color:#9CA3AF;margin-top:2px;font-weight:500">In Progress</div>
         </div>
-        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center">
-          <div style="width:36px;height:36px;background:#DBEAFE;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="ti ti-eye" style="font-size:17px;color:#3B82F6"></i></div>
-          <div style="font-size:24px;font-weight:800;color:#3B82F6">${review}</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:3px;font-weight:500">In Review</div>
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#3B82F6">${review}</div>
+          <div style="font-size:10px;color:#9CA3AF;margin-top:2px;font-weight:500">Review</div>
         </div>
-        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center">
-          <div style="width:36px;height:36px;background:#D1FAE5;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="ti ti-circle-check" style="font-size:17px;color:#10B981"></i></div>
-          <div style="font-size:24px;font-weight:800;color:#10B981">${done}</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:3px;font-weight:500">Done</div>
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#10B981">${done}</div>
+          <div style="font-size:10px;color:#9CA3AF;margin-top:2px;font-weight:500">Done</div>
+        </div>
+        <div style="background:#D1FAE5;border:1px solid #A7F3D0;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:#059669">৳${totalPaid>9999?Math.round(totalPaid/1000)+'k':totalPaid.toLocaleString()}</div>
+          <div style="font-size:10px;color:#059669;margin-top:2px;font-weight:600">Paid ✓</div>
+        </div>
+        <div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:#EF4444">৳${totalUnpaid>9999?Math.round(totalUnpaid/1000)+'k':totalUnpaid.toLocaleString()}</div>
+          <div style="font-size:10px;color:#EF4444;margin-top:2px;font-weight:600">Unpaid</div>
         </div>
       </div>
 
       <!-- Progress bar -->
-      ${total>0?`<div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:13px;font-weight:600;color:#111827">Overall Progress</div>
-          <div style="font-size:12px;color:#9CA3AF">${done}/${total} completed</div>
+      ${total>0?`<div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+        <div style="flex:1">
+          <div style="background:#F3F4F6;border-radius:20px;height:7px;overflow:hidden">
+            <div style="height:100%;background:linear-gradient(90deg,#7C3AED,#10B981);border-radius:20px;width:${Math.round(done/total*100)}%"></div>
+          </div>
         </div>
-        <div style="background:#F3F4F6;border-radius:20px;height:8px;overflow:hidden">
-          <div style="height:100%;background:linear-gradient(90deg,#7C3AED,#10B981);border-radius:20px;transition:width .5s;width:${Math.round(done/total*100)}%"></div>
-        </div>
-        <div style="font-size:11px;color:#9CA3AF;margin-top:6px;text-align:right">${Math.round(done/total*100)}% complete</div>
+        <div style="font-size:12px;color:#6B7280;font-weight:600;flex-shrink:0">${done}/${total} done <span style="color:#7C3AED">(${Math.round(done/total*100)}%)</span></div>
       </div>`:''}`;
 
   }catch(e){console.error('Dashboard error:',e);}
