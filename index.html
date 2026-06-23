@@ -2436,6 +2436,8 @@ async function openChatWith(editorId){
 
 async function fetchAndRenderMsgs(){
   if(!_chatEditorId)return;
+  // Clear rendered IDs for fresh render
+  _renderedMsgIds.clear();
   const {data,error}=await sb.from('editor_messages')
     .select('*').eq('editor_id',_chatEditorId)
     .order('created_at').limit(200);
@@ -2454,9 +2456,18 @@ async function fetchAndRenderMsgs(){
   scrollMsgsBottom();
 }
 
+// Track all rendered message IDs to prevent duplicates
+const _renderedMsgIds=new Set();
+
 function appendMsg(m, doScroll=true){
   const el=document.getElementById('chat-msg-view');
   if(!el)return;
+
+  // Prevent duplicate rendering
+  const msgKey=String(m.id);
+  if(_renderedMsgIds.has(msgKey))return;
+  _renderedMsgIds.add(msgKey);
+
   // Remove empty state
   const empty=el.querySelector('[style*="No messages"]');
   if(empty)empty.remove();
@@ -2466,6 +2477,7 @@ function appendMsg(m, doScroll=true){
   const roleColors={owner:'#7C3AED',manager:'#10B981',editor:'#0EA5E9',employee:'#0EA5E9'};
   const rc=roleColors[m.sender_role]||'#6B7280';
   const div=document.createElement('div');
+  div.dataset.msgId=msgKey;
   div.style.cssText=`display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px;margin-bottom:4px`;
   div.innerHTML=`
     ${!isMe?`<div style="font-size:10px;color:${rc};font-weight:600;padding:0 6px;margin-bottom:1px">${m.sender_name}</div>`:''}
@@ -2494,9 +2506,8 @@ async function chatSend(){
   inp.value='';
   inp.focus();
 
-  // Instant optimistic UI
+  // Instant optimistic UI with temp ID
   const tempId='temp-'+Date.now();
-  _sentMsgTexts.add(tempId);
   appendMsg({
     id:tempId,
     editor_id:_chatEditorId,
@@ -2508,6 +2519,7 @@ async function chatSend(){
     created_at:new Date().toISOString()
   }, true);
 
+  // Send to DB — get real ID back
   const {data,error}=await sb.from('editor_messages').insert({
     editor_id:_chatEditorId,
     sender_id:user?.id,
@@ -2521,11 +2533,13 @@ async function chatSend(){
     console.error('Send error:',error);
     toast('⚠️ Message send failed');
     inp.value=text;
+    // Remove temp from rendered
+    _renderedMsgIds.delete(tempId);
+    const el=document.getElementById('chat-msg-view');
+    el?.querySelector(`[data-msg-id="${tempId}"]`)?.remove();
   } else if(data){
-    // Track real ID so realtime doesn't duplicate
-    _sentMsgTexts.add(data.id);
-    // Remove temp after short delay
-    setTimeout(()=>_sentMsgTexts.delete(tempId),5000);
+    // Pre-register real ID so realtime won't duplicate
+    _renderedMsgIds.add(String(data.id));
   }
 }
 
