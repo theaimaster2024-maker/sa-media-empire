@@ -2490,6 +2490,20 @@ async function chatSend(){
   if(!text||!_chatEditorId)return;
   inp.value='';
   inp.style.borderColor='#E5E7EB';
+
+  // Optimistic UI — show message immediately
+  const tempMsg={
+    id:'temp-'+Date.now(),
+    editor_id:_chatEditorId,
+    sender_id:user?.id,
+    sender_name:profile?.name||user?.email?.split('@')[0],
+    sender_role:profile?.role,
+    message:text,
+    is_read:false,
+    created_at:new Date().toISOString()
+  };
+  appendMsg(tempMsg, true);
+
   const {error}=await sb.from('editor_messages').insert({
     editor_id:_chatEditorId,
     sender_id:user?.id,
@@ -2507,52 +2521,69 @@ async function chatSend(){
 
 function startMsgSubscription(editorId){
   if(_chatSubscription){_chatSubscription.unsubscribe();_chatSubscription=null;}
-  _chatSubscription=sb.channel(`chat-ed-${editorId}-${Date.now()}`)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'editor_messages',
-      filter:`editor_id=eq.${editorId}`},
+  _chatSubscription=sb.channel(`chat-ed-${editorId}`)
+    .on('postgres_changes',{
+      event:'INSERT',
+      schema:'public',
+      table:'editor_messages',
+      filter:`editor_id=eq.${editorId}`
+    },
     async(payload)=>{
       const m=payload.new;
-      const isInThisChat=_chatEditorId===editorId&&_chatOpen&&document.getElementById('chat-msg-view')?.style.display!=='none';
-      if(isInThisChat){
-        if(m.sender_id!==user?.id){
-          await markMsgsRead(editorId);
-        }
+      // Skip own messages — already shown optimistically
+      if(m.sender_id===user?.id)return;
+
+      const chatVisible=_chatOpen&&_chatEditorId===editorId&&
+        document.getElementById('chat-msg-view')?.style.display!=='none';
+
+      if(chatVisible){
         appendMsg(m,true);
+        await markMsgsRead(editorId);
       } else {
-        // Different editor or panel closed
-        if(m.sender_id!==user?.id){
-          _unreadCounts[editorId]=(_unreadCounts[editorId]||0)+1;
-          updateBubbleBadge();
-          showMsgToast(m);
-          playNotifSound();
-        }
+        _unreadCounts[editorId]=(_unreadCounts[editorId]||0)+1;
+        updateBubbleBadge();
+        showMsgToast(m);
+        playNotifSound();
       }
-    }).subscribe((status)=>{
-      console.log('Chat subscription status:',status);
+    })
+    .subscribe((status,err)=>{
+      if(err)console.error('Chat sub error:',err);
     });
 }
 
-// Global subscription for owner/manager to watch all editors
 function startGlobalSubscription(){
   if(_allChatSubscription){_allChatSubscription.unsubscribe();}
   _allChatSubscription=sb.channel(`chat-global-${user?.id}`)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'editor_messages'},
+    .on('postgres_changes',{
+      event:'INSERT',
+      schema:'public',
+      table:'editor_messages'
+    },
     async(payload)=>{
       const m=payload.new;
-      if(m.sender_id===user?.id)return; // own message
+      // Skip own messages
+      if(m.sender_id===user?.id)return;
       const edId=m.editor_id;
-      // Update unread
-      if(edId!==_chatEditorId||!_chatOpen){
+      // If currently viewing this chat and it's open, don't show toast
+      const chatVisible=_chatOpen&&_chatEditorId===edId&&
+        document.getElementById('chat-msg-view')?.style.display!=='none';
+      if(chatVisible){
+        appendMsg(m,true);
+        await markMsgsRead(edId);
+      } else {
         _unreadCounts[edId]=(_unreadCounts[edId]||0)+1;
         updateBubbleBadge();
         showMsgToast(m);
         playNotifSound();
-        // Refresh list if visible
+        // Refresh list if showing
         if(document.getElementById('chat-list-view')?.style.display!=='none'){
           await renderChatList();
         }
       }
-    }).subscribe();
+    })
+    .subscribe((status,err)=>{
+      if(err)console.error('Global sub error:',err);
+    });
 }
 
 async function markMsgsRead(editorId){
@@ -2642,8 +2673,16 @@ function hideChatBubble(){
   if(_chatSubscription){_chatSubscription.unsubscribe();_chatSubscription=null;}
 }
 
-// Legacy compat
-async function sendMessage(){chatSend();}
+// Chat enter key - document level handler for reliability
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    const active=document.activeElement;
+    if(active&&active.id==='chat-inp'){
+      e.preventDefault();
+      chatSend();
+    }
+  }
+});
 async function loadMessages(){if(_chatEditorId)openChatWith(_chatEditorId);}
 function updateMsgBadge(c){if(c===0)_unreadCounts={};updateBubbleBadge();}
 
