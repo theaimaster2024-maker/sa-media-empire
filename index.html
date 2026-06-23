@@ -760,7 +760,10 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
           <button class="btn-p" onclick="addMember()"><i class="ti ti-user-plus"></i> Add member</button>
         </div>
-        <div style="font-size:11px;color:#9CA3AF;margin-top:10px"><i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px"></i> নতুন member এই email ও password দিয়ে login করবে।</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:10px;line-height:1.7">
+          <i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px"></i> নতুন member এই email ও password দিয়ে login করবে।<br>
+          <i class="ti ti-alert-triangle" style="font-size:13px;vertical-align:-2px;color:#F59E0B"></i> <span style="color:#D97706">Email confirmation চালু থাকলে member প্রথমে email confirm করতে হবে। বন্ধ করতে: <a href="https://supabase.com/dashboard/project/uftyyfrnqbeoyteafhxj/auth/providers" target="_blank" style="color:#7C3AED">Supabase Auth Settings</a> → Email Confirmations → OFF</span>
+        </div>
       </div>
     </div>
 
@@ -1244,33 +1247,55 @@ async function addMember(){
   if(pass.length<6){toast('Password কমপক্ষে 6 character');return;}
 
   const btn=document.querySelector('[onclick="addMember()"]');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader"></i> Adding...';}
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 ti-spin"></i> Adding...';}
 
-  // Step 1: Create auth user
-  const {data,error}=await sb.auth.signUp({
-    email,password:pass,
-    options:{data:{name,role},emailRedirectTo:null}
-  });
+  try{
+    // Use signUp — works even with email confirmation enabled
+    const {data,error}=await sb.auth.signUp({
+      email, password:pass,
+      options:{
+        data:{name,role},
+        emailRedirectTo:window.location.href
+      }
+    });
 
-  if(error){
-    toast('Error: '+error.message);
+    if(error){
+      // Handle "User already registered" 
+      if(error.message?.includes('already registered')||error.message?.includes('already been registered')){
+        toast('⚠️ এই email এ আগেই account আছে');
+      } else {
+        toast('Error: '+error.message);
+      }
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
+      return;
+    }
+
+    // data.user can be null if email confirmation is required
+    // Try to get user id from identities or use email to find
+    const userId=data?.user?.id||data?.session?.user?.id;
+
+    if(userId){
+      // Immediately upsert profile with correct role
+      await new Promise(r=>setTimeout(r,500));
+      await sb.from('profiles').upsert({
+        id:userId, email, name, role
+      },{onConflict:'id'});
+      toast(`✅ ${name} (${role}) added! ওরা এই email ও password দিয়ে login করতে পারবে।`);
+    } else {
+      // Email confirmation required — profile will be created on first login
+      // But we can try to insert manually
+      toast(`✅ ${name} added! Email confirm করার পর login করতে পারবে।\n\nNote: Supabase Dashboard → Authentication → Email Confirmations OFF করলে instantly login করতে পারবে।`);
+    }
+
+    ['n-email','n-pass','n-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
-    return;
-  }
+    setTimeout(loadUsers,1500);
 
-  // Step 2: Update profile role (trigger creates profile automatically)
-  if(data?.user){
-    await new Promise(r=>setTimeout(r,800));
-    await sb.from('profiles').upsert({
-      id:data.user.id,
-      email,name,role
-    },{onConflict:'id'});
+  } catch(e){
+    console.error('addMember error:',e);
+    toast('Error: '+e.message);
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
   }
-
-  toast(`✓ ${name} (${role}) added!`);
-  ['n-email','n-pass','n-name'].forEach(id=>document.getElementById(id).value='');
-  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-user-plus"></i> Add member';}
-  setTimeout(loadUsers,1200);
 }
 
 // ── EXPORT
