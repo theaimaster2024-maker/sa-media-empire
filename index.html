@@ -2065,8 +2065,8 @@ async function openWorkspace(id){
   initChatBubble();
   showChatBubble(id, ed.name);
   // Show welcome popup for editors
-  const isEditorRole=(profile?.role==='editor'||profile?.role==='employee');
-  if(isEditorRole){
+  const isEditorRole2=(profile?.role==='editor'||profile?.role==='employee');
+  if(isEditorRole2&&typeof showEditorWelcome==='function'){
     setTimeout(()=>showEditorWelcome(),400);
   }
 }
@@ -2647,7 +2647,40 @@ async function sendMessage(){chatSend();}
 async function loadMessages(){if(_chatEditorId)openChatWith(_chatEditorId);}
 function updateMsgBadge(c){if(c===0)_unreadCounts={};updateBubbleBadge();}
 
-document.head.appendChild(_wcStyle);
+// Editor welcome popup
+async function showEditorWelcome(){
+  try{
+    const ed=editors.find(e=>e.id===currentEditorId);
+    if(!ed)return;
+    const unread=await checkUnreadMessages(currentEditorId);
+    const hr=new Date().getHours();
+    const greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+    const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const assigned=_currentProjects.filter(p=>p.status==='assigned').length;
+    const inprog=_currentProjects.filter(p=>p.status==='in_progress').length;
+    const review=_currentProjects.filter(p=>p.status==='review').length;
+    const overlay=document.createElement('div');
+    overlay.id='editor-welcome-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`<div style="background:#fff;border-radius:20px;width:100%;max-width:460px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.18)">
+      <div style="background:linear-gradient(135deg,#7C3AED,#0EA5E9);padding:26px 28px 22px">
+        <div style="width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;margin-bottom:12px">${ini}</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">${greeting}, ${ed.name.split(' ')[0]}! 👋</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.8)">${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</div>
+      </div>
+      <div style="padding:20px 28px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+          <div style="text-align:center;padding:12px;background:#F5F3FF;border-radius:10px"><div style="font-size:22px;font-weight:800;color:#7C3AED">${assigned}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">Assigned</div></div>
+          <div style="text-align:center;padding:12px;background:#EDE9FE;border-radius:10px"><div style="font-size:22px;font-weight:800;color:#6D28D9">${inprog}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">In Progress</div></div>
+          <div style="text-align:center;padding:12px;background:#DBEAFE;border-radius:10px"><div style="font-size:22px;font-weight:800;color:#3B82F6">${review}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">Review</div></div>
+        </div>
+        ${unread>0?`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="closeWelcome()"><div style="width:34px;height:34px;background:#F59E0B;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-message" style="font-size:17px;color:#fff"></i></div><div><div style="font-size:13px;font-weight:700;color:#92400E">${unread} unread message${unread>1?'s':''}!</div><div style="font-size:12px;color:#D97706;margin-top:1px">Chat bubble এ click করুন →</div></div></div>`:`<div style="background:#D1FAE5;border:1px solid #A7F3D0;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;background:#10B981;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="font-size:17px;color:#fff"></i></div><div style="font-size:13px;font-weight:600;color:#065F46">All caught up! No new messages.</div></div>`}
+        <button onclick="closeWelcome()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#0EA5E9);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Go to my workspace →</button>
+      </div></div>`;
+    document.body.appendChild(overlay);
+  }catch(e){console.error('Welcome error:',e);}
+}
+function closeWelcome(){const el=document.getElementById('editor-welcome-overlay');if(el)el.remove();}
 async function loadPaymentTab(){
   const p=_currentProjects.find(x=>x.id===_currentProjId);
   if(!p)return;
@@ -3511,7 +3544,12 @@ async function deleteProject(){
 }
 
 
-init();
+// Wait for supabase to be ready before init
+if(typeof supabase !== 'undefined'){
+  init();
+} else {
+  window.addEventListener('load', init);
+}
 </script>
 </body>
 </html>
