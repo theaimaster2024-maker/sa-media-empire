@@ -967,9 +967,19 @@ async function login(){
   const btn=document.getElementById('a-btn');
   const err=document.getElementById('a-err');
   if(!email||!pass){setErr('Email ও password দিন');return;}
-  btn.disabled=true;btn.textContent='Signing in...';
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Signing in...';
   const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
-  if(error){setErr(error.message);btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Sign in';return;}
+  if(error){
+    // Better error messages
+    let msg=error.message||'Login failed';
+    if(msg==='Invalid login credentials'||msg==='{}')msg='Email বা password সঠিক নয়';
+    else if(msg.includes('Email not confirmed'))msg='Email confirm করা হয়নি';
+    else if(msg==='{}')msg='Login failed — password চেক করুন';
+    setErr(msg);
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-login"></i> Sign in';
+    return;
+  }
   err.classList.remove('on');
   await loadProfile(data.user);
   showApp();
