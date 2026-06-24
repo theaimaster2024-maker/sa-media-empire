@@ -536,7 +536,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
           <div class="r2">
             <div><label class="f-lbl">Email</label><input class="f-inp" id="ed-email" type="email" placeholder="editor@email.com"/></div>
-            <div><label class="f-lbl">Rate per video (৳)</label><input class="f-inp" id="ed-rate" type="number" placeholder="0" min="0"/></div>
+            <div><label class="f-lbl">Rate per minute (৳)</label><input class="f-inp" id="ed-rate" type="number" placeholder="0" min="0"/></div>
           </div>
           <div class="r2">
             <div><label class="f-lbl">Hire date</label><input class="f-inp" id="ed-hire" type="date"/></div>
@@ -2228,7 +2228,7 @@ function renderEditorCards(){
         <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;background:${sc.bg};color:${sc.text}">${ed.status}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #F3F4F6">
-        <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rate/video</div><div style="font-size:15px;font-weight:700;color:#7C3AED">৳${Number(ed.rate_per_video||0).toLocaleString()}</div></div>
+        <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rate/min</div><div style="font-size:15px;font-weight:700;color:#7C3AED">৳${Number(ed.rate_per_video||0).toLocaleString()}</div></div>
         <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Skills</div><div style="font-size:12px;color:#6B7280">${(ed.skills||[]).slice(0,2).join(', ')||'—'}</div></div>
         <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Hired</div><div style="font-size:12px;color:#6B7280">${ed.hire_date?new Date(ed.hire_date).toLocaleDateString('en-GB',{month:'short',year:'numeric'}):'—'}</div></div>
       </div>
@@ -2256,7 +2256,7 @@ async function openWorkspace(id){
   contact.innerHTML=[
     ed.phone?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-phone" style="font-size:13px"></i>${ed.phone}</span>`:'',
     ed.email?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-mail" style="font-size:13px"></i>${ed.email}</span>`:'',
-    ed.rate_per_video?`<span style="font-size:12px;color:#7C3AED;font-weight:600;display:flex;align-items:center;gap:4px"><i class="ti ti-coin" style="font-size:13px"></i>৳${Number(ed.rate_per_video).toLocaleString()}/video</span>`:''
+    ed.rate_per_video?`<span style="font-size:12px;color:#7C3AED;font-weight:600;display:flex;align-items:center;gap:4px"><i class="ti ti-coin" style="font-size:13px"></i>৳${Number(ed.rate_per_video).toLocaleString()}/min</span>`:''
   ].filter(Boolean).join('');
   // Show/hide buttons based on role
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
@@ -3911,8 +3911,8 @@ function openProjectModal(id=null){
   document.getElementById('proj-deadline').value=p?.deadline||'';
   document.getElementById('proj-status').value=p?.status||'assigned';
   document.getElementById('proj-pay-status').value=p?.payment_status||'unpaid';
-  document.getElementById('proj-amount').value=p?.amount||(editors.find(e=>e.id===currentEditorId)?.rate_per_video||'');
-  document.getElementById('proj-amt-per-min').value=p?.amount_per_minute||'';
+  document.getElementById('proj-amount').value='';
+  document.getElementById('proj-amt-per-min').value=p?.amount_per_minute||(editors.find(e=>e.id===currentEditorId)?.rate_per_video||'');
   document.getElementById('proj-minutes').value=p?.total_minutes||'';
   document.getElementById('proj-total-amount').value=p?.total_amount||'';
   document.getElementById('proj-paid').value=p?.paid_amount||'';
