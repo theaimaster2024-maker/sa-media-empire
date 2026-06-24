@@ -3072,7 +3072,7 @@ async function loadPaymentTab(){
               oninput="calcPayment()"/>
             <span style="font-size:13px;color:#9CA3AF;font-weight:500">sec</span>
           </div>
-          <div id="pay-calc-result" style="font-size:20px;font-weight:700;color:#7C3AED;margin-left:8px">${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`= ৳${Math.round(Number(p.amount_per_minute||0)*((Number(p.video_duration_min||0))+(Number(p.video_duration_sec||0)/60))).toLocaleString()}`:''}</div>
+          <div id="pay-calc-result" style="font-size:20px;font-weight:700;color:#7C3AED;margin-left:8px">${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`= ৳${Math.round(Number(p.amount_per_minute||0)*((Number(p.video_duration_min||0))+(Number(p.video_duration_sec||0)/60))).toLocaleString()}`:(!isPerMin&&ratePerVideo>0?`= ৳${ratePerVideo.toLocaleString()}`:'')}  </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button onclick="saveDuration(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save duration</button>
@@ -3165,17 +3165,20 @@ function calcPayment(){
   const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===_currentProjId);
-  const rate=Number(p?.amount_per_minute||0);
-  if(!rate){
-    // per video — just show duration, no calculation
-    const el=document.getElementById('pay-calc-result');
-    if(el)el.textContent='';
-    return;
-  }
-  const totalMins=mins+(secs/60);
-  const total=Math.round(rate*totalMins);
+  const ratePerMin=Number(p?.amount_per_minute||0);
+  const ratePerVideo=Number(p?.amount||p?.total_amount||0);
   const el=document.getElementById('pay-calc-result');
-  if(el)el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
+  if(!el)return;
+  if(ratePerMin>0){
+    const totalMins=mins+(secs/60);
+    const total=Math.round(ratePerMin*totalMins);
+    el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
+  } else if(ratePerVideo>0){
+    // per video — always show the fixed amount
+    el.textContent=`= ৳${ratePerVideo.toLocaleString()}`;
+  } else {
+    el.textContent='';
+  }
 }
 
 async function saveDuration(projId){
