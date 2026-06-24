@@ -3055,7 +3055,7 @@ async function loadPaymentTab(){
       ${isOwner?`<button onclick="document.getElementById('proj-detail-modal').style.display='none';openProjectModal(${p.id})" style="margin-top:10px;background:none;border:1px solid #C4B5FD;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:#7C3AED;cursor:pointer;font-family:inherit">Edit rate</button>`:''}
     </div>`;
 
-  if(isPerMin){
+  if(isPerMin || ratePerVideo > 0 || true){
     document.getElementById('pdm-pay-duration-box').innerHTML=`
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:5px"><i class="ti ti-clock" style="font-size:14px"></i> Video Duration</div>
@@ -3072,12 +3072,12 @@ async function loadPaymentTab(){
               oninput="calcPayment()"/>
             <span style="font-size:13px;color:#9CA3AF;font-weight:500">sec</span>
           </div>
-          <div id="pay-calc-result" style="font-size:20px;font-weight:700;color:#7C3AED;margin-left:8px"></div>
+          <div id="pay-calc-result" style="font-size:20px;font-weight:700;color:#7C3AED;margin-left:8px">${isPerMin&&(p.video_duration_min||p.video_duration_sec)?`= ৳${Math.round(Number(p.amount_per_minute||0)*((Number(p.video_duration_min||0))+(Number(p.video_duration_sec||0)/60))).toLocaleString()}`:''}</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button onclick="saveDuration(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save duration</button>
         </div>
-        <div style="font-size:11px;color:#9CA3AF;margin-top:8px">Duration লিখলে total payment automatically calculate হবে</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:8px">${isPerMin?'Duration লিখলে total payment automatically calculate হবে':'Video length record করে রাখুন'}</div>
       </div>`;
     setTimeout(()=>calcPayment(),50);
   } else {
@@ -3166,11 +3166,16 @@ function calcPayment(){
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===_currentProjId);
   const rate=Number(p?.amount_per_minute||0);
-  if(!rate)return;
+  if(!rate){
+    // per video — just show duration, no calculation
+    const el=document.getElementById('pay-calc-result');
+    if(el)el.textContent='';
+    return;
+  }
   const totalMins=mins+(secs/60);
   const total=Math.round(rate*totalMins);
   const el=document.getElementById('pay-calc-result');
-  if(el)el.textContent=`= ৳${total.toLocaleString()}`;
+  if(el)el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
 }
 
 async function saveDuration(projId){
