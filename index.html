@@ -3869,8 +3869,10 @@ function closeEditorModal(){document.getElementById('editor-modal').style.displa
 async function saveEditor(){
   const name=document.getElementById('ed-name').value.trim();
   if(!name){toast('Name দিন');return;}
+  const emailVal=document.getElementById('ed-email').value.trim();
+  if(!emailVal){toast('Email দিন — account link করার জন্য email required');return;}
   const skills=document.getElementById('ed-skills').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const payload={name,phone:document.getElementById('ed-phone').value.trim()||null,email:document.getElementById('ed-email').value.trim()||null,rate_per_video:parseFloat(document.getElementById('ed-rate').value)||0,hire_date:document.getElementById('ed-hire').value||null,status:document.getElementById('ed-status').value,skills,notes:document.getElementById('ed-notes-inp').value.trim()||null,created_by:user?.id};
+  const payload={name,phone:document.getElementById('ed-phone').value.trim()||null,email:emailVal,rate_per_video:parseFloat(document.getElementById('ed-rate').value)||0,hire_date:document.getElementById('ed-hire').value||null,status:document.getElementById('ed-status').value,skills,notes:document.getElementById('ed-notes-inp').value.trim()||null,created_by:user?.id};
   const editId=document.getElementById('editor-modal')._editId;
   let error;
   if(editId){({error}=await sb.from('editors').update(payload).eq('id',editId));}
