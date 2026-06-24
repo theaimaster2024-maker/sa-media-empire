@@ -575,28 +575,21 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <select class="f-inp" id="proj-pay-status"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option></select>
             </div>
           </div>
-          <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
-            <div style="font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-coin" style="font-size:14px"></i> Payment Details</div>
-            <div class="r2" style="margin-bottom:10px">
-              <div><label class="f-lbl">Amount per video (৳)</label><input class="f-inp" id="proj-amount" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
-              <div><label class="f-lbl">Amount per minute (৳)</label><input class="f-inp" id="proj-amt-per-min" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
-            </div>
-            <div class="r2">
-              <div><label class="f-lbl">Total minutes</label><input class="f-inp" id="proj-minutes" type="number" placeholder="0" min="0" oninput="calcTotalAmount()"/></div>
-              <div><label class="f-lbl">Total amount (৳) <span style="color:#7C3AED;font-size:10px;font-weight:400">auto</span></label><input class="f-inp" id="proj-total-amount" type="number" placeholder="0" style="font-weight:700;color:#7C3AED"/></div>
-            </div>
-            <div class="r2" style="margin-top:10px">
-              <div><label class="f-lbl">Paid amount (৳)</label><input class="f-inp" id="proj-paid" type="number" placeholder="0" min="0"/></div>
-              <div><label class="f-lbl">Payment note</label><input class="f-inp" id="proj-pay-note" type="text" placeholder="bKash, bank transfer..."/></div>
-            </div>
-          </div>
+          <!-- Hidden payment fields (data preserved, managed via Payment tab) -->
+          <input type="hidden" id="proj-amount"/>
+          <input type="hidden" id="proj-amt-per-min"/>
+          <input type="hidden" id="proj-minutes"/>
+          <input type="hidden" id="proj-total-amount"/>
+          <input type="hidden" id="proj-paid"/>
+          <input type="hidden" id="proj-pay-note"/>
           <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
             <div style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-text" style="font-size:14px"></i> Script & Instructions</div>
             <div style="margin-bottom:10px"><label class="f-lbl">Google Doc / Script link</label><input class="f-inp" id="proj-script-link" type="text" placeholder="https://docs.google.com/document/..."/></div>
             <div><label class="f-lbl">Editing Instructions</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
           </div>
-          <div>
-            <label class="f-lbl">Google Drive video link <span style="color:#6B7280;font-weight:400">(editor fills when done)</span></label>
+          <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
+            <div style="font-size:11px;font-weight:700;color:#3B82F6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-brand-google-drive" style="font-size:14px"></i> Completed Video</div>
+            <label class="f-lbl">Google Drive link <span style="color:#9CA3AF;font-weight:400;font-size:11px">(editor submits when done — can update anytime)</span></label>
             <input class="f-inp" id="proj-drive" type="text" placeholder="https://drive.google.com/file/d/..."/>
           </div>
           <div><label class="f-lbl">Feedback / Revision notes</label><textarea class="f-inp" id="proj-feedback" rows="3" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Revision requests, feedback..."></textarea></div>
@@ -2425,7 +2418,7 @@ function openProjDetail(id){
     ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
     ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
-    ${!p.drive_link?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
+    ${!p.drive_link?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px"><i class="ti ti-brand-google-drive" style="font-size:14px"></i> Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:`<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#1D4ED8;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between"><span><i class="ti ti-brand-google-drive" style="font-size:14px"></i> Completed video link</span><button onclick="document.getElementById('drive-update-box-${p.id}').style.display=document.getElementById('drive-update-box-${p.id}').style.display==='none'?'flex':'none'" style="background:none;border:1px solid #93C5FD;border-radius:6px;padding:2px 8px;font-size:11px;color:#1D4ED8;cursor:pointer;font-family:inherit"><i class="ti ti-edit" style="font-size:11px"></i> Update link</button></div><a href="${p.drive_link}" target="_blank" style="font-size:12px;color:#1D4ED8;word-break:break-all;display:block;margin-bottom:6px"><i class="ti ti-external-link" style="font-size:12px"></i> ${p.drive_link.slice(0,60)}${p.drive_link.length>60?'...':''}</a><div id="drive-update-box-${p.id}" style="display:none;gap:8px;margin-top:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="New Drive link..." value="${p.drive_link}"/><button onclick="submitDriveLink(${p.id})" style="background:#1D4ED8;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Update</button></div></div>`}
   `;
   // Payment tab — hidden from manager
   const payTab=document.getElementById('pdm-payment-tab');
@@ -3922,11 +3915,6 @@ function openProjectModal(id=null){
   document.getElementById('proj-feedback').value=p?.feedback||'';
   document.getElementById('proj-refs').value=(p?.reference_urls||[]).join(', ');
   document.getElementById('proj-del-btn').style.display=p?'flex':'none';
-  // Hide payment section for manager
-  const payBlock=document.querySelector('#project-modal [style*="Payment Details"]')?.closest('[style*="border:1px solid"]');
-  if(payBlock)payBlock.style.display=isOwner?'block':'none';
-  const payStatusRow=document.getElementById('proj-pay-status')?.closest('.r2');
-  if(payStatusRow)payStatusRow.style.display=isOwner?'grid':'none';
   document.getElementById('project-modal').style.display='flex';
 }
 function closeProjectModal(){document.getElementById('project-modal').style.display='none';}
