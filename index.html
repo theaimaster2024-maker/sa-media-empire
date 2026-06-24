@@ -441,7 +441,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         </div>
         <!-- PROJECTS TAB: Kanban -->
         <div id="ws-projects">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px">
             <div class="kanban-col" data-status="assigned" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event,'assigned')">
               <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:8px 11px;background:#FEF3C7;border-radius:8px">
                 <div style="width:7px;height:7px;border-radius:50%;background:#F59E0B"></div>
@@ -3041,8 +3041,10 @@ async function loadPaymentTab(){
   if(!p)return;
   const isOwner=profile?.role==='owner';
   const isEditor=(profile?.role==='editor'||profile?.role==='employee');
-  const ratePerMin=Number(p.amount_per_minute||0);
-  const ratePerVideo=Number(p.amount||0);
+  // rate_per_video on editor is now per-minute rate; use amount_per_minute if set, else fall back to editor's rate
+  const editorRate=Number(editors.find(e=>e.id===p.editor_id)?.rate_per_video||0);
+  const ratePerMin=Number(p.amount_per_minute||0)||editorRate;
+  const ratePerVideo=0; // no longer per-video system
   const isPerMin=ratePerMin>0;
 
   document.getElementById('pdm-pay-rate-box').innerHTML=`
@@ -3165,17 +3167,14 @@ function calcPayment(){
   const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===_currentProjId);
-  const ratePerMin=Number(p?.amount_per_minute||0);
-  const ratePerVideo=Number(p?.amount||p?.total_amount||0);
+  const editorRate=Number(editors.find(e=>e.id===p?.editor_id)?.rate_per_video||0);
+  const ratePerMin=Number(p?.amount_per_minute||0)||editorRate;
   const el=document.getElementById('pay-calc-result');
   if(!el)return;
   if(ratePerMin>0){
     const totalMins=mins+(secs/60);
     const total=Math.round(ratePerMin*totalMins);
     el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
-  } else if(ratePerVideo>0){
-    // per video — always show the fixed amount
-    el.textContent=`= ৳${ratePerVideo.toLocaleString()}`;
   } else {
     el.textContent='';
   }
@@ -3185,12 +3184,13 @@ async function saveDuration(projId){
   const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===projId);
-  const rate=Number(p?.amount_per_minute||0);
+  const editorRate=Number(editors.find(e=>e.id===p?.editor_id)?.rate_per_video||0);
+  const rate=Number(p?.amount_per_minute||0)||editorRate;
   const totalMins=mins+(secs/60);
   const total=Math.round(rate*totalMins)||Number(p?.amount||0);
   const {error}=await sb.from('editor_projects').update({
     video_duration_min:mins,video_duration_sec:secs,
-    total_amount:total,amount:total
+    total_amount:total,amount_per_minute:rate,amount:total
   }).eq('id',projId);
   if(error){toast('Error: '+error.message);return;}
   toast('Duration saved ✓');
