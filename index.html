@@ -3041,10 +3041,11 @@ async function loadPaymentTab(){
   if(!p)return;
   const isOwner=profile?.role==='owner';
   const isEditor=(profile?.role==='editor'||profile?.role==='employee');
-  // rate_per_video on editor is now per-minute rate; use amount_per_minute if set, else fall back to editor's rate
-  const editorRate=Number(editors.find(e=>e.id===p.editor_id)?.rate_per_video||0);
+  // Find editor — coerce id to number for safe comparison
+  const edObj=editors.find(e=>Number(e.id)===Number(p.editor_id));
+  const editorRate=Number(edObj?.rate_per_video||0);
   const ratePerMin=Number(p.amount_per_minute||0)||editorRate;
-  const ratePerVideo=0; // no longer per-video system
+  const ratePerVideo=0;
   const isPerMin=ratePerMin>0;
 
   document.getElementById('pdm-pay-rate-box').innerHTML=`
@@ -3089,12 +3090,10 @@ async function loadPaymentTab(){
   const payStatus=p.payment_status||'unpaid';
   const PAY={paid:{bg:'#D1FAE5',text:'#059669'},unpaid:{bg:'#FEE2E2',text:'#EF4444'},partial:{bg:'#FEF3C7',text:'#D97706'}};
   const ps=PAY[payStatus]||PAY.unpaid;
-  // Live calculation — use editor rate if amount_per_minute not set
-  const editorRateForStatus=Number(editors.find(e=>e.id===p.editor_id)?.rate_per_video||0);
-  const rateForStatus=Number(p.amount_per_minute||0)||editorRateForStatus;
+  // Use same edObj from above — rate already calculated as ratePerMin
   const hasDurForStatus=(Number(p.video_duration_min||0)>0||Number(p.video_duration_sec||0)>0);
   const durationMinsForStatus=Number(p.video_duration_min||0)+(Number(p.video_duration_sec||0)/60);
-  const calcForStatus=rateForStatus>0&&hasDurForStatus?Math.round(rateForStatus*durationMinsForStatus):0;
+  const calcForStatus=ratePerMin>0&&hasDurForStatus?Math.round(ratePerMin*durationMinsForStatus):0;
   const totalAmt=calcForStatus||Number(p.total_amount||p.amount||0);
   const paidAmt=Number(p.paid_amount||0);
   document.getElementById('pdm-pay-status-box').innerHTML=`
@@ -3173,7 +3172,8 @@ function calcPayment(){
   const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===_currentProjId);
-  const editorRate=Number(editors.find(e=>e.id===p?.editor_id)?.rate_per_video||0);
+  const edObj=editors.find(e=>Number(e.id)===Number(p?.editor_id));
+  const editorRate=Number(edObj?.rate_per_video||0);
   const ratePerMin=Number(p?.amount_per_minute||0)||editorRate;
   const el=document.getElementById('pay-calc-result');
   if(!el)return;
@@ -3190,8 +3190,8 @@ async function saveDuration(projId){
   const mins=parseFloat(document.getElementById('pay-dur-min')?.value)||0;
   const secs=parseFloat(document.getElementById('pay-dur-sec')?.value)||0;
   const p=_currentProjects.find(x=>x.id===projId);
-  const editorRate=Number(editors.find(e=>e.id===p?.editor_id)?.rate_per_video||0);
-  const rate=Number(p?.amount_per_minute||0)||editorRate;
+  const edObj=editors.find(e=>Number(e.id)===Number(p?.editor_id));
+  const rate=Number(p?.amount_per_minute||0)||Number(edObj?.rate_per_video||0);
   const totalMins=mins+(secs/60);
   const total=Math.round(rate*totalMins)||Number(p?.amount||0);
   const {error}=await sb.from('editor_projects').update({
@@ -3295,11 +3295,11 @@ async function generateInvoice(projId){
   await loadWorkspaceProjects();
   const p=_currentProjects.find(x=>x.id===projId);
   if(!p)return;
-  const ed=editors.find(e=>e.id===p.editor_id);
+  const ed=editors.find(e=>Number(e.id)===Number(p.editor_id));
   const editorRate=Number(ed?.rate_per_video||0);
   const ratePerMin=Number(p.amount_per_minute||0)||editorRate;
-  const hasDuration=(p.video_duration_min||0)>0||(p.video_duration_sec||0)>0;
-  const durationMins=(Number(p.video_duration_min||0))+(Number(p.video_duration_sec||0)/60);
+  const hasDuration=Number(p.video_duration_min||0)>0||Number(p.video_duration_sec||0)>0;
+  const durationMins=Number(p.video_duration_min||0)+(Number(p.video_duration_sec||0)/60);
   const calcTotal=ratePerMin>0&&hasDuration?Math.round(ratePerMin*durationMins):0;
   const totalAmt=calcTotal||Number(p.total_amount||p.amount||0);
   const isPerMin=ratePerMin>0;
