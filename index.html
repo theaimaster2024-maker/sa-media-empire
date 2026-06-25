@@ -3305,8 +3305,11 @@ async function generateInvoice(projId){
   const ed=editors.find(e=>Number(e.id)===Number(p.editor_id));
   const editorRate=Number(ed?.rate_per_video||0);
   const ratePerMin=Number(p.amount_per_minute||0)||editorRate;
-  const hasDuration=Number(p.video_duration_min||0)>0||Number(p.video_duration_sec||0)>0;
-  const durationMins=Number(p.video_duration_min||0)+(Number(p.video_duration_sec||0)/60);
+  // Read from input fields (current values) — fallback to DB
+  const inputMins=parseFloat(document.getElementById('pay-dur-min')?.value)||Number(p.video_duration_min||0);
+  const inputSecs=parseFloat(document.getElementById('pay-dur-sec')?.value)||Number(p.video_duration_sec||0);
+  const hasDuration=inputMins>0||inputSecs>0;
+  const durationMins=inputMins+(inputSecs/60);
   const calcTotal=ratePerMin>0&&hasDuration?Math.round(ratePerMin*durationMins):0;
   const totalAmt=calcTotal||Number(p.total_amount||p.amount||0);
   const isPerMin=ratePerMin>0;
@@ -3352,7 +3355,7 @@ tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
 <tr>
   <td><strong>${p.project_name}</strong>${note?`<br><small style="font-size:11px;color:#9CA3AF">${note}</small>`:''}</td>
   <td>${isPerMin?`৳${ratePerMin.toLocaleString()}/min`:`৳${Number(p.amount||0).toLocaleString()}/video`}</td>
-  <td>${isPerMin&&hasDuration?`${p.video_duration_min||0}m ${p.video_duration_sec||0}s`:'—'}</td>
+  <td>${isPerMin&&hasDuration?`${inputMins}m ${inputSecs}s`:'—'}</td>
   <td style="text-align:right;font-weight:700;font-size:15px">৳${totalAmt.toLocaleString()}</td>
 </tr>
 </tbody>
