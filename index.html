@@ -3090,20 +3090,22 @@ async function loadPaymentTab(){
   const payStatus=p.payment_status||'unpaid';
   const PAY={paid:{bg:'#D1FAE5',text:'#059669'},unpaid:{bg:'#FEE2E2',text:'#EF4444'},partial:{bg:'#FEF3C7',text:'#D97706'}};
   const ps=PAY[payStatus]||PAY.unpaid;
-  // Use same edObj from above — rate already calculated as ratePerMin
-  const hasDurForStatus=(Number(p.video_duration_min||0)>0||Number(p.video_duration_sec||0)>0);
-  const durationMinsForStatus=Number(p.video_duration_min||0)+(Number(p.video_duration_sec||0)/60);
-  const calcForStatus=ratePerMin>0&&hasDurForStatus?Math.round(ratePerMin*durationMinsForStatus):0;
-  const totalAmt=calcForStatus||Number(p.total_amount||p.amount||0);
+  // Use DB duration as base; calcPayment() will update live when user types
+  const dbMins=Number(p.video_duration_min||0);
+  const dbSecs=Number(p.video_duration_sec||0);
+  const hasDurDB=(dbMins>0||dbSecs>0);
+  const durationMinsDB=dbMins+(dbSecs/60);
+  const calcDB=ratePerMin>0&&hasDurDB?Math.round(ratePerMin*durationMinsDB):0;
+  const totalAmt=calcDB||Number(p.total_amount||p.amount||0);
   const paidAmt=Number(p.paid_amount||0);
   document.getElementById('pdm-pay-status-box').innerHTML=`
     <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px">
       <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Payment Status</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:22px;font-weight:700;color:#111827">৳${totalAmt.toLocaleString()}</span>
+        <span id="pay-status-amount" style="font-size:22px;font-weight:700;color:#111827">৳${totalAmt.toLocaleString()}</span>
         <span style="font-size:12px;padding:4px 12px;border-radius:20px;font-weight:700;background:${ps.bg};color:${ps.text}">${payStatus.toUpperCase()}</span>
         ${paidAmt>0?`<span style="font-size:13px;color:#059669;font-weight:600">Paid: ৳${paidAmt.toLocaleString()}</span>`:''}
-        ${isOwner&&payStatus!=='paid'?`<button onclick="markPaidFromPayTab(${p.id},${totalAmt})" style="margin-left:auto;background:#059669;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Mark as Paid</button>`:''}
+        ${isOwner&&payStatus!=='paid'?`<button id="mark-paid-btn" onclick="markPaidFromPayTab(${p.id},${totalAmt})" style="margin-left:auto;background:#059669;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Mark as Paid</button>`:''}
       </div>
       ${p.payment_note?`<div style="font-size:12px;color:#9CA3AF;margin-top:8px">${p.payment_note}</div>`:''}
     </div>`;
@@ -3176,13 +3178,18 @@ function calcPayment(){
   const editorRate=Number(edObj?.rate_per_video||0);
   const ratePerMin=Number(p?.amount_per_minute||0)||editorRate;
   const el=document.getElementById('pay-calc-result');
-  if(!el)return;
+  const statusEl=document.getElementById('pay-status-amount');
+  const markPaidBtn=document.getElementById('mark-paid-btn');
   if(ratePerMin>0){
     const totalMins=mins+(secs/60);
     const total=Math.round(ratePerMin*totalMins);
-    el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
+    if(el) el.textContent=totalMins>0?`= ৳${total.toLocaleString()}`:'';
+    if(statusEl&&totalMins>0){
+      statusEl.textContent=`৳${total.toLocaleString()}`;
+      if(markPaidBtn) markPaidBtn.setAttribute('onclick',`markPaidFromPayTab(${p.id},${total})`);
+    }
   } else {
-    el.textContent='';
+    if(el) el.textContent='';
   }
 }
 
