@@ -3089,7 +3089,13 @@ async function loadPaymentTab(){
   const payStatus=p.payment_status||'unpaid';
   const PAY={paid:{bg:'#D1FAE5',text:'#059669'},unpaid:{bg:'#FEE2E2',text:'#EF4444'},partial:{bg:'#FEF3C7',text:'#D97706'}};
   const ps=PAY[payStatus]||PAY.unpaid;
-  const totalAmt=Number(p.total_amount||p.amount||0);
+  // Live calculation — use editor rate if amount_per_minute not set
+  const editorRateForStatus=Number(editors.find(e=>e.id===p.editor_id)?.rate_per_video||0);
+  const rateForStatus=Number(p.amount_per_minute||0)||editorRateForStatus;
+  const hasDurForStatus=(Number(p.video_duration_min||0)>0||Number(p.video_duration_sec||0)>0);
+  const durationMinsForStatus=Number(p.video_duration_min||0)+(Number(p.video_duration_sec||0)/60);
+  const calcForStatus=rateForStatus>0&&hasDurForStatus?Math.round(rateForStatus*durationMinsForStatus):0;
+  const totalAmt=calcForStatus||Number(p.total_amount||p.amount||0);
   const paidAmt=Number(p.paid_amount||0);
   document.getElementById('pdm-pay-status-box').innerHTML=`
     <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px">
