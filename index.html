@@ -138,7 +138,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .tb.on{background:#F5F3FF;color:#7C3AED}
 .bclr{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;flex-shrink:0}
 .bclr.on{border-color:#111827;transform:scale(1.2)}
-.b-card{position:absolute;background:#fff;border-radius:12px;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);min-width:200px;min-height:110px;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;z-index:2}
+.b-card{position:absolute;background:#fff;border-radius:12px;border:2px solid #E5E7EB;box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:160px;min-height:80px;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;z-index:2;overflow:visible}
 .b-card:hover{border-color:#C4B5FD;box-shadow:0 4px 12px rgba(124,58,237,.12)}
 .b-card.bsel{border-color:#7C3AED!important;box-shadow:0 0 0 2px rgba(124,58,237,.15),0 4px 12px rgba(124,58,237,.12)!important}
 .b-card-head{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;border-bottom:1px solid #F3F4F6;border-radius:12px 12px 0 0;flex-shrink:0;cursor:move}
@@ -824,6 +824,10 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <button class="tb" title="Save board (Ctrl+S)" onclick="bSave()" style="color:#00C48C"><i class="ti ti-device-floppy"></i></button>
             <button class="tb" title="Share board (view-only)" onclick="bShareBoard()" style="color:#7C3AED"><i class="ti ti-share"></i></button>
             <button class="tb" title="Clear board" onclick="bClear()" style="color:#FF4E6A"><i class="ti ti-trash"></i></button>
+
+            <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
+            <!-- Board name inside toolbar -->
+            <div id="b-board-name-badge" style="font-size:12px;font-weight:600;color:#7C3AED;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px">Default Board</div>
           </div>
 
           <!-- ZOOM BADGE -->
@@ -831,9 +835,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;
             padding:6px 12px;font-size:12px;font-weight:600;color:#5A6080;
             box-shadow:0 2px 10px rgba(108,99,255,.1)">100%</div>
-
-          <!-- BOARD NAME badge -->
-          <div style="position:absolute;top:14px;right:14px;z-index:100;background:#F5F3FF;border:1px solid #EDE9FE;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;color:#7C3AED;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="b-board-name-badge">Default Board</div>
 
           <!-- CANVAS WRAP -->
           <div id="b-wrap" style="width:100%;height:100%;overflow:hidden;cursor:grab;position:relative;
@@ -1447,7 +1448,7 @@ function initBoard(){
       if(dir.includes('w')){nw=Math.max(180,_bResize.sw-dx);nx=_bResize.cx+_bResize.sw-nw;}
       if(dir.includes('n')){nh=Math.max(100,_bResize.sh-dy);ny=_bResize.cy+_bResize.sh-nh;}
       el.style.width=nw+'px';el.style.height=nh+'px';el.style.left=nx+'px';el.style.top=ny+'px';
-      c.w=nw;c.h=nh;c.x=nx;c.y=ny; bRedrawConns();
+      c.w=nw;c.h=nh;c.x=nx;c.y=ny;bRedrawConns();
     }
     if(_bDrawing){
       const p=s2c(e.clientX,e.clientY);
@@ -1592,7 +1593,7 @@ function bRenderCard(c){
   const el=document.createElement('div');
   el.className='b-card';el.id=c.id;
   const col=c.color||'#6C63FF';
-  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;min-height:${c.h}px;position:absolute;border-radius:12px;background:white;border:2px solid ${col}33;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:10;user-select:none`;
+  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;position:absolute;border-radius:12px;background:white;border:2px solid ${col}33;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:10;user-select:none;overflow:visible`;
 
   el.innerHTML=`
     <div class="b-card-head" style="background:${col}15;border-bottom:1.5px solid ${col}22;border-radius:10px 10px 0 0;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:move">
@@ -1698,18 +1699,6 @@ function bRenderCard(c){
   document.getElementById('b-canvas').appendChild(el);
 }
 
-function bGetPortCenter(cardId,side){
-  const el=document.getElementById(cardId);
-  const c=_bCards.find(x=>x.id===cardId);
-  if(!el||!c)return{x:0,y:0};
-  const w=el.offsetWidth,h=el.offsetHeight;
-  if(side==='t')return{x:c.x+w/2,y:c.y};
-  if(side==='b')return{x:c.x+w/2,y:c.y+h};
-  if(side==='l')return{x:c.x,y:c.y+h/2};
-  if(side==='r')return{x:c.x+w,y:c.y+h/2};
-  return{x:c.x+w/2,y:c.y+h/2};
-}
-
 function bDelCard(id){
   _bCards=_bCards.filter(c=>c.id!==id);
   _bConns=_bConns.filter(c=>c.f!==id&&c.t!==id);
@@ -1755,7 +1744,8 @@ function bGetPortCenter(cardId,side){
   const el=document.getElementById(cardId);
   const c=_bCards.find(x=>x.id===cardId)||_bStickies.find(x=>x.id===cardId);
   if(!el||!c)return null;
-  const w=el.offsetWidth,h=el.offsetHeight;
+  const w=el.offsetWidth||(c.w||240);
+  const h=el.offsetHeight||(c.h||160);
   if(side==='t')return{x:c.x+w/2,y:c.y};
   if(side==='b')return{x:c.x+w/2,y:c.y+h};
   if(side==='l')return{x:c.x,y:c.y+h/2};
