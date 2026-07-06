@@ -828,6 +828,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
             <!-- Board name inside toolbar -->
             <div id="b-board-name-badge" style="font-size:12px;font-weight:600;color:#7C3AED;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px">Default Board</div>
+            <span id="b-save-status" style="font-size:11px;color:#9CA3AF;margin-left:4px"></span>
           </div>
 
           <!-- ZOOM BADGE -->
@@ -1467,8 +1468,8 @@ function initBoard(){
 
   document.addEventListener('mouseup',e=>{
     if(_bPan){_bPan=false;wrap.style.cursor='';}
-    if(_bDrag){bPushH();_bDrag=null;}
-    if(_bResize){bPushH();_bResize=null;}
+    if(_bDrag){bPushH();bAutoSave();_bDrag=null;}
+    if(_bResize){bPushH();bAutoSave();_bResize=null;}
     if(_bDrawing){_bDrawing=false;_bDctx.globalCompositeOperation='source-over';dc.style.pointerEvents='none';bPushH();}
     if(_bLineStart){
       const end=s2c(e.clientX,e.clientY);
@@ -1818,8 +1819,10 @@ function bRedrawConns(){
 // Auto-save debounce
 let _bSaveTimer=null;
 function bAutoSave(){
+  const badge=document.getElementById('b-save-status');
+  if(badge)badge.textContent='saving...';
   clearTimeout(_bSaveTimer);
-  _bSaveTimer=setTimeout(()=>bSave(true),1500);
+  _bSaveTimer=setTimeout(()=>bSave(true),800);
 }
 
 function hideBCtx(){const ctx=document.getElementById('b-ctx');if(ctx)ctx.style.display='none';}
@@ -1985,16 +1988,25 @@ async function bDeleteBoard(id){
 }
 
 async function bSave(silent=false){
-  const id=_bCurrentBoardId||'default';
+  if(!user||!_bCurrentBoardId||_bCurrentBoardId==='default')return;
+  const id=_bCurrentBoardId;
   const data={
     cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
     stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
     conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
   };
   try{
-    await sb.from('script_boards').upsert({id,data,updated_at:new Date().toISOString(),created_by:user.id},{onConflict:'id'});
-    if(!silent)toast('Saved ✓');
-  }catch(e){if(!silent)toast('Save failed');}
+    const {error}=await sb.from('script_boards').update({data,updated_at:new Date().toISOString()}).eq('id',id).eq('created_by',user.id);
+    if(error)throw error;
+    if(!silent){
+      const badge=document.getElementById('b-save-status');
+      if(badge){badge.textContent='Saved ✓';badge.style.color='#059669';setTimeout(()=>{badge.textContent='';},2000);}
+      else toast('Saved ✓');
+    }
+  }catch(e){
+    console.error('Board save error:',e);
+    if(!silent)toast('Save failed: '+e.message);
+  }
 }
 
 async function bShareBoard(){
