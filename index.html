@@ -1429,7 +1429,8 @@ function initBoard(){
     if(_bPan){_bPx=_bPs.px+(e.clientX-_bPs.x);_bPy=_bPs.py+(e.clientY-_bPs.y);applyT();}
     if(_bDrag){
       const el=document.getElementById(_bDrag.id);
-      const nx=(e.clientX-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-_bPy)/_bSc-_bDrag.oy;
+      const wr=wrap.getBoundingClientRect();
+      const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
       el.style.left=nx+'px';el.style.top=ny+'px';
       const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
       if(c){c.x=nx;c.y=ny;} bRedrawConns();
@@ -1437,7 +1438,8 @@ function initBoard(){
     if(_bResize){
       const el=document.getElementById(_bResize.id);
       const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
-      const mx=(e.clientX-_bPx)/_bSc,my=(e.clientY-_bPy)/_bSc;
+      const wr=wrap.getBoundingClientRect();
+      const mx=(e.clientX-wr.left-_bPx)/_bSc,my=(e.clientY-wr.top-_bPy)/_bSc;
       const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
       let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
       if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
@@ -1452,7 +1454,14 @@ function initBoard(){
       _bDctx.lineTo(p.x,p.y);
       _bDctx.stroke();
     }
-    if(_bConnFrom&&_bTmpLine){const p=s2c(e.clientX,e.clientY);_bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);}
+    if(_bConnFrom&&_bTmpLine){
+      const p=s2c(e.clientX,e.clientY);
+      const from=bGetPortCenter(_bConnFrom.id,_bConnFrom.side||'r');
+      if(from){
+        const dx=p.x-from.x,cpLen=Math.max(60,Math.abs(dx)*.5);
+        _bTmpLine.setAttribute('d',`M${from.x},${from.y} C${from.x+cpLen},${from.y} ${p.x-cpLen},${p.y} ${p.x},${p.y}`);
+      }
+    }
   });
 
   document.addEventListener('mouseup',e=>{
@@ -1575,70 +1584,136 @@ function bFit(){
 
 function bAddCard(x,y,type,opts={}){
   const id='bc'+(++_bNid);
-  const c={id,x,y,type,w:opts.w||230,h:opts.h||150,title:opts.title||(type==='script'?'New Script':'New Card'),body:opts.body||'',color:opts.color||_bColor};
+  const c={id,x,y,type,w:opts.w||240,h:opts.h||160,title:opts.title||(type==='script'?'New Script':'New Card'),body:opts.body||'',color:opts.color||_bColor};
   _bCards.push(c);bRenderCard(c);return c;
 }
+
 function bRenderCard(c){
   const el=document.createElement('div');
   el.className='b-card';el.id=c.id;
-  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px`;
   const col=c.color||'#6C63FF';
+  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;min-height:${c.h}px;position:absolute;border-radius:12px;background:white;border:2px solid ${col}33;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:10;user-select:none`;
+
   el.innerHTML=`
-    <div class="b-card-head" style="background:${col}12">
-      <div class="b-card-ico" style="background:${col}22;color:${col}"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
-      <div class="b-card-ttl" contenteditable="true" spellcheck="false">${c.title}</div>
-      <button class="b-del" onclick="bDelCard('${c.id}')"><i class="ti ti-trash"></i></button>
+    <div class="b-card-head" style="background:${col}15;border-bottom:1.5px solid ${col}22;border-radius:10px 10px 0 0;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:move">
+      <div style="width:22px;height:22px;border-radius:6px;background:${col}22;color:${col};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
+      <div class="b-card-ttl" contenteditable="true" spellcheck="false" style="flex:1;font-size:13px;font-weight:600;color:#1A1F3C;outline:none;cursor:text;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
+      <button class="b-del" onclick="bDelCard('${c.id}')" style="background:none;border:none;cursor:pointer;color:#CBD5E1;font-size:14px;padding:2px;border-radius:4px;line-height:1" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='#CBD5E1'"><i class="ti ti-trash"></i></button>
     </div>
-    <div class="b-card-body" contenteditable="true" spellcheck="false" data-ph="Write here...">${c.body||''}</div>
-    <div class="bcd bcd-r" data-id="${c.id}"></div>
-    <div class="bcd bcd-b" data-id="${c.id}"></div>
+    <!-- Rich text toolbar -->
+    <div class="b-rtb" style="display:none;align-items:center;gap:2px;padding:4px 8px;background:#F9FAFB;border-bottom:1px solid #E5E7EB;flex-wrap:wrap">
+      <button onclick="document.execCommand('bold')" title="Bold" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-weight:700;font-size:12px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'">B</button>
+      <button onclick="document.execCommand('italic')" title="Italic" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-style:italic;font-size:12px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'">I</button>
+      <button onclick="document.execCommand('underline')" title="Underline" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:12px;color:#374151;text-decoration:underline" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'">U</button>
+      <button onclick="document.execCommand('strikeThrough')" title="Strike" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:12px;color:#374151;text-decoration:line-through" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'">S</button>
+      <div style="width:1px;height:16px;background:#E5E7EB;margin:0 2px"></div>
+      <select onchange="document.execCommand('fontSize',false,this.value);this.value=''" style="border:1px solid #E5E7EB;border-radius:4px;font-size:11px;padding:2px 4px;cursor:pointer;background:white;color:#374151">
+        <option value="">Size</option><option value="1">10px</option><option value="2">12px</option><option value="3">14px</option><option value="4">18px</option><option value="5">24px</option><option value="6">32px</option>
+      </select>
+      <div style="width:1px;height:16px;background:#E5E7EB;margin:0 2px"></div>
+      ${['#1A1F3C','#EF4444','#7C3AED','#059669','#2563EB','#F59E0B'].map(clr=>`<div onclick="document.execCommand('foreColor',false,'${clr}')" style="width:16px;height:16px;border-radius:50%;background:${clr};cursor:pointer;border:2px solid white;box-shadow:0 0 0 1px #E5E7EB" title="${clr}"></div>`).join('')}
+      <div style="width:1px;height:16px;background:#E5E7EB;margin:0 2px"></div>
+      <button onclick="document.execCommand('insertUnorderedList')" title="Bullet list" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'"><i class="ti ti-list"></i></button>
+      <button onclick="document.execCommand('insertOrderedList')" title="Numbered list" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'"><i class="ti ti-list-numbers"></i></button>
+    </div>
+    <div class="b-card-body" contenteditable="true" spellcheck="false" style="padding:10px;font-size:13px;line-height:1.7;color:#374151;outline:none;min-height:80px;border-radius:0 0 10px 10px">${c.body||''}</div>
+    <!-- Connection ports — 4 sides -->
+    <div class="bport" data-id="${c.id}" data-side="t" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
+    <div class="bport" data-id="${c.id}" data-side="b" style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
+    <div class="bport" data-id="${c.id}" data-side="l" style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
+    <div class="bport" data-id="${c.id}" data-side="r" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
+    <!-- Resize handles -->
     <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
     <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>`;
 
-  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;});
-  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;});
+  // Show rich text toolbar on body focus
+  const body=el.querySelector('.b-card-body');
+  const rtb=el.querySelector('.b-rtb');
+  body.addEventListener('focus',()=>{rtb.style.display='flex';});
+  body.addEventListener('blur',()=>{setTimeout(()=>{if(!rtb.contains(document.activeElement))rtb.style.display='none';},200);});
+  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;bAutoSave();});
+  body.addEventListener('input',e=>{c.body=e.target.innerHTML;bAutoSave();});
 
+  // Drag via header
   el.querySelector('.b-card-head').addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-del'))return;
     e.stopPropagation();
-    _bDrag={id:c.id,ox:(e.clientX-_bPx)/_bSc-c.x,oy:(e.clientY-_bPy)/_bSc-c.y};
+    const canvas=document.getElementById('b-canvas');
+    const cr=wrap.getBoundingClientRect();
+    _bDrag={id:c.id,ox:(e.clientX-cr.left-_bPx)/_bSc-c.x,oy:(e.clientY-cr.top-_bPy)/_bSc-c.y};
     bSelCard(c.id);
   });
 
+  // Show/hide ports on hover
+  el.addEventListener('mouseenter',()=>el.querySelectorAll('.bport').forEach(p=>p.style.opacity='1'));
+  el.addEventListener('mouseleave',()=>{if(!_bConnFrom)el.querySelectorAll('.bport').forEach(p=>p.style.opacity='0');});
+
+  // Port connection drag
+  el.querySelectorAll('.bport').forEach(port=>{
+    port.addEventListener('mousedown',e=>{
+      e.stopPropagation();e.preventDefault();
+      _bConnFrom={id:c.id,side:port.dataset.side};
+      const pt=bGetPortCenter(c.id,port.dataset.side);
+      const svg=document.getElementById('b-svg');
+      _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
+      _bTmpLine.setAttribute('stroke',_bColor);
+      _bTmpLine.setAttribute('stroke-width','2.5');
+      _bTmpLine.setAttribute('fill','none');
+      _bTmpLine.setAttribute('stroke-dasharray','8 4');
+      _bTmpLine.setAttribute('opacity','.8');
+      _bTmpLine.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
+      svg.appendChild(_bTmpLine);
+    });
+    port.addEventListener('mouseup',e=>{
+      e.stopPropagation();
+      if(_bConnFrom&&_bConnFrom.id!==c.id){
+        bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,port.dataset.side);
+      }
+      _bConnFrom=null;
+      if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
+    });
+  });
+
+  el.addEventListener('mouseup',()=>{
+    if(_bConnFrom&&_bConnFrom.id!==c.id){
+      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,'t');
+      _bConnFrom=null;
+      if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
+    }
+  });
+
+  // Resize
   el.querySelectorAll('.brh').forEach(rh=>{
     rh.addEventListener('mousedown',e=>{
       e.stopPropagation();e.preventDefault();
-      _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-_bPx)/_bSc,sy:(e.clientY-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
+      const canvas2=document.getElementById('b-canvas');
+      const cr2=wrap.getBoundingClientRect();
+      _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-cr2.left-_bPx)/_bSc,sy:(e.clientY-cr2.top-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
     });
   });
 
-  el.querySelectorAll('.bcd').forEach(dot=>{
-    const svg=document.getElementById('b-svg');
-    dot.addEventListener('mousedown',e=>{
-      e.stopPropagation();
-      const r=dot.getBoundingClientRect();
-      const p=window._bs2c?.((r.left+r.right)/2,(r.top+r.bottom)/2)||{x:c.x,y:c.y};
-      _bConnFrom=c.id;
-      _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','line');
-      _bTmpLine.setAttribute('x1',p.x);_bTmpLine.setAttribute('y1',p.y);
-      _bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);
-      _bTmpLine.setAttribute('stroke',_bColor);_bTmpLine.setAttribute('stroke-width','2');
-      _bTmpLine.setAttribute('stroke-dasharray','6 4');_bTmpLine.setAttribute('opacity','.7');
-      svg.appendChild(_bTmpLine);
-    });
-    dot.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==c.id){bAddConn(_bConnFrom,c.id);_bConnFrom=null;}});
-  });
-
-  el.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==c.id){bAddConn(_bConnFrom,c.id);_bConnFrom=null;}});
   el.addEventListener('click',()=>bSelCard(c.id));
   document.getElementById('b-canvas').appendChild(el);
 }
+
+function bGetPortCenter(cardId,side){
+  const el=document.getElementById(cardId);
+  const c=_bCards.find(x=>x.id===cardId);
+  if(!el||!c)return{x:0,y:0};
+  const w=el.offsetWidth,h=el.offsetHeight;
+  if(side==='t')return{x:c.x+w/2,y:c.y};
+  if(side==='b')return{x:c.x+w/2,y:c.y+h};
+  if(side==='l')return{x:c.x,y:c.y+h/2};
+  if(side==='r')return{x:c.x+w,y:c.y+h/2};
+  return{x:c.x+w/2,y:c.y+h/2};
+}
+
 function bDelCard(id){
   _bCards=_bCards.filter(c=>c.id!==id);
   _bConns=_bConns.filter(c=>c.f!==id&&c.t!==id);
-  document.getElementById(id)?.remove();bRedrawConns();bPushH();
+  document.getElementById(id)?.remove();bRedrawConns();bPushH();bAutoSave();
 }
 function bSelCard(id){
   _bSel=id;
@@ -1658,50 +1733,103 @@ function bRenderSticky(s){
   el.className='b-sticky';el.id=s.id;
   el.style.cssText=`left:${s.x}px;top:${s.y}px;background:${s.color}22;border:1.5px solid ${s.color}55;color:${s.color}`;
   el.innerHTML=`<button class="b-sdel" onclick="bDelSticky('${s.id}')"><i class="ti ti-x"></i></button><div class="b-sticky-txt" contenteditable="true" spellcheck="false">${s.text}</div>`;
-  el.querySelector('.b-sticky-txt').addEventListener('input',e=>{s.text=e.target.innerText;});
+  el.querySelector('.b-sticky-txt').addEventListener('input',e=>{s.text=e.target.innerText;bAutoSave();});
   el.addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-sdel'))return;
     e.stopPropagation();
-    _bDrag={id:s.id,ox:(e.clientX-_bPx)/_bSc-s.x,oy:(e.clientY-_bPy)/_bSc-s.y};
+    const canvas=document.getElementById('b-canvas');
+    const cr=wrap.getBoundingClientRect();
+    _bDrag={id:s.id,ox:(e.clientX-cr.left-_bPx)/_bSc-s.x,oy:(e.clientY-cr.top-_bPy)/_bSc-s.y};
   });
   document.getElementById('b-canvas').appendChild(el);
 }
-function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();}
+function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();bAutoSave();}
 
-function bAddConn(f,t){
+function bAddConn(f,t,fs,ts){
   if(_bConns.find(c=>(c.f===f&&c.t===t)||(c.f===t&&c.t===f)))return;
-  _bConns.push({id:'bcn'+(++_bNid),f,t,color:_bColor});
-  bRedrawConns();bPushH();
+  _bConns.push({id:'bcn'+(++_bNid),f,t,fs:fs||'r',ts:ts||'l',color:_bColor});
+  bRedrawConns();bPushH();bAutoSave();
 }
-function bGetCenter(id){
-  const el=document.getElementById(id);
-  const c=_bCards.find(c=>c.id===id)||_bStickies.find(s=>s.id===id);
+
+function bGetPortCenter(cardId,side){
+  const el=document.getElementById(cardId);
+  const c=_bCards.find(x=>x.id===cardId)||_bStickies.find(x=>x.id===cardId);
   if(!el||!c)return null;
-  return{x:c.x+el.offsetWidth/2,y:c.y+el.offsetHeight/2};
+  const w=el.offsetWidth,h=el.offsetHeight;
+  if(side==='t')return{x:c.x+w/2,y:c.y};
+  if(side==='b')return{x:c.x+w/2,y:c.y+h};
+  if(side==='l')return{x:c.x,y:c.y+h/2};
+  if(side==='r')return{x:c.x+w,y:c.y+h/2};
+  return{x:c.x+w/2,y:c.y+h/2};
 }
+
 function bRedrawConns(){
   const svg=document.getElementById('b-svg');
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
   _bConns.forEach(conn=>{
-    const a=bGetCenter(conn.f),b=bGetCenter(conn.t);if(!a||!b)return;
+    const a=bGetPortCenter(conn.f,conn.fs||'r');
+    const b=bGetPortCenter(conn.t,conn.ts||'l');
+    if(!a||!b)return;
     const dx=b.x-a.x,dy=b.y-a.y;
-    const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.className.baseVal='bcg';
+    // Smooth bezier control points based on port side
+    const cpLen=Math.max(60,Math.abs(dx)*.5,Math.abs(dy)*.5);
+    const getCP=(pt,side,len)=>{
+      if(side==='r')return{x:pt.x+len,y:pt.y};
+      if(side==='l')return{x:pt.x-len,y:pt.y};
+      if(side==='b')return{x:pt.x,y:pt.y+len};
+      if(side==='t')return{x:pt.x,y:pt.y-len};
+      return{x:pt.x+len,y:pt.y};
+    };
+    const cp1=getCP(a,conn.fs||'r',cpLen);
+    const cp2=getCP(b,conn.ts||'l',cpLen);
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.className.baseVal='bcg';g.style.cursor='pointer';
+
+    // Shadow path for easier click
+    const shadow=document.createElementNS('http://www.w3.org/2000/svg','path');
+    shadow.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b.x},${b.y}`);
+    shadow.setAttribute('stroke','transparent');shadow.setAttribute('stroke-width','12');shadow.setAttribute('fill','none');shadow.style.pointerEvents='stroke';
+
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${a.x},${a.y} C${a.x+dx*.4},${a.y} ${b.x-dx*.4},${b.y} ${b.x},${b.y}`);
-    path.setAttribute('stroke',conn.color||'#6C63FF');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');path.setAttribute('opacity','.75');
-    const ang=Math.atan2(dy,dx),aw=10;
-    const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-    arr.setAttribute('points',`${b.x},${b.y} ${b.x-aw*Math.cos(ang-.4)},${b.y-aw*Math.sin(ang-.4)} ${b.x-aw*Math.cos(ang+.4)},${b.y-aw*Math.sin(ang+.4)}`);
-    arr.setAttribute('fill',conn.color||'#6C63FF');arr.setAttribute('opacity','.75');
-    const dc=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-    dc.setAttribute('cx',mx);dc.setAttribute('cy',my);dc.setAttribute('r','8');
-    dc.setAttribute('fill','#FF4E6A');dc.setAttribute('opacity','0');dc.style.cursor='pointer';dc.style.pointerEvents='all';
-    dc.addEventListener('click',()=>{_bConns=_bConns.filter(c=>c.id!==conn.id);bRedrawConns();});
-    g.addEventListener('mouseenter',()=>dc.setAttribute('opacity','1'));
-    g.addEventListener('mouseleave',()=>dc.setAttribute('opacity','0'));
-    g.appendChild(path);g.appendChild(arr);g.appendChild(dc);svg.appendChild(g);
+    path.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b.x},${b.y}`);
+    path.setAttribute('stroke',conn.color||'#6C63FF');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');
+    path.setAttribute('marker-end',`url(#arr-${conn.id})`);
+
+    // Arrowhead marker
+    const defs=svg.querySelector('defs')||svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'),svg.firstChild);
+    const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    marker.setAttribute('id',`arr-${conn.id}`);marker.setAttribute('markerWidth','8');marker.setAttribute('markerHeight','8');
+    marker.setAttribute('refX','6');marker.setAttribute('refY','3');marker.setAttribute('orient','auto');
+    const arrPoly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    arrPoly.setAttribute('points','0,0 6,3 0,6');arrPoly.setAttribute('fill',conn.color||'#6C63FF');
+    marker.appendChild(arrPoly);defs.appendChild(marker);
+
+    // Delete dot in middle
+    const t2=.5;
+    const mx=Math.pow(1-t2,3)*a.x+3*Math.pow(1-t2,2)*t2*cp1.x+3*(1-t2)*Math.pow(t2,2)*cp2.x+Math.pow(t2,3)*b.x;
+    const my=Math.pow(1-t2,3)*a.y+3*Math.pow(1-t2,2)*t2*cp1.y+3*(1-t2)*Math.pow(t2,2)*cp2.y+Math.pow(t2,3)*b.y;
+    const delBtn=document.createElementNS('http://www.w3.org/2000/svg','g');
+    delBtn.style.opacity='0';delBtn.style.pointerEvents='all';
+    const delCirc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    delCirc.setAttribute('cx',mx);delCirc.setAttribute('cy',my);delCirc.setAttribute('r','10');
+    delCirc.setAttribute('fill','#EF4444');delCirc.style.cursor='pointer';
+    const delX=document.createElementNS('http://www.w3.org/2000/svg','text');
+    delX.setAttribute('x',mx);delX.setAttribute('y',my+4);delX.setAttribute('text-anchor','middle');
+    delX.setAttribute('fill','white');delX.setAttribute('font-size','12');delX.setAttribute('font-weight','700');delX.style.pointerEvents='none';
+    delX.textContent='×';
+    delBtn.appendChild(delCirc);delBtn.appendChild(delX);
+    delCirc.addEventListener('click',e=>{e.stopPropagation();_bConns=_bConns.filter(c=>c.id!==conn.id);bRedrawConns();bAutoSave();});
+
+    g.addEventListener('mouseenter',()=>{path.setAttribute('stroke-width','3.5');delBtn.style.opacity='1';});
+    g.addEventListener('mouseleave',()=>{path.setAttribute('stroke-width','2.5');delBtn.style.opacity='0';});
+    g.appendChild(shadow);g.appendChild(path);g.appendChild(delBtn);svg.appendChild(g);
   });
+}
+
+// Auto-save debounce
+let _bSaveTimer=null;
+function bAutoSave(){
+  clearTimeout(_bSaveTimer);
+  _bSaveTimer=setTimeout(()=>bSave(true),1500);
 }
 
 function hideBCtx(){const ctx=document.getElementById('b-ctx');if(ctx)ctx.style.display='none';}
@@ -1712,11 +1840,11 @@ function bModal(mode,target){
     yt:{title:'YouTube embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube link paste করুন — সরাসরি play হবে'},
     drive:{title:'Google Drive embed',ph:'https://drive.google.com/file/d/FILE_ID/view',hint:'Google Drive file link দিন (Share → Anyone with link)'},
   };
-  const c=cfg[mode]||{title:mode,ph:'',hint:''};
-  document.getElementById('b-modal-title').textContent=c.title;
+  const c2=cfg[mode]||{title:mode,ph:'',hint:''};
+  document.getElementById('b-modal-title').textContent=c2.title;
   document.getElementById('b-modal-inp').value='';
-  document.getElementById('b-modal-inp').placeholder=c.ph;
-  document.getElementById('b-modal-hint').textContent=c.hint;
+  document.getElementById('b-modal-inp').placeholder=c2.ph;
+  document.getElementById('b-modal-hint').textContent=c2.hint;
   const m=document.getElementById('b-modal');m.style.display='flex';
   setTimeout(()=>document.getElementById('b-modal-inp').focus(),50);
 }
