@@ -1819,8 +1819,8 @@ function bRedrawConns(){
 // Auto-save debounce
 let _bSaveTimer=null;
 function bAutoSave(){
-  const badge=document.getElementById('b-save-status');
-  if(badge)badge.textContent='saving...';
+  const st=document.getElementById('b-save-status');
+  if(st){st.textContent='saving...';st.style.color='#9CA3AF';}
   clearTimeout(_bSaveTimer);
   _bSaveTimer=setTimeout(()=>bSave(true),800);
 }
@@ -1917,7 +1917,9 @@ let _bCurrentBoardId='default';
 
 // ── Supabase board helpers ──────────────────────────────
 async function bGetAllBoards(){
-  const {data}=await sb.from('script_boards').select('id,name,updated_at,is_public,share_token').eq('created_by',user.id).order('updated_at',{ascending:false});
+  if(!user)return[];
+  const {data,error}=await sb.from('script_boards').select('id,name,updated_at,is_public,share_token').eq('created_by',user.id).order('updated_at',{ascending:false});
+  if(error){console.error('bGetAllBoards:',error.message);return[];}
   return data||[];
 }
 
@@ -1925,51 +1927,47 @@ async function bRenderSidebar(){
   const list=document.getElementById('b-boards-list');
   if(!list)return;
   const boards=await bGetAllBoards();
-  list.innerHTML=boards.length===0?`<div style="padding:16px 8px;text-align:center;color:rgba(255,255,255,.3);font-size:12px">No boards yet</div>`:
-    boards.map(b=>`
-      <div onclick="bSwitchBoard('${b.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;background:${b.id===_bCurrentBoardId?'rgba(108,99,255,.35)':'rgba(255,255,255,.04)'};transition:background .15s" onmouseover="if('${b.id}'!=='${_bCurrentBoardId}')this.style.background='rgba(255,255,255,.08)'" onmouseout="if('${b.id}'!=='${_bCurrentBoardId}')this.style.background='rgba(255,255,255,.04)'">
-        <i class="ti ti-layout-board" style="font-size:14px;color:${b.id===_bCurrentBoardId?'#A5A0FF':'rgba(255,255,255,.4)'}"></i>
-        <span style="flex:1;font-size:12px;font-weight:${b.id===_bCurrentBoardId?'600':'400'};color:${b.id===_bCurrentBoardId?'white':'rgba(255,255,255,.7)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.name}</span>
-        ${b.is_public?`<i class="ti ti-world" style="font-size:11px;color:#A5A0FF" title="Shared publicly"></i>`:''}
-        <button onclick="event.stopPropagation();bDeleteBoard('${b.id}')" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.2);font-size:13px;padding:2px;border-radius:4px;opacity:0;transition:opacity .15s" class="b-del-btn"><i class="ti ti-trash"></i></button>
-      </div>`).join('');
-  // Show delete on hover
-  list.querySelectorAll('[onmouseover]').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{el.querySelector('.b-del-btn')&&(el.querySelector('.b-del-btn').style.opacity='1');});
-    el.addEventListener('mouseleave',()=>{el.querySelector('.b-del-btn')&&(el.querySelector('.b-del-btn').style.opacity='0');});
-  });
+  if(!boards.length){list.innerHTML='<div style="padding:16px 8px;text-align:center;color:rgba(255,255,255,.3);font-size:12px">No boards yet</div>';return;}
+  list.innerHTML=boards.map(b=>{
+    const active=b.id===_bCurrentBoardId;
+    return `<div onclick="bSwitchBoard('${b.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;background:${active?'rgba(108,99,255,.35)':'transparent'}" onmouseover="this.style.background='${active?'rgba(108,99,255,.35)':'rgba(255,255,255,.08)'}'" onmouseout="this.style.background='${active?'rgba(108,99,255,.35)':'transparent'}'">
+      <i class="ti ti-layout-board" style="font-size:14px;color:${active?'#A5A0FF':'rgba(255,255,255,.4)'}"></i>
+      <span style="flex:1;font-size:12px;font-weight:${active?'600':'400'};color:${active?'white':'rgba(255,255,255,.7)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.name}</span>
+      ${b.is_public?'<i class="ti ti-world" style="font-size:11px;color:#A5A0FF"></i>':''}
+      <button onclick="event.stopPropagation();bDeleteBoard('${b.id}')" title="Delete" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.0);font-size:13px;padding:2px 4px;border-radius:4px" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='rgba(255,255,255,0)'"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
 }
 
 async function bCreateNewBoard(){
   const name=prompt('Board এর নাম দিন:','New Board');
-  if(!name)return;
+  if(!name||!user)return;
   const id='b'+Date.now();
   const {error}=await sb.from('script_boards').insert({id,name,created_by:user.id,data:{cards:[],stickies:[],conns:[],nid:1,vp:{px:0,py:0,sc:1}}});
   if(error){toast('Error: '+error.message);return;}
   await bSwitchBoard(id);
-  toast(`"${name}" তৈরি হয়েছে ✓`);
+  toast('"'+name+'" তৈরি হয়েছে ✓');
 }
 
 async function bSwitchBoard(id){
-  await bSave(true);
+  if(_bCurrentBoardId&&_bCurrentBoardId!==id)await bSave(true);
   _bCards.forEach(c=>document.getElementById(c.id)?.remove());
   _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
-  const dc=document.getElementById('b-dc');if(dc){const ctx=dc.getContext('2d');ctx.clearRect(0,0,10000,10000);}
+  const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
   _bCards=[];_bStickies=[];_bConns=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
   _bCurrentBoardId=id;
-  const {data}=await sb.from('script_boards').select('name,data').eq('id',id).single();
+  const {data,error}=await sb.from('script_boards').select('name,data').eq('id',id).single();
+  if(error)console.error('bSwitchBoard:',error.message);
   const badge=document.getElementById('b-board-name-badge');
   if(badge)badge.textContent=data?.name||'Board';
-  if(data?.data){
+  if(data?.data&&(data.data.cards?.length||data.data.stickies?.length)){
     const d=data.data;
     _bNid=d.nid||1;
-    if(d.vp){_bPx=d.vp.px;_bPy=d.vp.py;_bSc=d.vp.sc;}
-    d.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
-    d.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+    if(d.vp){_bPx=d.vp.px||0;_bPy=d.vp.py||0;_bSc=d.vp.sc||1;}
+    (d.cards||[]).forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title||'';el.querySelector('.b-card-body').innerHTML=c.body||'';}});
+    (d.stickies||[]).forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
     _bConns=d.conns||[];bRedrawConns();
-  } else {
-    bAddCard(150,150,'note',{title:'📝 Start here'});bPushH();
   }
   window._bApplyT?.();
   bRenderSidebar();
@@ -1977,36 +1975,34 @@ async function bSwitchBoard(id){
 
 async function bDeleteBoard(id){
   if(!confirm('এই board delete করবে?'))return;
-  await sb.from('script_boards').delete().eq('id',id);
+  const {error}=await sb.from('script_boards').delete().eq('id',id).eq('created_by',user.id);
+  if(error){toast('Delete failed');return;}
   if(_bCurrentBoardId===id){
     const boards=await bGetAllBoards();
     const next=boards.find(b=>b.id!==id);
     if(next)await bSwitchBoard(next.id);
-    else{_bCurrentBoardId='default';_bCards=[];_bStickies=[];_bConns=[];}
+    else{_bCurrentBoardId='';_bCards=[];_bStickies=[];_bConns=[];const b2=document.getElementById('b-board-name-badge');if(b2)b2.textContent='No board';}
   }
   bRenderSidebar();toast('Deleted');
 }
 
 async function bSave(silent=false){
-  if(!user||!_bCurrentBoardId||_bCurrentBoardId==='default')return;
-  const id=_bCurrentBoardId;
+  if(!user||!_bCurrentBoardId)return;
+  const st=document.getElementById('b-save-status');
   const data={
     cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
     stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
     conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
   };
-  try{
-    const {error}=await sb.from('script_boards').update({data,updated_at:new Date().toISOString()}).eq('id',id).eq('created_by',user.id);
-    if(error)throw error;
-    if(!silent){
-      const badge=document.getElementById('b-save-status');
-      if(badge){badge.textContent='Saved ✓';badge.style.color='#059669';setTimeout(()=>{badge.textContent='';},2000);}
-      else toast('Saved ✓');
-    }
-  }catch(e){
-    console.error('Board save error:',e);
-    if(!silent)toast('Save failed: '+e.message);
+  const {error}=await sb.from('script_boards').update({data,updated_at:new Date().toISOString()}).eq('id',_bCurrentBoardId).eq('created_by',user.id);
+  if(error){
+    console.error('bSave error:',error.message);
+    if(st){st.textContent='Save failed!';st.style.color='#EF4444';setTimeout(()=>{st.textContent='';},3000);}
+    if(!silent)toast('Save failed: '+error.message);
+    return;
   }
+  if(st){st.textContent='Saved ✓';st.style.color='#059669';setTimeout(()=>{st.textContent='';},2000);}
+  if(!silent)toast('Saved ✓');
 }
 
 async function bShareBoard(){
