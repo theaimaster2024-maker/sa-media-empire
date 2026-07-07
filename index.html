@@ -1483,6 +1483,7 @@ function initBoard(){
     if(_bPan){_bPan=false;wrap.style.cursor='';}
     if(_bDrag){bPushH();bAutoSave();_bDrag=null;}
     if(_bResize){bPushH();bAutoSave();_bResize=null;}
+    if(_bConnFrom){bEndConn();}
     if(_bDrawing){_bDrawing=false;_bDctx.globalCompositeOperation='source-over';dc.style.pointerEvents='none';bPushH();}
     if(_bLineStart){
       const end=s2c(e.clientX,e.clientY);
@@ -1632,11 +1633,8 @@ function bRenderCard(c){
       <button onclick="document.execCommand('insertOrderedList')" title="Numbered list" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'"><i class="ti ti-list-numbers"></i></button>
     </div>
     <div class="b-card-body" contenteditable="true" spellcheck="false" style="padding:10px;font-size:13px;line-height:1.7;color:#374151;outline:none;min-height:80px;border-radius:0 0 10px 10px">${c.body||''}</div>
-    <!-- Connection ports — 4 sides -->
-    <div class="bport" data-id="${c.id}" data-side="t" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
-    <div class="bport" data-id="${c.id}" data-side="b" style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
-    <div class="bport" data-id="${c.id}" data-side="l" style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
-    <div class="bport" data-id="${c.id}" data-side="r" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${col};cursor:crosshair;opacity:0;transition:opacity .15s;z-index:20"></div>
+    <!-- Dynamic connection port — follows mouse on edge -->
+    <div class="bdynport" data-id="${c.id}" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 3px rgba(124,58,237,.3)"></div>
     <!-- Resize handles -->
     <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
@@ -1661,41 +1659,53 @@ function bRenderCard(c){
     bSelCard(c.id);
   });
 
-  // Show/hide ports on hover
-  el.addEventListener('mouseenter',()=>el.querySelectorAll('.bport').forEach(p=>p.style.opacity='1'));
-  el.addEventListener('mouseleave',()=>{if(!_bConnFrom)el.querySelectorAll('.bport').forEach(p=>p.style.opacity='0');});
-
-  // Port connection drag
-  el.querySelectorAll('.bport').forEach(port=>{
-    port.addEventListener('mousedown',e=>{
-      e.stopPropagation();e.preventDefault();
-      _bConnFrom={id:c.id,side:port.dataset.side};
-      const pt=bGetPortCenter(c.id,port.dataset.side);
-      const svg=document.getElementById('b-svg');
-      _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
-      _bTmpLine.setAttribute('stroke',_bColor);
-      _bTmpLine.setAttribute('stroke-width','2.5');
-      _bTmpLine.setAttribute('fill','none');
-      _bTmpLine.setAttribute('stroke-dasharray','8 4');
-      _bTmpLine.setAttribute('opacity','.8');
-      _bTmpLine.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
-      svg.appendChild(_bTmpLine);
-    });
-    port.addEventListener('mouseup',e=>{
-      e.stopPropagation();
-      if(_bConnFrom&&_bConnFrom.id!==c.id){
-        bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,port.dataset.side);
-      }
-      _bConnFrom=null;
-      if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
-    });
+  // Dynamic port — shows on edge closest to mouse
+  const dynPort=el.querySelector('.bdynport');
+  el.addEventListener('mousemove',e=>{
+    if(_bDrag||_bResize)return;
+    const r=el.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const w=r.width, h=r.height;
+    // Find nearest edge
+    const dists={t:my, b:h-my, l:mx, r:w-mx};
+    const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
+    // Clamp position along edge
+    const pad=16;
+    if(side==='t'){dynPort.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';dynPort.style.top='-7px';dynPort.style.bottom='';}
+    else if(side==='b'){dynPort.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';dynPort.style.top=h-7+'px';dynPort.style.bottom='';}
+    else if(side==='l'){dynPort.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';dynPort.style.left='-7px';}
+    else{dynPort.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';dynPort.style.left=w-7+'px';}
+    dynPort.dataset.side=side;
+    dynPort.style.opacity='1';
+    dynPort.style.pointerEvents='all';
   });
-
-  el.addEventListener('mouseup',()=>{
+  el.addEventListener('mouseleave',()=>{
+    if(!_bConnFrom){dynPort.style.opacity='0';dynPort.style.pointerEvents='none';}
+  });
+  dynPort.addEventListener('mousedown',e=>{
+    e.stopPropagation();e.preventDefault();
+    const side=dynPort.dataset.side||'r';
+    _bConnFrom={id:c.id,side};
+    const pt=bGetPortCenter(c.id,side);
+    bStartTmpLine(pt);
+  });
+  dynPort.addEventListener('mouseup',e=>{
+    e.stopPropagation();
     if(_bConnFrom&&_bConnFrom.id!==c.id){
-      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,'t');
-      _bConnFrom=null;
-      if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
+      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,dynPort.dataset.side||'l');
+    }
+    bEndConn();
+  });
+  el.addEventListener('mouseup',e=>{
+    if(_bConnFrom&&_bConnFrom.id!==c.id){
+      // Find nearest side from mouse position
+      const r=el.getBoundingClientRect();
+      const mx=e.clientX-r.left,my=e.clientY-r.top;
+      const w=r.width,h=r.height;
+      const dists={t:my,b:h-my,l:mx,r:w-mx};
+      const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
+      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,side);
+      bEndConn();
     }
   });
 
@@ -1724,6 +1734,90 @@ function bSelCard(id){
   if(id)document.getElementById(id)?.classList.add('bsel');
 }
 
+// ── Connection helpers ──────────────────────────────
+function bStartTmpLine(pt){
+  const svg=document.getElementById('b-svg');
+  _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
+  _bTmpLine.setAttribute('stroke',_bColor);
+  _bTmpLine.setAttribute('stroke-width','2.5');
+  _bTmpLine.setAttribute('fill','none');
+  _bTmpLine.setAttribute('stroke-dasharray','8 4');
+  _bTmpLine.setAttribute('opacity','.8');
+  _bTmpLine.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
+  svg.appendChild(_bTmpLine);
+}
+
+function bEndConn(){
+  _bConnFrom=null;
+  if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
+  // Hide all dynamic ports
+  document.querySelectorAll('.bdynport').forEach(p=>{p.style.opacity='0';p.style.pointerEvents='none';});
+}
+
+function bNearestSide(el,clientX,clientY){
+  const r=el.getBoundingClientRect();
+  const mx=clientX-r.left, my=clientY-r.top;
+  const w=r.width, h=r.height;
+  const dists={t:my, b:h-my, l:mx, r:w-mx};
+  return Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
+}
+
+function bAddDynPort(el, getId, getItem){
+  const port=document.createElement('div');
+  port.className='bdynport';
+  port.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 3px rgba(124,58,237,.3)';
+  el.appendChild(port);
+
+  el.addEventListener('mousemove',e=>{
+    if(_bDrag||_bResize)return;
+    const r=el.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const w=r.width, h=r.height;
+    const dists={t:my,b:h-my,l:mx,r:w-mx};
+    const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
+    const pad=12;
+    if(side==='t'){port.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';port.style.top='-7px';}
+    else if(side==='b'){port.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';port.style.top=(h-7)+'px';}
+    else if(side==='l'){port.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';port.style.left='-7px';}
+    else{port.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';port.style.left=(w-7)+'px';}
+    port.dataset.side=side;
+    port.style.opacity='1';
+    port.style.pointerEvents='all';
+  });
+  el.addEventListener('mouseleave',()=>{
+    if(!_bConnFrom){port.style.opacity='0';port.style.pointerEvents='none';}
+  });
+  port.addEventListener('mousedown',e=>{
+    e.stopPropagation();e.preventDefault();
+    const id=getId();
+    const side=port.dataset.side||'r';
+    _bConnFrom={id,side};
+    const item=getItem();
+    if(!item)return;
+    const elr=el.getBoundingClientRect();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    const px=(parseFloat(port.style.left)+7+elr.left-wr.left-_bPx)/_bSc;
+    const py=(parseFloat(port.style.top)+7+elr.top-wr.top-_bPy)/_bSc;
+    bStartTmpLine({x:px,y:py});
+  });
+  port.addEventListener('mouseup',e=>{
+    e.stopPropagation();
+    const id=getId();
+    if(_bConnFrom&&_bConnFrom.id!==id){
+      bAddConn(_bConnFrom.id,id,_bConnFrom.side,port.dataset.side||'l');
+    }
+    bEndConn();
+  });
+  el.addEventListener('mouseup',e=>{
+    const id=getId();
+    if(_bConnFrom&&_bConnFrom.id!==id){
+      const side=bNearestSide(el,e.clientX,e.clientY);
+      bAddConn(_bConnFrom.id,id,_bConnFrom.side,side);
+      bEndConn();
+    }
+  });
+}
+
 function bAddSticky(x,y){
   const id='bs'+(++_bNid);
   const cols=['#F5A623','#6C63FF','#00C48C','#FF6B9D','#00C2CB'];
@@ -1740,10 +1834,11 @@ function bRenderSticky(s){
   el.addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-sdel'))return;
     e.stopPropagation();
-    const canvas=document.getElementById('b-canvas');
     const cr=document.getElementById('b-wrap').getBoundingClientRect();
     _bDrag={id:s.id,ox:(e.clientX-cr.left-_bPx)/_bSc-s.x,oy:(e.clientY-cr.top-_bPy)/_bSc-s.y};
   });
+  // Dynamic port for sticky
+  bAddDynPort(el, ()=>s.id, ()=>s);
   document.getElementById('b-canvas').appendChild(el);
 }
 function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();bAutoSave();}
@@ -1756,7 +1851,7 @@ function bAddConn(f,t,fs,ts){
 
 function bGetPortCenter(cardId,side){
   const el=document.getElementById(cardId);
-  const c=_bCards.find(x=>x.id===cardId)||_bStickies.find(x=>x.id===cardId);
+  const c=_bCards.find(x=>x.id===cardId)||_bStickies.find(x=>x.id===cardId)||_bImages.find(x=>x.id===cardId);
   if(!el||!c)return null;
   const w=el.offsetWidth||(c.w||240);
   const h=el.offsetHeight||(c.h||160);
@@ -1938,6 +2033,8 @@ function bRenderBoardImage(img){
     const wr=document.getElementById('b-wrap').getBoundingClientRect();
     _bResize={id:img.id,isImg:true,sx:(e.clientX-wr.left-_bPx)/_bSc,sw:img.w};
   });
+  // Dynamic port for image
+  bAddDynPort(el, ()=>img.id, ()=>img);
   document.getElementById('b-canvas').appendChild(el);
 }
 
