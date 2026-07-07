@@ -1470,12 +1470,14 @@ function initBoard(){
       _bDctx.stroke();
     }
     if(_bConnFrom&&_bTmpLine){
-      const p=s2c(e.clientX,e.clientY);
-      const from=bGetPortCenter(_bConnFrom.id,_bConnFrom.side||'r');
-      if(from){
-        const dx=p.x-from.x,cpLen=Math.max(60,Math.abs(dx)*.5);
-        _bTmpLine.setAttribute('d',`M${from.x},${from.y} C${from.x+cpLen},${from.y} ${p.x-cpLen},${p.y} ${p.x},${p.y}`);
-      }
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const px=(e.clientX-wr.left-_bPx)/_bSc;
+      const py=(e.clientY-wr.top-_bPy)/_bSc;
+      const from={x:_bConnFrom.cx, y:_bConnFrom.cy};
+      const dx=px-from.x, dy=py-from.y;
+      const cp1={x:from.x+dx*.3, y:from.y+dy*.1};
+      const cp2={x:px-dx*.3, y:py-dy*.1};
+      _bTmpLine.setAttribute('d',`M${from.x},${from.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${px},${py}`);
     }
   });
 
@@ -1633,8 +1635,6 @@ function bRenderCard(c){
       <button onclick="document.execCommand('insertOrderedList')" title="Numbered list" style="background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11px;color:#374151" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='none'"><i class="ti ti-list-numbers"></i></button>
     </div>
     <div class="b-card-body" contenteditable="true" spellcheck="false" style="padding:10px;font-size:13px;line-height:1.7;color:#374151;outline:none;min-height:80px;border-radius:0 0 10px 10px">${c.body||''}</div>
-    <!-- Dynamic connection port — follows mouse on edge -->
-    <div class="bdynport" data-id="${c.id}" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 3px rgba(124,58,237,.3)"></div>
     <!-- Resize handles -->
     <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
@@ -1649,62 +1649,51 @@ function bRenderCard(c){
   el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;bAutoSave();});
   body.addEventListener('input',e=>{c.body=e.target.innerHTML;bAutoSave();});
 
-  // Drag via header
-  el.querySelector('.b-card-head').addEventListener('mousedown',e=>{
-    if(e.target.isContentEditable||e.target.closest('.b-del'))return;
-    e.stopPropagation();
-    const canvas=document.getElementById('b-canvas');
-    const cr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bDrag={id:c.id,ox:(e.clientX-cr.left-_bPx)/_bSc-c.x,oy:(e.clientY-cr.top-_bPy)/_bSc-c.y};
-    bSelCard(c.id);
-  });
-
-  // Dynamic port — shows on edge closest to mouse
-  const dynPort=el.querySelector('.bdynport');
+  // ── Miro-style connection: hover border → crosshair → drag to connect
   el.addEventListener('mousemove',e=>{
-    if(_bDrag||_bResize)return;
+    if(_bDrag||_bResize||e.target.isContentEditable||e.target.closest('.b-rtb')||e.target.closest('.b-card-ttl')||e.target.closest('.b-del'))return;
     const r=el.getBoundingClientRect();
     const mx=e.clientX-r.left, my=e.clientY-r.top;
     const w=r.width, h=r.height;
-    // Find nearest edge
-    const dists={t:my, b:h-my, l:mx, r:w-mx};
-    const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
-    // Clamp position along edge
-    const pad=16;
-    if(side==='t'){dynPort.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';dynPort.style.top='-7px';dynPort.style.bottom='';}
-    else if(side==='b'){dynPort.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';dynPort.style.top=h-7+'px';dynPort.style.bottom='';}
-    else if(side==='l'){dynPort.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';dynPort.style.left='-7px';}
-    else{dynPort.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';dynPort.style.left=w-7+'px';}
-    dynPort.dataset.side=side;
-    dynPort.style.opacity='1';
-    dynPort.style.pointerEvents='all';
-  });
-  el.addEventListener('mouseleave',()=>{
-    if(!_bConnFrom){dynPort.style.opacity='0';dynPort.style.pointerEvents='none';}
-  });
-  dynPort.addEventListener('mousedown',e=>{
-    e.stopPropagation();e.preventDefault();
-    const side=dynPort.dataset.side||'r';
-    _bConnFrom={id:c.id,side};
-    const pt=bGetPortCenter(c.id,side);
-    bStartTmpLine(pt);
-  });
-  dynPort.addEventListener('mouseup',e=>{
-    e.stopPropagation();
-    if(_bConnFrom&&_bConnFrom.id!==c.id){
-      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,dynPort.dataset.side||'l');
+    const edgeDist=Math.min(mx, my, w-mx, h-my);
+    if(edgeDist<18){
+      el.style.cursor='crosshair';
+      el.dataset.connZone='1';
+    } else {
+      el.style.cursor='';
+      el.dataset.connZone='0';
     }
-    bEndConn();
   });
+  el.addEventListener('mouseleave',()=>{el.style.cursor='';el.dataset.connZone='0';});
+
+  el.addEventListener('mousedown',e=>{
+    if(e.target.isContentEditable||e.target.closest('.b-del')||e.target.closest('.b-rtb')||e.target.closest('.brh'))return;
+    const isConnZone=el.dataset.connZone==='1';
+    if(isConnZone){
+      // Start connection
+      e.stopPropagation();e.preventDefault();
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const cx=(e.clientX-wr.left-_bPx)/_bSc;
+      const cy=(e.clientY-wr.top-_bPy)/_bSc;
+      _bConnFrom={id:c.id,cx,cy};
+      bStartTmpLine({x:cx,y:cy});
+      return;
+    }
+    // Normal drag
+    if(e.target.closest('.b-card-head')){
+      e.stopPropagation();
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      _bDrag={id:c.id,ox:(e.clientX-wr.left-_bPx)/_bSc-c.x,oy:(e.clientY-wr.top-_bPy)/_bSc-c.y};
+      bSelCard(c.id);
+    }
+  });
+
   el.addEventListener('mouseup',e=>{
     if(_bConnFrom&&_bConnFrom.id!==c.id){
-      // Find nearest side from mouse position
-      const r=el.getBoundingClientRect();
-      const mx=e.clientX-r.left,my=e.clientY-r.top;
-      const w=r.width,h=r.height;
-      const dists={t:my,b:h-my,l:mx,r:w-mx};
-      const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
-      bAddConn(_bConnFrom.id,c.id,_bConnFrom.side,side);
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const cx=(e.clientX-wr.left-_bPx)/_bSc;
+      const cy=(e.clientY-wr.top-_bPy)/_bSc;
+      bAddConnExact(_bConnFrom.id,c.id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
       bEndConn();
     }
   });
@@ -1763,68 +1752,32 @@ function bNearestSide(el,clientX,clientY){
 }
 
 function bAddDynPort(el, getId, getItem){
-  const port=document.createElement('div');
-  port.className='bdynport';
-  port.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 4px rgba(124,58,237,.25)';
-  el.appendChild(port);
-
-  // Store exact canvas coords where dot is shown
-  let _portCanvasX=0, _portCanvasY=0;
-
+  // Miro-style: border area shows crosshair, drag starts connection
   el.addEventListener('mousemove',e=>{
     if(_bDrag||_bResize)return;
     const r=el.getBoundingClientRect();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
     const mx=e.clientX-r.left, my=e.clientY-r.top;
     const w=r.width, h=r.height;
-
-    // Find nearest edge and clamp dot position to that edge
-    const dists={t:my, b:h-my, l:mx, r:w-mx};
-    const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
-    let dotX, dotY; // pixel position relative to element
-    if(side==='t'){dotX=Math.min(Math.max(mx,0),w); dotY=0;}
-    else if(side==='b'){dotX=Math.min(Math.max(mx,0),w); dotY=h;}
-    else if(side==='l'){dotX=0; dotY=Math.min(Math.max(my,0),h);}
-    else{dotX=w; dotY=Math.min(Math.max(my,0),h);}
-
-    // Position dot
-    port.style.left=(dotX-7)+'px';
-    port.style.top=(dotY-7)+'px';
-    port.dataset.side=side;
-    port.style.opacity='1';
-    port.style.pointerEvents='all';
-
-    // Store exact canvas coordinate
-    _portCanvasX=(e.clientX-wr.left-_bPx)/_bSc - (mx-dotX)/_bSc;
-    _portCanvasY=(e.clientY-wr.top-_bPy)/_bSc - (my-dotY)/_bSc;
-    port._cx=_portCanvasX;
-    port._cy=_portCanvasY;
+    const edgeDist=Math.min(mx, my, w-mx, h-my);
+    if(edgeDist<16){
+      el.style.cursor='crosshair';
+      el.dataset.connZone='1';
+    } else {
+      el.style.cursor='';
+      el.dataset.connZone='0';
+    }
   });
-
-  el.addEventListener('mouseleave',()=>{
-    if(!_bConnFrom){port.style.opacity='0';port.style.pointerEvents='none';}
-  });
-
-  port.addEventListener('mousedown',e=>{
+  el.addEventListener('mouseleave',()=>{el.style.cursor='';el.dataset.connZone='0';});
+  el.addEventListener('mousedown',e=>{
+    if(el.dataset.connZone!=='1')return;
     e.stopPropagation();e.preventDefault();
     const id=getId();
-    const side=port.dataset.side||'r';
-    const cx=port._cx||0, cy=port._cy||0;
-    _bConnFrom={id, side, cx, cy};
-    bStartTmpLine({x:cx, y:cy});
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    const cx=(e.clientX-wr.left-_bPx)/_bSc;
+    const cy=(e.clientY-wr.top-_bPy)/_bSc;
+    _bConnFrom={id,cx,cy};
+    bStartTmpLine({x:cx,y:cy});
   });
-
-  port.addEventListener('mouseup',e=>{
-    e.stopPropagation();
-    const id=getId();
-    if(_bConnFrom&&_bConnFrom.id!==id){
-      const side=port.dataset.side||'l';
-      const cx=port._cx||0, cy=port._cy||0;
-      bAddConnExact(_bConnFrom.id,id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
-    }
-    bEndConn();
-  });
-
   el.addEventListener('mouseup',e=>{
     const id=getId();
     if(_bConnFrom&&_bConnFrom.id!==id){
