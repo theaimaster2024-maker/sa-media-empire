@@ -1319,7 +1319,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 // ── SCRIPT BOARD — canvas
 let _bSc=1,_bPx=0,_bPy=0,_bTool='sel',_bColor='#6C63FF',bPenSz=4;
-let _bCards=[],_bStickies=[],_bConns=[],_bNid=1;
+let _bCards=[],_bStickies=[],_bConns=[],_bImages=[],_bNid=1;
 let _bDrag=null,_bResize=null,_bPan=false,_bPs={};
 let _bConnFrom=null,_bTmpLine=null;
 let _bDrawing=false,_bDctx=null;
@@ -1328,6 +1328,7 @@ let _bHistory=[],_bHIdx=-1,_bModalMode='',_bModalTarget=null;
 
 function initBoard(){
   window._boardInit=true;
+  bInitPaste(); // Enable Ctrl+V paste anywhere on board
   const wrap=document.getElementById('b-wrap');
   const canvas=document.getElementById('b-canvas');
   const svg=document.getElementById('b-svg');
@@ -1430,26 +1431,38 @@ function initBoard(){
   document.addEventListener('mousemove',e=>{
     if(_bPan){_bPx=_bPs.px+(e.clientX-_bPs.x);_bPy=_bPs.py+(e.clientY-_bPs.y);applyT();}
     if(_bDrag){
-      const el=document.getElementById(_bDrag.id);
       const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
-      el.style.left=nx+'px';el.style.top=ny+'px';
-      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
-      if(c){c.x=nx;c.y=ny;} bRedrawConns();
+      const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox;
+      const ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
+      if(_bDrag.isImg){
+        const img=_bImages.find(i=>i.id===_bDrag.id);
+        if(img){img.x=nx;img.y=ny;const el=document.getElementById(img.id);if(el){el.style.left=nx+'px';el.style.top=ny+'px';}}
+      } else {
+        const el=document.getElementById(_bDrag.id);
+        if(el){el.style.left=nx+'px';el.style.top=ny+'px';}
+        const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
+        if(c){c.x=nx;c.y=ny;} bRedrawConns();
+      }
     }
     if(_bResize){
-      const el=document.getElementById(_bResize.id);
-      const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
       const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const mx=(e.clientX-wr.left-_bPx)/_bSc,my=(e.clientY-wr.top-_bPy)/_bSc;
-      const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
-      let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
-      if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
-      if(dir.includes('s'))nh=Math.max(100,_bResize.sh+dy);
-      if(dir.includes('w')){nw=Math.max(180,_bResize.sw-dx);nx=_bResize.cx+_bResize.sw-nw;}
-      if(dir.includes('n')){nh=Math.max(100,_bResize.sh-dy);ny=_bResize.cy+_bResize.sh-nh;}
-      el.style.width=nw+'px';el.style.height=nh+'px';el.style.left=nx+'px';el.style.top=ny+'px';
-      c.w=nw;c.h=nh;c.x=nx;c.y=ny;bRedrawConns();
+      const mx=(e.clientX-wr.left-_bPx)/_bSc;
+      const my=(e.clientY-wr.top-_bPy)/_bSc;
+      if(_bResize.isImg){
+        const img=_bImages.find(i=>i.id===_bResize.id);
+        if(img){img.w=Math.max(80,_bResize.sw+(mx-_bResize.sx));const el=document.getElementById(img.id);if(el)el.style.width=img.w+'px';}
+      } else {
+        const el=document.getElementById(_bResize.id);
+        const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
+        const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
+        let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
+        if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
+        if(dir.includes('s'))nh=Math.max(100,_bResize.sh+dy);
+        if(dir.includes('w')){nw=Math.max(180,_bResize.sw-dx);nx=_bResize.cx+_bResize.sw-nw;}
+        if(dir.includes('n')){nh=Math.max(100,_bResize.sh-dy);ny=_bResize.cy+_bResize.sh-nh;}
+        el.style.width=nw+'px';el.style.height=nh+'px';el.style.left=nx+'px';el.style.top=ny+'px';
+        c.w=nw;c.h=nh;c.x=nx;c.y=ny;bRedrawConns();
+      }
     }
     if(_bDrawing){
       const p=s2c(e.clientX,e.clientY);
@@ -1883,16 +1896,100 @@ document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){bTool('sel');document.getElementById('b-modal').style.display='none';}
   }
 });
+// ── Floating Image on Board ──────────────────────────────
+function bAddBoardImage(src,x,y){
+  const id='bimg'+(++_bNid);
+  const img={id,x,y,w:300,src};
+  _bImages.push(img);
+  bRenderBoardImage(img);
+  bAutoSave();bPushH();
+}
+
+function bRenderBoardImage(img){
+  const el=document.createElement('div');
+  el.id=img.id;
+  el.style.cssText=`position:absolute;left:${img.x}px;top:${img.y}px;width:${img.w}px;z-index:5;user-select:none;cursor:move`;
+  el.innerHTML=`
+    <div style="position:relative;group">
+      <img src="${img.src}" style="width:100%;border-radius:10px;display:block;box-shadow:0 4px 16px rgba(0,0,0,.12);pointer-events:none" draggable="false"/>
+      <button onclick="bDelBoardImage('${img.id}')" style="position:absolute;top:-8px;right:-8px;background:#EF4444;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;z-index:10;padding:0" class="bimg-del"><i class="ti ti-x"></i></button>
+      <!-- Resize handle SE -->
+      <div class="bimg-rh" data-id="${img.id}" style="position:absolute;bottom:-5px;right:-5px;width:12px;height:12px;background:#7C3AED;border-radius:50%;cursor:se-resize;opacity:0;transition:opacity .15s"></div>
+    </div>`;
+  // Show controls on hover
+  el.addEventListener('mouseenter',()=>{
+    el.querySelector('.bimg-del').style.opacity='1';
+    el.querySelector('.bimg-rh').style.opacity='1';
+  });
+  el.addEventListener('mouseleave',()=>{
+    el.querySelector('.bimg-del').style.opacity='0';
+    el.querySelector('.bimg-rh').style.opacity='0';
+  });
+  // Drag to move
+  el.addEventListener('mousedown',e=>{
+    if(e.target.closest('.bimg-del')||e.target.closest('.bimg-rh'))return;
+    e.stopPropagation();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bDrag={id:img.id,ox:(e.clientX-wr.left-_bPx)/_bSc-img.x,oy:(e.clientY-wr.top-_bPy)/_bSc-img.y,isImg:true};
+  });
+  // Resize handle
+  el.querySelector('.bimg-rh').addEventListener('mousedown',e=>{
+    e.stopPropagation();e.preventDefault();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bResize={id:img.id,isImg:true,sx:(e.clientX-wr.left-_bPx)/_bSc,sw:img.w};
+  });
+  document.getElementById('b-canvas').appendChild(el);
+}
+
+function bDelBoardImage(id){
+  _bImages=_bImages.filter(i=>i.id!==id);
+  document.getElementById(id)?.remove();
+  bAutoSave();bPushH();
+}
+
+// Handle Ctrl+V paste anywhere on board
+function bInitPaste(){
+  document.addEventListener('paste',e=>{
+    if(!window._boardInit)return;
+    // Check if focused on a text input — don't intercept
+    const tag=document.activeElement?.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA')return;
+    const ce=document.activeElement?.isContentEditable;
+    const items=e.clipboardData?.items||[];
+    let hasImage=false;
+    for(const item of items){
+      if(item.type.startsWith('image/')){
+        hasImage=true;
+        e.preventDefault();
+        const blob=item.getAsFile();
+        if(!blob)return;
+        const reader=new FileReader();
+        reader.onload=ev=>{
+          // Place in center of current viewport
+          const wr=document.getElementById('b-wrap');
+          const cx=window._bs2c?.(wr.clientWidth/2,wr.clientHeight/2+24);
+          const x=(cx?.x||300)-150;
+          const y=(cx?.y||200)-100;
+          bAddBoardImage(ev.target.result,x,y);
+          toast('Image added ✓');
+        };
+        reader.readAsDataURL(blob);
+        break;
+      }
+    }
+  });
+}
+
 function bHandleImg(inp){
   const f=inp.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=e=>{
-    const wrap=document.getElementById('b-wrap');
-    const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:200,y:200};
-    const c=bAddCard(p.x-120,p.y-90,'note',{w:260,h:200,title:'Image'});
-    const el=document.getElementById(c.id);
-    const body=el?.querySelector('.b-card-body');
-    if(body){body.innerHTML=`<img src="${e.target.result}" style="width:100%;border-radius:8px"/>`;c.body=body.innerHTML;}
+    const wr=document.getElementById('b-wrap');
+    const cx=window._bs2c?.(wr.clientWidth/2,wr.clientHeight/2+24);
+    const x=(cx?.x||300)-150;
+    const y=(cx?.y||200)-100;
+    bAddBoardImage(e.target.result,x,y);
+    toast('Image added ✓');
   };
   r.readAsDataURL(f);inp.value='';
 }
@@ -1955,7 +2052,7 @@ async function bSwitchBoard(id){
   _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
   const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
-  _bCards=[];_bStickies=[];_bConns=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
+  _bCards=[];_bStickies=[];_bConns=[];_bImages=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
   _bCurrentBoardId=id;
   const {data,error}=await sb.from('script_boards').select('name,data').eq('id',id).single();
   if(error)console.error('bSwitchBoard:',error.message);
@@ -1967,6 +2064,7 @@ async function bSwitchBoard(id){
     if(d.vp){_bPx=d.vp.px||0;_bPy=d.vp.py||0;_bSc=d.vp.sc||1;}
     (d.cards||[]).forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title||'';el.querySelector('.b-card-body').innerHTML=c.body||'';}});
     (d.stickies||[]).forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+    (d.images||[]).forEach(img=>{_bImages.push(img);bRenderBoardImage(img);});
     _bConns=d.conns||[];bRedrawConns();
   }
   window._bApplyT?.();
@@ -1992,6 +2090,7 @@ async function bSave(silent=false){
   const data={
     cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
     stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
+    images:_bImages,
     conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
   };
   const {error}=await sb.from('script_boards').update({data,updated_at:new Date().toISOString()}).eq('id',_bCurrentBoardId).eq('created_by',user.id);
