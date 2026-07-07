@@ -1765,54 +1765,73 @@ function bNearestSide(el,clientX,clientY){
 function bAddDynPort(el, getId, getItem){
   const port=document.createElement('div');
   port.className='bdynport';
-  port.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 3px rgba(124,58,237,.3)';
+  port.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;background:#7C3AED;border:2px solid white;cursor:crosshair;opacity:0;transition:opacity .15s;z-index:30;pointer-events:none;box-shadow:0 0 0 4px rgba(124,58,237,.25)';
   el.appendChild(port);
+
+  // Store exact canvas coords where dot is shown
+  let _portCanvasX=0, _portCanvasY=0;
 
   el.addEventListener('mousemove',e=>{
     if(_bDrag||_bResize)return;
     const r=el.getBoundingClientRect();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
     const mx=e.clientX-r.left, my=e.clientY-r.top;
     const w=r.width, h=r.height;
-    const dists={t:my,b:h-my,l:mx,r:w-mx};
+
+    // Find nearest edge and clamp dot position to that edge
+    const dists={t:my, b:h-my, l:mx, r:w-mx};
     const side=Object.keys(dists).reduce((a,b)=>dists[a]<dists[b]?a:b);
-    const pad=12;
-    if(side==='t'){port.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';port.style.top='-7px';}
-    else if(side==='b'){port.style.left=Math.min(Math.max(mx,pad),w-pad)-7+'px';port.style.top=(h-7)+'px';}
-    else if(side==='l'){port.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';port.style.left='-7px';}
-    else{port.style.top=Math.min(Math.max(my,pad),h-pad)-7+'px';port.style.left=(w-7)+'px';}
+    let dotX, dotY; // pixel position relative to element
+    if(side==='t'){dotX=Math.min(Math.max(mx,0),w); dotY=0;}
+    else if(side==='b'){dotX=Math.min(Math.max(mx,0),w); dotY=h;}
+    else if(side==='l'){dotX=0; dotY=Math.min(Math.max(my,0),h);}
+    else{dotX=w; dotY=Math.min(Math.max(my,0),h);}
+
+    // Position dot
+    port.style.left=(dotX-7)+'px';
+    port.style.top=(dotY-7)+'px';
     port.dataset.side=side;
     port.style.opacity='1';
     port.style.pointerEvents='all';
+
+    // Store exact canvas coordinate
+    _portCanvasX=(e.clientX-wr.left-_bPx)/_bSc - (mx-dotX)/_bSc;
+    _portCanvasY=(e.clientY-wr.top-_bPy)/_bSc - (my-dotY)/_bSc;
+    port._cx=_portCanvasX;
+    port._cy=_portCanvasY;
   });
+
   el.addEventListener('mouseleave',()=>{
     if(!_bConnFrom){port.style.opacity='0';port.style.pointerEvents='none';}
   });
+
   port.addEventListener('mousedown',e=>{
     e.stopPropagation();e.preventDefault();
     const id=getId();
     const side=port.dataset.side||'r';
-    _bConnFrom={id,side};
-    const item=getItem();
-    if(!item)return;
-    const elr=el.getBoundingClientRect();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    const px=(parseFloat(port.style.left)+7+elr.left-wr.left-_bPx)/_bSc;
-    const py=(parseFloat(port.style.top)+7+elr.top-wr.top-_bPy)/_bSc;
-    bStartTmpLine({x:px,y:py});
+    const cx=port._cx||0, cy=port._cy||0;
+    _bConnFrom={id, side, cx, cy};
+    bStartTmpLine({x:cx, y:cy});
   });
+
   port.addEventListener('mouseup',e=>{
     e.stopPropagation();
     const id=getId();
     if(_bConnFrom&&_bConnFrom.id!==id){
-      bAddConn(_bConnFrom.id,id,_bConnFrom.side,port.dataset.side||'l');
+      const side=port.dataset.side||'l';
+      const cx=port._cx||0, cy=port._cy||0;
+      bAddConnExact(_bConnFrom.id,id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
     }
     bEndConn();
   });
+
   el.addEventListener('mouseup',e=>{
     const id=getId();
     if(_bConnFrom&&_bConnFrom.id!==id){
-      const side=bNearestSide(el,e.clientX,e.clientY);
-      bAddConn(_bConnFrom.id,id,_bConnFrom.side,side);
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const cx=(e.clientX-wr.left-_bPx)/_bSc;
+      const cy=(e.clientY-wr.top-_bPy)/_bSc;
+      bAddConnExact(_bConnFrom.id,id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
       bEndConn();
     }
   });
@@ -1843,6 +1862,12 @@ function bRenderSticky(s){
 }
 function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();bAutoSave();}
 
+function bAddConnExact(fId,tId,fx,fy,tx,ty){
+  if(_bConns.find(c=>(c.f===fId&&c.t===tId)||(c.f===tId&&c.t===fId)))return;
+  _bConns.push({id:'bcn'+(++_bNid),f:fId,t:tId,fx,fy,tx,ty,color:_bColor});
+  bRedrawConns();bPushH();bAutoSave();
+}
+
 function bAddConn(f,t,fs,ts){
   if(_bConns.find(c=>(c.f===f&&c.t===t)||(c.f===t&&c.t===f)))return;
   _bConns.push({id:'bcn'+(++_bNid),f,t,fs:fs||'r',ts:ts||'l',color:_bColor});
@@ -1866,30 +1891,40 @@ function bRedrawConns(){
   const svg=document.getElementById('b-svg');
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
   _bConns.forEach(conn=>{
-    const a=bGetPortCenter(conn.f,conn.fs||'r');
-    const b=bGetPortCenter(conn.t,conn.ts||'l');
-    if(!a||!b)return;
-    const dx=b.x-a.x,dy=b.y-a.y;
-    // Smooth bezier control points based on port side
+    // Use exact coords if saved, otherwise fall back to port center
+    let a,b2;
+    if(conn.fx!==undefined&&conn.fy!==undefined){
+      a={x:conn.fx,y:conn.fy};
+    } else {
+      a=bGetPortCenter(conn.f,conn.fs||'r');
+    }
+    if(conn.tx!==undefined&&conn.ty!==undefined){
+      b2={x:conn.tx,y:conn.ty};
+    } else {
+      b2=bGetPortCenter(conn.t,conn.ts||'l');
+    }
+    if(!a||!b2)return;
+    const dx=b2.x-a.x,dy=b2.y-a.y;
+    // Smooth bezier — direction based on which side conn starts/ends from
     const cpLen=Math.max(60,Math.abs(dx)*.5,Math.abs(dy)*.5);
     const getCP=(pt,side,len)=>{
       if(side==='r')return{x:pt.x+len,y:pt.y};
       if(side==='l')return{x:pt.x-len,y:pt.y};
       if(side==='b')return{x:pt.x,y:pt.y+len};
       if(side==='t')return{x:pt.x,y:pt.y-len};
-      return{x:pt.x+len,y:pt.y};
+      // For exact coords: use direction from start to end
+      return{x:pt.x+dx*.4,y:pt.y+dy*.4};
     };
-    const cp1=getCP(a,conn.fs||'r',cpLen);
-    const cp2=getCP(b,conn.ts||'l',cpLen);
+    const cp1=getCP(a,conn.fs,cpLen);
+    const cp2=getCP(b2,conn.ts,cpLen);
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.className.baseVal='bcg';g.style.cursor='pointer';
 
-    // Shadow path for easier click
     const shadow=document.createElementNS('http://www.w3.org/2000/svg','path');
-    shadow.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b.x},${b.y}`);
+    shadow.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b2.x},${b2.y}`);
     shadow.setAttribute('stroke','transparent');shadow.setAttribute('stroke-width','12');shadow.setAttribute('fill','none');shadow.style.pointerEvents='stroke';
 
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b.x},${b.y}`);
+    path.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b2.x},${b2.y}`);
     path.setAttribute('stroke',conn.color||'#6C63FF');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');
     path.setAttribute('marker-end',`url(#arr-${conn.id})`);
 
@@ -1902,17 +1937,16 @@ function bRedrawConns(){
     arrPoly.setAttribute('points','0,0 6,3 0,6');arrPoly.setAttribute('fill',conn.color||'#6C63FF');
     marker.appendChild(arrPoly);defs.appendChild(marker);
 
-    // Delete dot in middle
     const t2=.5;
-    const mx=Math.pow(1-t2,3)*a.x+3*Math.pow(1-t2,2)*t2*cp1.x+3*(1-t2)*Math.pow(t2,2)*cp2.x+Math.pow(t2,3)*b.x;
-    const my=Math.pow(1-t2,3)*a.y+3*Math.pow(1-t2,2)*t2*cp1.y+3*(1-t2)*Math.pow(t2,2)*cp2.y+Math.pow(t2,3)*b.y;
+    const mx2=Math.pow(1-t2,3)*a.x+3*Math.pow(1-t2,2)*t2*cp1.x+3*(1-t2)*Math.pow(t2,2)*cp2.x+Math.pow(t2,3)*b2.x;
+    const my2=Math.pow(1-t2,3)*a.y+3*Math.pow(1-t2,2)*t2*cp1.y+3*(1-t2)*Math.pow(t2,2)*cp2.y+Math.pow(t2,3)*b2.y;
     const delBtn=document.createElementNS('http://www.w3.org/2000/svg','g');
     delBtn.style.opacity='0';delBtn.style.pointerEvents='all';
     const delCirc=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    delCirc.setAttribute('cx',mx);delCirc.setAttribute('cy',my);delCirc.setAttribute('r','10');
+    delCirc.setAttribute('cx',mx2);delCirc.setAttribute('cy',my2);delCirc.setAttribute('r','10');
     delCirc.setAttribute('fill','#EF4444');delCirc.style.cursor='pointer';
     const delX=document.createElementNS('http://www.w3.org/2000/svg','text');
-    delX.setAttribute('x',mx);delX.setAttribute('y',my+4);delX.setAttribute('text-anchor','middle');
+    delX.setAttribute('x',mx2);delX.setAttribute('y',my2+4);delX.setAttribute('text-anchor','middle');
     delX.setAttribute('fill','white');delX.setAttribute('font-size','12');delX.setAttribute('font-weight','700');delX.style.pointerEvents='none';
     delX.textContent='×';
     delBtn.appendChild(delCirc);delBtn.appendChild(delX);
@@ -2340,7 +2374,23 @@ async function bCheckShareLink(){
   const d=data.data||{};
   const allCards=d.cards||[];
   const allStickies=d.stickies||[];
+  const allImages=d.images||[];
   svPx=d.vp?.px||0;svPy=d.vp?.py||0;svSc=d.vp?.sc||1;
+
+  allImages&&allImages.forEach&&allImages.forEach(img=>{
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${img.x}px;top:${img.y}px;width:${img.w||300}px;z-index:5`;
+    el.innerHTML=`
+      <div style="position:relative">
+        <img src="${img.src}" style="width:100%;border-radius:10px;display:block;box-shadow:0 4px 16px rgba(0,0,0,.12)" draggable="false"/>
+        <a href="${img.src}" download="image.png" title="Download image" style="position:absolute;top:8px;right:8px;background:rgba(124,58,237,.9);color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)" class="sv-dl-btn">
+          <i class="ti ti-download"></i> Download
+        </a>
+      </div>`;
+    el.addEventListener('mouseenter',()=>el.querySelector('.sv-dl-btn').style.opacity='1');
+    el.addEventListener('mouseleave',()=>el.querySelector('.sv-dl-btn').style.opacity='0');
+    canvas.appendChild(el);
+  });
 
   allCards.forEach(c=>{
     const col=c.color||'#6C63FF';
