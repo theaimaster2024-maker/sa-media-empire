@@ -2046,30 +2046,169 @@ async function bCheckShareLink(){
   const params=new URLSearchParams(location.search);
   const shareToken=params.get('board_share');
   if(!shareToken)return false;
-  const {data}=await sb.from('script_boards').select('id,name,data').eq('share_token',shareToken).eq('is_public',true).single();
-  if(!data){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#6B7280">Link টি আর valid নেই বা share বন্ধ করা হয়েছে।</div>';return true;}
-  // Render read-only view
-  document.body.innerHTML=`<div style="font-family:sans-serif;background:#FAFAFA;height:100vh;overflow:hidden;display:flex;flex-direction:column">
-    <div style="background:#1A1F3C;padding:12px 20px;display:flex;align-items:center;gap:12px">
-      <span style="color:white;font-weight:700;font-size:15px">📋 ${data.name}</span>
-      <span style="background:rgba(108,99,255,.3);color:#A5A0FF;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600">View Only</span>
-      <span style="color:rgba(255,255,255,.4);font-size:11px;margin-left:auto">SA Media Empire</span>
+
+  // Fetch board data — public read, no auth needed
+  const {data,error}=await sb.from('script_boards').select('id,name,data').eq('share_token',shareToken).eq('is_public',true).single();
+
+  if(!data||error){
+    document.body.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;color:#6B7280;gap:12px">
+      <i class="ti ti-lock" style="font-size:40px;color:#DDD6FE"></i>
+      <div style="font-size:16px;font-weight:600;color:#374151">Link আর valid নেই</div>
+      <div style="font-size:13px">Share বন্ধ করা হয়েছে বা link ভুল।</div>
+    </div>`;
+    return true;
+  }
+
+  // Build full read-only page
+  document.body.style.cssText='margin:0;padding:0;font-family:Inter,sans-serif;overflow:hidden;height:100vh;background:#FAFAFA';
+  document.body.innerHTML=`
+    <!-- Header -->
+    <div id="sv-header" style="position:fixed;top:0;left:0;right:0;height:48px;background:linear-gradient(135deg,#7C3AED,#6C63FF);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:1000;box-shadow:0 2px 12px rgba(124,58,237,.3)">
+      <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:4px 8px;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-layout-board" style="color:white;font-size:14px"></i>
+        <span style="color:white;font-weight:700;font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${data.name}</span>
+      </div>
+      <span style="background:rgba(255,255,255,.2);color:white;font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:.04em">VIEW ONLY</span>
+      <div style="flex:1"></div>
+      <!-- Zoom controls -->
+      <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);border-radius:8px;padding:4px 8px">
+        <button onclick="svZoom(-.15)" style="background:none;border:none;cursor:pointer;color:white;font-size:16px;padding:2px 6px;border-radius:4px;line-height:1" title="Zoom out">−</button>
+        <span id="sv-zoom-badge" style="color:white;font-size:11px;font-weight:600;min-width:36px;text-align:center">100%</span>
+        <button onclick="svZoom(.15)" style="background:none;border:none;cursor:pointer;color:white;font-size:16px;padding:2px 6px;border-radius:4px;line-height:1" title="Zoom in">+</button>
+        <button onclick="svFit()" style="background:none;border:none;cursor:pointer;color:white;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1" title="Fit to screen"><i class="ti ti-maximize"></i></button>
+      </div>
+      <span style="color:rgba(255,255,255,.5);font-size:11px;margin-left:4px">SA Media Empire</span>
     </div>
-    <div id="b-wrap" style="flex:1;overflow:hidden;cursor:default;position:relative;background-color:#FAFAFA;background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);background-size:24px 24px">
-      <div id="b-canvas" style="position:absolute;transform-origin:0 0">
-        <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
-        <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none;z-index:50"></canvas>
+    <!-- Canvas -->
+    <div id="sv-wrap" style="position:fixed;top:48px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;background-color:#FAFAFA;background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);background-size:24px 24px">
+      <div id="sv-canvas" style="position:absolute;transform-origin:0 0">
+        <svg id="sv-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
       </div>
     </div>
-  </div>`;
-  // Load Tabler Icons
-  const link=document.createElement('link');link.rel='stylesheet';link.href='https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css';document.head.appendChild(link);
-  // Render cards read-only
+    <!-- Help bar -->
+    <div style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,.95);border:1px solid #E5E7EB;border-radius:12px;padding:7px 16px;font-size:11px;color:#8B92B8;box-shadow:0 2px 12px rgba(108,99,255,.08);white-space:nowrap">
+      <b style="color:#7C3AED">Scroll</b> → zoom &nbsp;·&nbsp;
+      <b style="color:#7C3AED">Drag</b> → pan &nbsp;·&nbsp;
+      <b style="color:#7C3AED">Read Only</b> — edit করা যাবে না
+    </div>`;
+
+  // State
+  let svPx=0,svPy=0,svSc=1;
+  const wrap=document.getElementById('sv-wrap');
+  const canvas=document.getElementById('sv-canvas');
+  const svg=document.getElementById('sv-svg');
+
+  function applyT(){
+    canvas.style.transform=`translate(${svPx}px,${svPy}px) scale(${svSc})`;
+    const badge=document.getElementById('sv-zoom-badge');
+    if(badge)badge.textContent=Math.round(svSc*100)+'%';
+  }
+
+  function svZoom(d,cx,cy){
+    const wr=wrap.getBoundingClientRect();
+    const ox=cx!==undefined?cx:wr.left+wr.width/2;
+    const oy=cy!==undefined?cy:wr.top+wr.height/2;
+    const oldSc=svSc;
+    svSc=Math.min(3,Math.max(.1,svSc+d));
+    svPx=ox-(ox-svPx)*(svSc/oldSc);
+    svPy=oy-(oy-svPy)*(svSc/oldSc);
+    applyT();
+  }
+  window.svZoom=svZoom;
+
+  function svFit(){
+    if(!allCards.length&&!allStickies.length)return;
+    const items=[...allCards,...allStickies];
+    const minX=Math.min(...items.map(c=>c.x));
+    const minY=Math.min(...items.map(c=>c.y));
+    const maxX=Math.max(...items.map(c=>c.x+(c.w||240)));
+    const maxY=Math.max(...items.map(c=>c.y+(c.h||160)));
+    const wr=wrap.getBoundingClientRect();
+    const scX=(wr.width-80)/(maxX-minX||1);
+    const scY=(wr.height-80)/(maxY-minY||1);
+    svSc=Math.min(scX,scY,.9);
+    svPx=(wr.width-((maxX-minX)*svSc))/2-minX*svSc;
+    svPy=(wr.height-((maxY-minY)*svSc))/2-minY*svSc;
+    applyT();
+  }
+  window.svFit=svFit;
+
+  // Pan
+  let svPan=null;
+  wrap.addEventListener('mousedown',e=>{if(e.button===1||e.button===0){svPan={sx:e.clientX-svPx,sy:e.clientY-svPy};wrap.style.cursor='grabbing';}});
+  document.addEventListener('mousemove',e=>{if(svPan){svPx=e.clientX-svPan.sx;svPy=e.clientY-svPan.sy;applyT();}});
+  document.addEventListener('mouseup',()=>{svPan=null;wrap.style.cursor='grab';});
+  wrap.addEventListener('wheel',e=>{e.preventDefault();svZoom(e.deltaY<0?.1:-.1,e.clientX,e.clientY);},{passive:false});
+
+  // Render cards (read-only, no events)
   const d=data.data||{};
-  _bPx=d.vp?.px||0;_bPy=d.vp?.py||0;_bSc=d.vp?.sc||1;
-  d.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c,true);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';el.style.pointerEvents='none';}});
-  d.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el){el.querySelector('.b-sticky-txt').innerText=s.text||'';el.style.pointerEvents='none';}});
-  _bConns=d.conns||[];bRedrawConns();window._bApplyT?.();
+  const allCards=d.cards||[];
+  const allStickies=d.stickies||[];
+  svPx=d.vp?.px||0;svPy=d.vp?.py||0;svSc=d.vp?.sc||1;
+
+  allCards.forEach(c=>{
+    const col=c.color||'#6C63FF';
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${c.x}px;top:${c.y}px;width:${c.w||240}px;min-height:${c.h||160}px;border-radius:12px;background:white;border:2px solid ${col}33;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;user-select:text`;
+    el.innerHTML=`
+      <div style="background:${col}15;border-bottom:1.5px solid ${col}22;padding:8px 10px;display:flex;align-items:center;gap:8px">
+        <div style="width:22px;height:22px;border-radius:6px;background:${col}22;color:${col};display:flex;align-items:center;justify-content:center;font-size:12px"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
+        <div style="font-size:13px;font-weight:600;color:#1A1F3C;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.title||''}</div>
+      </div>
+      <div style="padding:10px;font-size:13px;line-height:1.7;color:#374151;min-height:80px">${c.body||''}</div>`;
+    canvas.appendChild(el);
+  });
+
+  allStickies.forEach(s=>{
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${s.x}px;top:${s.y}px;background:${s.color}22;border:1.5px solid ${s.color}55;color:${s.color};border-radius:10px;padding:12px;min-width:160px;min-height:110px;font-size:13px;font-weight:500;line-height:1.6;word-break:break-word;white-space:pre-wrap;user-select:text`;
+    el.textContent=s.text||'';
+    canvas.appendChild(el);
+  });
+
+  // Draw connections
+  const conns=d.conns||[];
+  conns.forEach(conn=>{
+    const fc=allCards.find(x=>x.id===conn.f)||allStickies.find(x=>x.id===conn.f);
+    const tc=allCards.find(x=>x.id===conn.t)||allStickies.find(x=>x.id===conn.t);
+    if(!fc||!tc)return;
+    const getPort=(c,side)=>{
+      const w=c.w||240,h=c.h||160;
+      if(side==='t')return{x:c.x+w/2,y:c.y};
+      if(side==='b')return{x:c.x+w/2,y:c.y+h};
+      if(side==='l')return{x:c.x,y:c.y+h/2};
+      if(side==='r')return{x:c.x+w,y:c.y+h/2};
+      return{x:c.x+w/2,y:c.y+h/2};
+    };
+    const a=getPort(fc,conn.fs||'r'),b=getPort(tc,conn.ts||'l');
+    const dx=b.x-a.x;
+    const cpLen=Math.max(60,Math.abs(dx)*.5);
+    const getCP=(pt,side,len)=>{
+      if(side==='r')return{x:pt.x+len,y:pt.y};
+      if(side==='l')return{x:pt.x-len,y:pt.y};
+      if(side==='b')return{x:pt.x,y:pt.y+len};
+      if(side==='t')return{x:pt.x,y:pt.y-len};
+      return{x:pt.x+len,y:pt.y};
+    };
+    const cp1=getCP(a,conn.fs||'r',cpLen),cp2=getCP(b,conn.ts||'l',cpLen);
+    const defs=svg.querySelector('defs')||svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'),svg.firstChild);
+    const mid=`arr-sv-${conn.id}`;
+    const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    marker.setAttribute('id',mid);marker.setAttribute('markerWidth','8');marker.setAttribute('markerHeight','8');
+    marker.setAttribute('refX','6');marker.setAttribute('refY','3');marker.setAttribute('orient','auto');
+    const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points','0,0 6,3 0,6');poly.setAttribute('fill',conn.color||'#6C63FF');
+    marker.appendChild(poly);defs.appendChild(marker);
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${a.x},${a.y} C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${b.x},${b.y}`);
+    path.setAttribute('stroke',conn.color||'#6C63FF');path.setAttribute('stroke-width','2.5');
+    path.setAttribute('fill','none');path.setAttribute('marker-end',`url(#${mid})`);
+    svg.appendChild(path);
+  });
+
+  applyT();
+  // Auto-fit after render
+  setTimeout(svFit,100);
   return true;
 }
 
