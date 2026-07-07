@@ -171,6 +171,16 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .bqa-l:hover{transform:translateY(-50%) scale(1.2)}
 .bqa-r{right:-14px;top:50%;transform:translateY(-50%)}
 .bqa-r:hover{transform:translateY(-50%) scale(1.2)}
+/* Connect drag handles */
+.bch{position:absolute;z-index:35;opacity:0;transition:opacity .15s;cursor:crosshair}
+.b-card:hover .bch{opacity:1}
+.bch::before{content:'';position:absolute;background:#4F8EF7;border-radius:50%;border:2px solid white;box-shadow:0 1px 6px rgba(79,142,247,.5);transition:transform .1s}
+.bch-t{top:-5px;left:50%;transform:translateX(-50%);width:10px;height:10px}
+.bch-b{bottom:-5px;left:50%;transform:translateX(-50%);width:10px;height:10px}
+.bch-l{left:-5px;top:50%;transform:translateY(-50%);width:10px;height:10px}
+.bch-r{right:-5px;top:50%;transform:translateY(-50%);width:10px;height:10px}
+.bch::before{content:'';width:100%;height:100%;display:block;background:#4F8EF7;border-radius:50%;border:2px solid white;box-shadow:0 1px 6px rgba(79,142,247,.5)}
+.bch:hover::before{transform:scale(1.4);background:#2563EB}
 .bcd{position:absolute;width:12px;height:12px;border-radius:50%;background:#0EA5E9;border:2px solid #fff;box-shadow:0 0 0 1.5px #0EA5E9;cursor:crosshair;opacity:0;transition:.15s;z-index:15}
 .b-card:hover .bcd{opacity:1}
 .bcd-r{right:-6px;top:50%;transform:translateY(-50%)}
@@ -1652,13 +1662,32 @@ function bRenderCard(c){
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
     <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>
+    <!-- Miro-style drag-to-connect handles (4 sides) -->
+    <div class="bch bch-t" data-cid="${c.id}" data-side="t"></div>
+    <div class="bch bch-b" data-cid="${c.id}" data-side="b"></div>
+    <div class="bch bch-l" data-cid="${c.id}" data-side="l"></div>
+    <div class="bch bch-r" data-cid="${c.id}" data-side="r"></div>
     <!-- Quick connect arrows (Miro style) -->
     <div class="bqa bqa-t" data-cid="${c.id}" data-dir="t" title="Add connected card above">＋</div>
     <div class="bqa bqa-b" data-cid="${c.id}" data-dir="b" title="Add connected card below">＋</div>
     <div class="bqa bqa-l" data-cid="${c.id}" data-dir="l" title="Add connected card left">＋</div>
     <div class="bqa bqa-r" data-cid="${c.id}" data-dir="r" title="Add connected card right">＋</div>`;
 
-  // Quick connect arrows — click to add connected card
+  // ── Blue handles: drag to connect cards ──
+  el.querySelectorAll('.bch').forEach(handle=>{
+    handle.addEventListener('mousedown',e=>{
+      e.stopPropagation();e.preventDefault();
+      const side=handle.dataset.side;
+      const pt=bGetPortCenter(c.id,side);
+      if(!pt)return;
+      _bConnFrom={id:c.id,side,cx:pt.x,cy:pt.y};
+      bStartTmpLine({x:pt.x,y:pt.y});
+      // Keep handles visible while dragging
+      el.querySelectorAll('.bch').forEach(h=>h.style.opacity='1');
+    });
+  });
+
+  // ── Quick connect arrows ──
   el.querySelectorAll('.bqa').forEach(arrow=>{
     arrow.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();});
     arrow.addEventListener('click',e=>{
@@ -1692,60 +1721,46 @@ function bRenderCard(c){
   el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;bAutoSave();});
   body.addEventListener('input',e=>{c.body=e.target.innerHTML;bAutoSave();});
 
-  // ── Miro-style connection: hover border → crosshair → drag to connect
+  // ── Card drag and selection ──
   el.addEventListener('mousemove',e=>{
-    if(_bDrag||_bResize||e.target.isContentEditable||e.target.closest('.b-rtb')||e.target.closest('.b-card-ttl')||e.target.closest('.b-del'))return;
-    const r=el.getBoundingClientRect();
-    const mx=e.clientX-r.left, my=e.clientY-r.top;
-    const w=r.width, h=r.height;
-    const edgeDist=Math.min(mx, my, w-mx, h-my);
-    if(edgeDist<18){
-      el.style.cursor='crosshair';
-      el.dataset.connZone='1';
-    } else {
-      el.style.cursor='';
-      el.dataset.connZone='0';
-    }
+    if(_bDrag||_bResize||e.target.closest('.bch')||e.target.closest('.bqa')||e.target.closest('.brh'))return;
+    if(e.target.isContentEditable||e.target.closest('.b-rtb')||e.target.closest('.b-del'))return;
+    el.style.cursor=e.target.closest('.b-card-head')?'grab':'';
   });
-  el.addEventListener('mouseleave',()=>{el.style.cursor='';el.dataset.connZone='0';});
+  el.addEventListener('mouseleave',()=>{el.style.cursor='';});
 
   el.addEventListener('mousedown',e=>{
-    if(e.target.isContentEditable||e.target.closest('.b-del')||e.target.closest('.b-rtb')||e.target.closest('.brh'))return;
-    const isConnZone=el.dataset.connZone==='1';
-    if(isConnZone){
-      // Start connection
-      e.stopPropagation();e.preventDefault();
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const cx=(e.clientX-wr.left-_bPx)/_bSc;
-      const cy=(e.clientY-wr.top-_bPy)/_bSc;
-      _bConnFrom={id:c.id,cx,cy};
-      bStartTmpLine({x:cx,y:cy});
-      return;
-    }
-    // Normal drag
-    if(e.target.closest('.b-card-head')){
-      e.stopPropagation();
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      _bDrag={id:c.id,ox:(e.clientX-wr.left-_bPx)/_bSc-c.x,oy:(e.clientY-wr.top-_bPy)/_bSc-c.y};
-      bSelCard(c.id);
-    }
+    if(e.target.isContentEditable||e.target.closest('.b-del')||e.target.closest('.b-rtb')||e.target.closest('.brh')||e.target.closest('.bch')||e.target.closest('.bqa'))return;
+    e.stopPropagation();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bDrag={id:c.id,ox:(e.clientX-wr.left-_bPx)/_bSc-c.x,oy:(e.clientY-wr.top-_bPy)/_bSc-c.y};
+    bSelCard(c.id);
   });
 
   el.addEventListener('mouseup',e=>{
     if(_bConnFrom&&_bConnFrom.id!==c.id){
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const cx=(e.clientX-wr.left-_bPx)/_bSc;
-      const cy=(e.clientY-wr.top-_bPy)/_bSc;
+      e.stopPropagation();
+      // If dropped on a handle, use that side's center; otherwise use mouse position
+      const handle=e.target.closest('.bch');
+      let cx,cy;
+      if(handle){
+        const side=handle.dataset.side;
+        const pt=bGetPortCenter(c.id,side);
+        cx=pt?.x;cy=pt?.y;
+      } else {
+        const wr=document.getElementById('b-wrap').getBoundingClientRect();
+        cx=(e.clientX-wr.left-_bPx)/_bSc;
+        cy=(e.clientY-wr.top-_bPy)/_bSc;
+      }
       bAddConnExact(_bConnFrom.id,c.id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
       bEndConn();
     }
   });
 
-  // Resize
+  // ── Resize handles ──
   el.querySelectorAll('.brh').forEach(rh=>{
     rh.addEventListener('mousedown',e=>{
       e.stopPropagation();e.preventDefault();
-      const canvas2=document.getElementById('b-canvas');
       const cr2=document.getElementById('b-wrap').getBoundingClientRect();
       _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-cr2.left-_bPx)/_bSc,sy:(e.clientY-cr2.top-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
     });
