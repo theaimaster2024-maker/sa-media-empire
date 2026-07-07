@@ -156,10 +156,10 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .brh-s{bottom:-4px;left:16px;right:16px;height:8px;cursor:s-resize}
 .brh-e{right:-4px;top:16px;bottom:16px;width:8px;cursor:e-resize}
 .brh-w{left:-4px;top:16px;bottom:16px;width:8px;cursor:w-resize}
-.brh-se{bottom:-6px;right:-6px;width:12px;height:12px;cursor:se-resize;border-radius:50%;background:#7C3AED}
-.brh-sw{bottom:-6px;left:-6px;width:12px;height:12px;cursor:sw-resize;border-radius:50%;background:#C4B5FD}
-.brh-ne{top:-6px;right:-6px;width:12px;height:12px;cursor:ne-resize;border-radius:50%;background:#C4B5FD}
-.brh-nw{top:-6px;left:-6px;width:12px;height:12px;cursor:nw-resize;border-radius:50%;background:#C4B5FD}
+.brh-se{bottom:-6px;right:-6px;width:16px;height:16px;cursor:se-resize;border-radius:50%}
+.brh-sw{bottom:-6px;left:-6px;width:16px;height:16px;cursor:sw-resize;border-radius:50%}
+.brh-ne{top:-6px;right:-6px;width:16px;height:16px;cursor:ne-resize;border-radius:50%}
+.brh-nw{top:-6px;left:-6px;width:16px;height:16px;cursor:nw-resize;border-radius:50%}
 .bcd{position:absolute;width:12px;height:12px;border-radius:50%;background:#0EA5E9;border:2px solid #fff;box-shadow:0 0 0 1.5px #0EA5E9;cursor:crosshair;opacity:0;transition:.15s;z-index:15}
 .b-card:hover .bcd{opacity:1}
 .bcd-r{right:-6px;top:50%;transform:translateY(-50%)}
@@ -1996,7 +1996,7 @@ function bRenderBoardImage(img){
       <img src="${img.src}" style="width:100%;border-radius:10px;display:block;box-shadow:0 4px 16px rgba(0,0,0,.12);pointer-events:none" draggable="false"/>
       <button onclick="bDelBoardImage('${img.id}')" style="position:absolute;top:-8px;right:-8px;background:#EF4444;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;z-index:10;padding:0" class="bimg-del"><i class="ti ti-x"></i></button>
       <!-- Resize handle SE -->
-      <div class="bimg-rh" data-id="${img.id}" style="position:absolute;bottom:-5px;right:-5px;width:12px;height:12px;background:#7C3AED;border-radius:50%;cursor:se-resize;opacity:0;transition:opacity .15s"></div>
+      <div class="bimg-rh" data-id="${img.id}" style="position:absolute;bottom:-6px;right:-6px;width:16px;height:16px;background:transparent;border-radius:50%;cursor:se-resize;opacity:0;transition:opacity .15s"></div>
     </div>`;
   // Show controls on hover
   el.addEventListener('mouseenter',()=>{
