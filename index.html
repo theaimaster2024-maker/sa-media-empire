@@ -160,6 +160,17 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .brh-sw{bottom:-6px;left:-6px;width:16px;height:16px;cursor:sw-resize;border-radius:50%}
 .brh-ne{top:-6px;right:-6px;width:16px;height:16px;cursor:ne-resize;border-radius:50%}
 .brh-nw{top:-6px;left:-6px;width:16px;height:16px;cursor:nw-resize;border-radius:50%}
+.bqa{position:absolute;width:22px;height:22px;border-radius:50%;background:#7C3AED;color:white;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;cursor:pointer;opacity:0;transition:opacity .15s,transform .15s;z-index:40;border:2px solid white;box-shadow:0 2px 8px rgba(124,58,237,.4);line-height:1;user-select:none}
+.bqa:hover{background:#6D28D9;transform:scale(1.2)}
+.b-card:hover .bqa{opacity:1}
+.bqa-t{top:-14px;left:50%;transform:translateX(-50%)}
+.bqa-t:hover{transform:translateX(-50%) scale(1.2)}
+.bqa-b{bottom:-14px;left:50%;transform:translateX(-50%)}
+.bqa-b:hover{transform:translateX(-50%) scale(1.2)}
+.bqa-l{left:-14px;top:50%;transform:translateY(-50%)}
+.bqa-l:hover{transform:translateY(-50%) scale(1.2)}
+.bqa-r{right:-14px;top:50%;transform:translateY(-50%)}
+.bqa-r:hover{transform:translateY(-50%) scale(1.2)}
 .bcd{position:absolute;width:12px;height:12px;border-radius:50%;background:#0EA5E9;border:2px solid #fff;box-shadow:0 0 0 1.5px #0EA5E9;cursor:crosshair;opacity:0;transition:.15s;z-index:15}
 .b-card:hover .bcd{opacity:1}
 .bcd-r{right:-6px;top:50%;transform:translateY(-50%)}
@@ -813,6 +824,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
 
             <button class="tb" title="Save board (Ctrl+S)" onclick="bSave()" style="color:#00C48C"><i class="ti ti-device-floppy"></i></button>
+            <button class="tb" title="Export as PDF" onclick="bExportPDF()" style="color:#EF4444"><i class="ti ti-file-type-pdf"></i></button>
             <button class="tb" title="Share board (view-only)" onclick="bShareBoard()" style="color:#7C3AED"><i class="ti ti-share"></i></button>
             <button class="tb" title="Clear board" onclick="bClear()" style="color:#FF4E6A"><i class="ti ti-trash"></i></button>
 
@@ -1639,7 +1651,38 @@ function bRenderCard(c){
     <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
-    <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>`;
+    <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>
+    <!-- Quick connect arrows (Miro style) -->
+    <div class="bqa bqa-t" data-cid="${c.id}" data-dir="t" title="Add connected card above">＋</div>
+    <div class="bqa bqa-b" data-cid="${c.id}" data-dir="b" title="Add connected card below">＋</div>
+    <div class="bqa bqa-l" data-cid="${c.id}" data-dir="l" title="Add connected card left">＋</div>
+    <div class="bqa bqa-r" data-cid="${c.id}" data-dir="r" title="Add connected card right">＋</div>`;
+
+  // Quick connect arrows — click to add connected card
+  el.querySelectorAll('.bqa').forEach(arrow=>{
+    arrow.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();});
+    arrow.addEventListener('click',e=>{
+      e.stopPropagation();
+      const dir=arrow.dataset.dir;
+      const gap=40;
+      const cw=el.offsetWidth||c.w||240;
+      const ch=el.offsetHeight||c.h||160;
+      let nx=c.x, ny=c.y;
+      if(dir==='r')nx=c.x+cw+gap;
+      else if(dir==='l')nx=c.x-cw-gap;
+      else if(dir==='b')ny=c.y+ch+gap;
+      else if(dir==='t')ny=c.y-ch-gap;
+      const nc=bAddCard(nx,ny,c.type);
+      // Wait for DOM then connect center of edges
+      setTimeout(()=>{
+        const oppDir={r:'l',l:'r',t:'b',b:'t'};
+        const srcPt=bGetPortCenter(c.id,dir);
+        const tgtPt=bGetPortCenter(nc.id,oppDir[dir]);
+        if(srcPt&&tgtPt)bAddConnExact(c.id,nc.id,srcPt.x,srcPt.y,tgtPt.x,tgtPt.y);
+        document.getElementById(nc.id)?.querySelector('.b-card-ttl')?.focus();
+      },30);
+    });
+  });
 
   // Show rich text toolbar on body focus
   const body=el.querySelector('.b-card-body');
@@ -2186,6 +2229,76 @@ async function bSave(silent=false){
   }
   if(st){st.textContent='Saved ✓';st.style.color='#059669';setTimeout(()=>{st.textContent='';},2000);}
   if(!silent)toast('Saved ✓');
+}
+
+async function bExportPDF(){
+  toast('PDF তৈরি হচ্ছে...');
+  // Dynamically load html2canvas and jsPDF
+  const loadScript=url=>new Promise(res=>{
+    if(document.querySelector(`script[src="${url}"]`)){res();return;}
+    const s=document.createElement('script');s.src=url;s.onload=res;document.head.appendChild(s);
+  });
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+  // Save current transform, then fit all to screen temporarily
+  const prevPx=_bPx,prevPy=_bPy,prevSc=_bSc;
+
+  // Calculate board bounds
+  const all=[..._bCards,..._bStickies,..._bImages];
+  if(!all.length){toast('Board empty!');return;}
+  const minX=Math.min(...all.map(c=>c.x))-30;
+  const minY=Math.min(...all.map(c=>c.y))-30;
+  const maxX=Math.max(...all.map(c=>c.x+(c.w||240)))+30;
+  const maxY=Math.max(...all.map(c=>c.y+(c.h||160)))+30;
+  const bw=maxX-minX, bh=maxY-minY;
+
+  // Set transform to show full board at scale 1
+  _bPx=-minX;_bPy=-minY;_bSc=1;
+  window._bApplyT?.();
+
+  // Wait for render
+  await new Promise(r=>setTimeout(r,300));
+
+  const canvas2=document.getElementById('b-canvas');
+  try{
+    const boardName=document.getElementById('b-board-name-badge')?.textContent||'board';
+    const dpr=window.devicePixelRatio||1;
+    const imgCanvas=await window.html2canvas(canvas2,{
+      width:bw, height:bh,
+      x:0, y:0,
+      scale:2,
+      useCORS:true,
+      allowTaint:true,
+      backgroundColor:'#FAFAFA',
+      logging:false
+    });
+    const {jsPDF}=window.jspdf;
+    // A4 landscape or fit
+    const ratio=bw/bh;
+    let pw,ph;
+    if(ratio>1.414){pw=297;ph=210;}
+    else{pw=210;ph=297;}
+    const pdf=new jsPDF({orientation:ratio>1?'landscape':'portrait',unit:'mm',format:[pw,ph]});
+    // Scale image to fit page
+    const imgW=pw-20,imgH=imgW/ratio;
+    const yOff=Math.max(0,(ph-imgH)/2);
+    pdf.setFillColor(250,250,250);
+    pdf.rect(0,0,pw,ph,'F');
+    pdf.addImage(imgCanvas.toDataURL('image/jpeg',0.95),'JPEG',10,yOff<5?5:yOff,imgW,imgH>ph-10?ph-10:imgH);
+    // Footer
+    pdf.setFontSize(8);pdf.setTextColor(150);
+    pdf.text(`SA Media Empire — ${boardName} — ${new Date().toLocaleDateString('en-GB')}`,pw/2,ph-4,{align:'center'});
+    pdf.save(`${boardName.replace(/\s+/g,'-')}.pdf`);
+    toast('PDF downloaded ✓');
+  }catch(err){
+    toast('PDF failed: '+err.message);
+    console.error(err);
+  }finally{
+    // Restore transform
+    _bPx=prevPx;_bPy=prevPy;_bSc=prevSc;
+    window._bApplyT?.();
+  }
 }
 
 async function bShareBoard(){
