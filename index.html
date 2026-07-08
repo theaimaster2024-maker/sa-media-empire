@@ -1577,10 +1577,10 @@ function bRenderCard(c){
       <button class="b-del" onclick="bDelCard('${c.id}')"><i class="ti ti-trash"></i></button>
     </div>
     <div class="b-card-body" contenteditable="true" spellcheck="false" data-ph="Write here...">${c.body||''}</div>
-    <div class="bcd bcd-t" data-id="${c.id}" data-dir="t"></div>
-    <div class="bcd bcd-r" data-id="${c.id}" data-dir="r"></div>
-    <div class="bcd bcd-b" data-id="${c.id}" data-dir="b"></div>
-    <div class="bcd bcd-l" data-id="${c.id}" data-dir="l"></div>
+    <div class="bcd bcd-t" data-id="${c.id}"></div>
+    <div class="bcd bcd-r" data-id="${c.id}"></div>
+    <div class="bcd bcd-b" data-id="${c.id}"></div>
+    <div class="bcd bcd-l" data-id="${c.id}"></div>
     <div class="brh brh-n" data-dir="n"></div><div class="brh brh-s" data-dir="s"></div>
     <div class="brh brh-e" data-dir="e"></div><div class="brh brh-w" data-dir="w"></div>
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
@@ -1604,7 +1604,14 @@ function bRenderCard(c){
   });
 
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,c.id));
-  el.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==c.id){bAddConn(_bConnFrom,c.id);_bConnFrom=null;if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}}});
+  el.addEventListener('mouseup',e=>{
+    if(e.target.classList.contains('bcd'))return;
+    if(_bConnFrom&&_bConnFrom!==c.id){
+      bAddConn(_bConnFrom,c.id);
+      _bConnFrom=null;
+      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
+    }
+  });
   el.addEventListener('click',()=>bSelCard(c.id));
   document.getElementById('b-canvas').appendChild(el);
 }
@@ -1657,20 +1664,31 @@ function bRenderSticky(s){
   el.style.cssText=`left:${s.x}px;top:${s.y}px;background:${s.color}22;border:1.5px solid ${s.color}55;color:${s.color}`;
   el.innerHTML=`
     <button class="b-sdel" onclick="bDelSticky('${s.id}')"><i class="ti ti-x"></i></button>
-    <div class="b-sticky-txt" contenteditable="true" spellcheck="false">${s.text}</div>
-    <div class="bcd bcd-t" data-id="${s.id}" data-dir="t"></div>
-    <div class="bcd bcd-r" data-id="${s.id}" data-dir="r"></div>
-    <div class="bcd bcd-b" data-id="${s.id}" data-dir="b"></div>
-    <div class="bcd bcd-l" data-id="${s.id}" data-dir="l"></div>`;
+    <div class="b-sticky-txt" contenteditable="true" spellcheck="false">${s.text||''}</div>
+    <div class="bcd bcd-t" data-id="${s.id}"></div>
+    <div class="bcd bcd-r" data-id="${s.id}"></div>
+    <div class="bcd bcd-b" data-id="${s.id}"></div>
+    <div class="bcd bcd-l" data-id="${s.id}"></div>`;
+
   el.querySelector('.b-sticky-txt').addEventListener('input',e=>{s.text=e.target.innerText;});
+
   el.addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-sdel')||e.target.classList.contains('bcd'))return;
     e.stopPropagation();
     _bDrag={id:s.id,ox:(e.clientX-_bPx)/_bSc-s.x,oy:(e.clientY-_bPy)/_bSc-s.y};
   });
-  // Add connector dot handlers
+
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,s.id));
-  el.addEventListener('mouseup',()=>{if(_bConnFrom&&_bConnFrom!==s.id){bAddConn(_bConnFrom,s.id);_bConnFrom=null;if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}}});
+
+  el.addEventListener('mouseup',e=>{
+    if(e.target.classList.contains('bcd'))return;
+    if(_bConnFrom&&_bConnFrom!==s.id){
+      bAddConn(_bConnFrom,s.id);
+      _bConnFrom=null;
+      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
+    }
+  });
+
   document.getElementById('b-canvas').appendChild(el);
 }
 function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getElementById(id)?.remove();}
