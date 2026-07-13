@@ -1430,16 +1430,19 @@ function initBoard(){
   document.addEventListener('mousemove',e=>{
     if(_bPan){_bPx=_bPs.px+(e.clientX-_bPs.x);_bPy=_bPs.py+(e.clientY-_bPs.y);applyT();}
     if(_bDrag){
-      const el=document.getElementById(_bDrag.id);
-      const nx=(e.clientX-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-_bPy)/_bSc-_bDrag.oy;
+      const el=document.getElementById(_bDrag.id);if(!el)return;
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox;
+      const ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
       el.style.left=nx+'px';el.style.top=ny+'px';
-      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
+      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id)||_bImages.find(i=>i.id===_bDrag.id);
       if(c){c.x=nx;c.y=ny;} bRedrawConns();
     }
     if(_bResize){
       const el=document.getElementById(_bResize.id);
       const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
-      const mx=(e.clientX-_bPx)/_bSc,my=(e.clientY-_bPy)/_bSc;
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const mx=(e.clientX-wr.left-_bPx)/_bSc,my=(e.clientY-wr.top-_bPy)/_bSc;
       const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
       let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
       if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
@@ -1466,8 +1469,13 @@ function initBoard(){
 
   document.addEventListener('mouseup',e=>{
     if(_bPan){_bPan=false;wrap.style.cursor='';}
-    if(_bDrag){bPushH();_bDrag=null;}
-    if(_bResize){bPushH();_bResize=null;}
+    if(_bDrag){
+      // Hide iframe overlay
+      document.getElementById(_bDrag.id)?.querySelector('.b-drag-overlay')&&
+        (document.getElementById(_bDrag.id).querySelector('.b-drag-overlay').style.display='none');
+      bPushH();bAutoSave();_bDrag=null;
+    }
+    if(_bResize){bPushH();bAutoSave();_bResize=null;}
     if(_bDrawing){_bDrawing=false;_bDctx.globalCompositeOperation='source-over';dc.style.pointerEvents='none';bPushH();}
     if(_bLineStart){
       const end=s2c(e.clientX,e.clientY);
@@ -1591,15 +1599,17 @@ function bAddCard(x,y,type,opts={}){
 function bRenderCard(c){
   const el=document.createElement('div');
   el.className='b-card';el.id=c.id;
-  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px`;
+  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w||230}px;min-height:${c.h||150}px`;
   const col=c.color||'#6C63FF';
   el.innerHTML=`
-    <div class="b-card-head" style="background:${col}12">
+    <div class="b-card-head" style="background:${col}12;cursor:grab">
       <div class="b-card-ico" style="background:${col}22;color:${col}"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
       <div class="b-card-ttl" contenteditable="true" spellcheck="false">${c.title}</div>
       <button class="b-del" onclick="bDelCard('${c.id}')"><i class="ti ti-trash"></i></button>
     </div>
     <div class="b-card-body" contenteditable="true" spellcheck="false" data-ph="Write here...">${c.body||''}</div>
+    <!-- Transparent overlay shown during drag to capture events over iframes -->
+    <div class="b-drag-overlay" style="display:none;position:absolute;inset:0;z-index:100;cursor:grabbing"></div>
     <div class="bcd bcd-t" data-id="${c.id}"></div>
     <div class="bcd bcd-r" data-id="${c.id}"></div>
     <div class="bcd bcd-b" data-id="${c.id}"></div>
@@ -1609,25 +1619,38 @@ function bRenderCard(c){
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
     <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>`;
 
-  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;});
-  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;});
+  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;bAutoSave();});
+  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;bAutoSave();});
 
+  // Drag via header — use wrap rect for correct coordinates
   el.querySelector('.b-card-head').addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-del'))return;
     e.stopPropagation();
-    _bDrag={id:c.id,ox:(e.clientX-_bPx)/_bSc-c.x,oy:(e.clientY-_bPy)/_bSc-c.y};
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bDrag={id:c.id,ox:(e.clientX-wr.left-_bPx)/_bSc-c.x,oy:(e.clientY-wr.top-_bPy)/_bSc-c.y};
+    // Show overlay to capture mouse over iframes
+    el.querySelector('.b-drag-overlay').style.display='block';
     bSelCard(c.id);
   });
 
+  // Resize handles
   el.querySelectorAll('.brh').forEach(rh=>{
     rh.addEventListener('mousedown',e=>{
       e.stopPropagation();e.preventDefault();
-      _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-_bPx)/_bSc,sy:(e.clientY-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      _bResize={id:c.id,dir:rh.dataset.dir,
+        sx:(e.clientX-wr.left-_bPx)/_bSc,sy:(e.clientY-wr.top-_bPy)/_bSc,
+        sw:el.offsetWidth||c.w||230,sh:el.offsetHeight||c.h||150,cx:c.x,cy:c.y};
     });
   });
 
+  // Connection dots
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,c.id));
+
+  // Receive connection drop
   el.addEventListener('mouseup',e=>{
+    // Hide drag overlay
+    el.querySelector('.b-drag-overlay').style.display='none';
     if(e.target.classList.contains('bcd'))return;
     if(_bConnFrom&&_bConnFrom.id!==c.id){
       const[tx,ty]=bGetSideCenter(c.id,_bConnFrom);
@@ -1635,6 +1658,7 @@ function bRenderCard(c){
       bEndConn();
     }
   });
+
   el.addEventListener('click',()=>bSelCard(c.id));
   document.getElementById('b-canvas').appendChild(el);
 }
@@ -1732,7 +1756,8 @@ function bRenderSticky(s){
   el.addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-sdel')||e.target.classList.contains('bcd'))return;
     e.stopPropagation();
-    _bDrag={id:s.id,ox:(e.clientX-_bPx)/_bSc-s.x,oy:(e.clientY-_bPy)/_bSc-s.y};
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bDrag={id:s.id,ox:(e.clientX-wr.left-_bPx)/_bSc-s.x,oy:(e.clientY-wr.top-_bPy)/_bSc-s.y};
   });
 
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,s.id));
