@@ -1483,7 +1483,24 @@ function initBoard(){
       g.appendChild(line);g.appendChild(arr);svg.appendChild(g);
       _bLineStart=null;bPushH();
     }
-    if(_bConnFrom&&_bTmpLine){svg.removeChild(_bTmpLine);_bTmpLine=null;_bConnFrom=null;}
+    if(_bConnFrom&&_bTmpLine){
+      // Dropped on empty space → create new connected card
+      const from=_bConnFrom;
+      bEndConn();
+      const wr2=wrap.getBoundingClientRect();
+      const dropX=(e.clientX-wr2.left-_bPx)/_bSc;
+      const dropY=(e.clientY-wr2.top-_bPy)/_bSc;
+      const fromEl=document.getElementById(from.id);
+      const fromCard=_bCards.find(c=>c.id===from.id)||_bStickies.find(s=>s.id===from.id);
+      const newType=fromCard?.type||'note';
+      const newW=230, newH=150;
+      const nc=bAddCard(dropX-newW/2, dropY-newH/2, newType);
+      setTimeout(()=>{
+        const tcx=nc.x+newW/2, tcy=nc.y+newH/2;
+        bAddConnExact(from.id,nc.id,from.cx,from.cy,tcx,tcy);
+        document.getElementById(nc.id)?.querySelector('.b-card-ttl')?.focus();
+      },30);
+    }
   });
 
   applyT();
@@ -1612,10 +1629,10 @@ function bRenderCard(c){
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,c.id));
   el.addEventListener('mouseup',e=>{
     if(e.target.classList.contains('bcd'))return;
-    if(_bConnFrom&&_bConnFrom!==c.id){
-      bAddConn(_bConnFrom,c.id);
-      _bConnFrom=null;
-      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
+    if(_bConnFrom&&_bConnFrom.id!==c.id){
+      const[tx,ty]=bGetSideCenter(c.id,_bConnFrom);
+      bAddConnExact(_bConnFrom.id,c.id,_bConnFrom.cx,_bConnFrom.cy,tx,ty);
+      bEndConn();
     }
   });
   el.addEventListener('click',()=>bSelCard(c.id));
@@ -1625,26 +1642,60 @@ function bRenderCard(c){
 // Setup connector dot — shared for cards + stickies
 function bSetupDot(dot, nodeId){
   const svg=document.getElementById('b-svg');
+  // Which side is this dot?
+  const side=dot.classList.contains('bcd-t')?'t':dot.classList.contains('bcd-b')?'b':dot.classList.contains('bcd-l')?'l':'r';
+
   dot.addEventListener('mousedown',e=>{
     e.stopPropagation();e.preventDefault();
+    // Get exact canvas position of dot center
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
     const r=dot.getBoundingClientRect();
-    const p=s2c((r.left+r.right)/2,(r.top+r.bottom)/2);
-    _bConnFrom=nodeId;
-    _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','line');
-    _bTmpLine.setAttribute('x1',p.x);_bTmpLine.setAttribute('y1',p.y);
-    _bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);
-    _bTmpLine.setAttribute('stroke','#7C3AED');_bTmpLine.setAttribute('stroke-width','2');
-    _bTmpLine.setAttribute('stroke-dasharray','6 4');_bTmpLine.setAttribute('opacity','0.8');
+    const cx=(r.left+r.width/2-wr.left-_bPx)/_bSc;
+    const cy=(r.top+r.height/2-wr.top-_bPy)/_bSc;
+    _bConnFrom={id:nodeId, side, cx, cy};
+    // Start dashed bezier preview line
+    _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
+    _bTmpLine.setAttribute('stroke','#7C3AED');
+    _bTmpLine.setAttribute('stroke-width','2.5');
+    _bTmpLine.setAttribute('fill','none');
+    _bTmpLine.setAttribute('stroke-dasharray','8 4');
+    _bTmpLine.setAttribute('opacity','0.8');
+    _bTmpLine.setAttribute('d',`M${cx},${cy} L${cx},${cy}`);
     svg?.appendChild(_bTmpLine);
   });
+
   dot.addEventListener('mouseup',e=>{
     e.stopPropagation();
-    if(_bConnFrom&&_bConnFrom!==nodeId){
-      bAddConn(_bConnFrom,nodeId);
-      _bConnFrom=null;
-      if(_bTmpLine){svg?.removeChild(_bTmpLine);_bTmpLine=null;}
+    if(_bConnFrom&&_bConnFrom.id!==nodeId){
+      // Connect to this node
+      bAddConnExact(_bConnFrom.id,nodeId,_bConnFrom.cx,_bConnFrom.cy,
+        ...bGetSideCenter(nodeId, _bConnFrom));
+      bEndConn();
     }
   });
+}
+
+// Get the best side center of target card relative to source
+function bGetSideCenter(targetId, from){
+  const el=document.getElementById(targetId);
+  const c=_bCards.find(x=>x.id===targetId)||_bStickies.find(x=>x.id===targetId)||_bImages.find(x=>x.id===targetId);
+  if(!el||!c)return[0,0];
+  const w=el.offsetWidth,h=el.offsetHeight;
+  const cx=c.x+w/2, cy=c.y+h/2;
+  // Find nearest side to source point
+  const sides={
+    t:{x:cx,y:c.y},
+    b:{x:cx,y:c.y+h},
+    l:{x:c.x,y:cy},
+    r:{x:c.x+w,y:cy}
+  };
+  const fx=from?.cx||cx, fy=from?.cy||cy;
+  let best='t', bestDist=Infinity;
+  for(const [s,pt] of Object.entries(sides)){
+    const d=Math.hypot(pt.x-fx,pt.y-fy);
+    if(d<bestDist){bestDist=d;best=s;}
+  }
+  return[sides[best].x, sides[best].y];
 }
 function bDelCard(id){
   _bCards=_bCards.filter(c=>c.id!==id);
@@ -1688,10 +1739,10 @@ function bRenderSticky(s){
 
   el.addEventListener('mouseup',e=>{
     if(e.target.classList.contains('bcd'))return;
-    if(_bConnFrom&&_bConnFrom!==s.id){
-      bAddConn(_bConnFrom,s.id);
-      _bConnFrom=null;
-      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
+    if(_bConnFrom&&_bConnFrom.id!==s.id){
+      const[tx,ty]=bGetSideCenter(s.id,_bConnFrom);
+      bAddConnExact(_bConnFrom.id,s.id,_bConnFrom.cx,_bConnFrom.cy,tx,ty);
+      bEndConn();
     }
   });
 
