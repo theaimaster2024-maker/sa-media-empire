@@ -1777,9 +1777,8 @@ function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getE
 
 function bAddConn(f,t){
   if(_bConns.find(c=>(c.f===f&&c.t===t)||(c.f===t&&c.t===f)))return;
-  const a=bGetCenter(f),b=bGetCenter(t);
-  if(!a||!b)return;
-  _bConns.push({id:'bcn'+(++_bNid),f,t,fx:a.x,fy:a.y,tx:b.x,ty:b.y,color:_bColor||'#7C3AED'});
+  // Save center as 50% offset so it follows cards when moved
+  _bConns.push({id:'bcn'+(++_bNid),f,t,fpx:.5,fpy:.5,tpx:.5,tpy:.5,color:_bColor||'#7C3AED'});
   bRedrawConns();bPushH();bAutoSave();
 }
 function bGetCenter(id){
@@ -1805,23 +1804,50 @@ function bRedrawConns(){
   if(!svg)return;
   svg.querySelectorAll('.bcg').forEach(e=>e.remove());
   _bConns.forEach(conn=>{
-    // Use exact coords if available, else center
-    let ax=conn.fx,ay=conn.fy,bx=conn.tx,by=conn.ty;
-    if(ax===undefined){const a=bGetCenter(conn.f);if(!a)return;ax=a.x;ay=a.y;}
-    if(bx===undefined){const b=bGetCenter(conn.t);if(!b)return;bx=b.x;by=b.y;}
-    const dx=bx-ax,dy=by-ay;
+    // Always recalculate from live card positions
+    let ax,ay,bx2,by2;
+    if(conn.fside){
+      // Has side info — use side center
+      const fp=bGetPortCenter(conn.f,conn.fside);
+      if(!fp)return;
+      ax=fp.x;ay=fp.y;
+    } else if(conn.fpx!==undefined&&conn.fpy!==undefined){
+      // Has percentage offset from card top-left
+      const fc=_bCards.find(x=>x.id===conn.f)||_bStickies.find(x=>x.id===conn.f)||_bImages.find(x=>x.id===conn.f);
+      const fel=document.getElementById(conn.f);
+      if(!fc||!fel)return;
+      ax=fc.x+conn.fpx*fel.offsetWidth;
+      ay=fc.y+conn.fpy*fel.offsetHeight;
+    } else {
+      // Fallback: center
+      const fp=bGetCenter(conn.f);if(!fp)return;ax=fp.x;ay=fp.y;
+    }
+    if(conn.tside){
+      const tp=bGetPortCenter(conn.t,conn.tside);
+      if(!tp)return;
+      bx2=tp.x;by2=tp.y;
+    } else if(conn.tpx!==undefined&&conn.tpy!==undefined){
+      const tc=_bCards.find(x=>x.id===conn.t)||_bStickies.find(x=>x.id===conn.t)||_bImages.find(x=>x.id===conn.t);
+      const tel=document.getElementById(conn.t);
+      if(!tc||!tel)return;
+      bx2=tc.x+conn.tpx*tel.offsetWidth;
+      by2=tc.y+conn.tpy*tel.offsetHeight;
+    } else {
+      const tp=bGetCenter(conn.t);if(!tp)return;bx2=tp.x;by2=tp.y;
+    }
+    const dx=bx2-ax,dy=by2-ay;
     const cpLen=Math.max(60,Math.sqrt(dx*dx+dy*dy)*.4);
     const cp1x=ax+dx*.35,cp1y=ay+dy*.05;
-    const cp2x=bx-dx*.35,cp2y=by-dy*.05;
+    const cp2x=bx2-dx*.35,cp2y=by2-dy*.05;
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');
     g.className.baseVal='bcg';g.style.cursor='pointer';
     // Hit zone
     const hit=document.createElementNS('http://www.w3.org/2000/svg','path');
-    hit.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx},${by}`);
+    hit.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx2},${by2}`);
     hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.setAttribute('fill','none');hit.style.pointerEvents='stroke';
     // Visible path
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx},${by}`);
+    path.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx2},${by2}`);
     path.setAttribute('stroke',conn.color||'#7C3AED');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');path.setAttribute('stroke-linecap','round');
     // Arrowhead marker
     const defs=svg.querySelector('defs')||svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'),svg.firstChild);
@@ -1837,8 +1863,8 @@ function bRedrawConns(){
     path.setAttribute('marker-end',`url(#${mid})`);
     // Delete button at midpoint
     const t2=.5;
-    const mxp=Math.pow(1-t2,3)*ax+3*Math.pow(1-t2,2)*t2*cp1x+3*(1-t2)*Math.pow(t2,2)*cp2x+Math.pow(t2,3)*bx;
-    const myp=Math.pow(1-t2,3)*ay+3*Math.pow(1-t2,2)*t2*cp1y+3*(1-t2)*Math.pow(t2,2)*cp2y+Math.pow(t2,3)*by;
+    const mxp=Math.pow(1-t2,3)*ax+3*Math.pow(1-t2,2)*t2*cp1x+3*(1-t2)*Math.pow(t2,2)*cp2x+Math.pow(t2,3)*bx2;
+    const myp=Math.pow(1-t2,3)*ay+3*Math.pow(1-t2,2)*t2*cp1y+3*(1-t2)*Math.pow(t2,2)*cp2y+Math.pow(t2,3)*by2;
     const del=document.createElementNS('http://www.w3.org/2000/svg','circle');
     del.setAttribute('cx',mxp);del.setAttribute('cy',myp);del.setAttribute('r','9');
     del.setAttribute('fill','#EF4444');del.style.cursor='pointer';del.style.opacity='0';del.style.pointerEvents='all';
@@ -2024,7 +2050,21 @@ function bEndConn(){
 }
 function bAddConnExact(fId,tId,fx,fy,tx,ty){
   if(_bConns.find(c=>(c.f===fId&&c.t===tId)||(c.f===tId&&c.t===fId)))return;
-  _bConns.push({id:'bcn'+(++_bNid),f:fId,t:tId,fx,fy,tx,ty,color:_bColor||'#6C63FF'});
+  const fel=document.getElementById(fId);
+  const tel=document.getElementById(tId);
+  const fc=_bCards.find(x=>x.id===fId)||_bStickies.find(x=>x.id===fId)||_bImages.find(x=>x.id===fId);
+  const tc=_bCards.find(x=>x.id===tId)||_bStickies.find(x=>x.id===tId)||_bImages.find(x=>x.id===tId);
+  const conn={id:'bcn'+(++_bNid),f:fId,t:tId,color:_bColor||'#6C63FF'};
+  // Save as percentage offsets so line follows card on move
+  if(fc&&fel&&fel.offsetWidth>0){
+    conn.fpx=(fx-fc.x)/fel.offsetWidth;
+    conn.fpy=(fy-fc.y)/fel.offsetHeight;
+  }
+  if(tc&&tel&&tel.offsetWidth>0){
+    conn.tpx=(tx-tc.x)/tel.offsetWidth;
+    conn.tpy=(ty-tc.y)/tel.offsetHeight;
+  }
+  _bConns.push(conn);
   bRedrawConns();bPushH();bAutoSave();
 }
 function bAddDynPort(el,getId,getItem){
