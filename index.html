@@ -789,7 +789,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <button class="tb" id="bt-sticky" title="Sticky note" onclick="bTool('sticky')"><i class="ti ti-sticky-note"></i></button>
           <button class="tb" title="Add image" onclick="document.getElementById('b-img-inp').click()"><i class="ti ti-photo"></i></button>
           <button class="tb" title="YouTube embed" onclick="bModal('yt')"><i class="ti ti-brand-youtube"></i></button>
-          <button class="tb" title="Browse YouTube Channel" onclick="bYTBrowser()" style="color:#FF0000"><i class="ti ti-broadcast"></i></button>
+          <button class="tb" title="Add YouTube Channel Card" onclick="bModal('channel')" style="color:#FF0000"><i class="ti ti-broadcast"></i></button>
           <button class="tb" title="Google Drive link" onclick="bModal('drive')"><i class="ti ti-brand-google-drive"></i></button>
 
           <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
@@ -1384,6 +1384,7 @@ function initBoard(){
       <div class="bctx-it" onclick="bAddSticky(${p.x},${p.y});hideBCtx()"><i class="ti ti-sticky-note"></i> Sticky note</div>
       <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
       <div class="bctx-it" onclick="bModal('yt');hideBCtx()"><i class="ti ti-brand-youtube"></i> YouTube embed</div>
+      <div class="bctx-it" onclick="bModal('channel');hideBCtx()" style="color:#FF0000"><i class="ti ti-broadcast"></i> YouTube Channel Card</div>
       <div class="bctx-it" onclick="bModal('drive');hideBCtx()"><i class="ti ti-brand-google-drive"></i> Google Drive</div>
       <div class="bctx-it" onclick="document.getElementById('b-img-inp').click();hideBCtx()"><i class="ti ti-photo"></i> Add image</div>
       <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
@@ -1910,7 +1911,8 @@ function hideBCtx(){const ctx=document.getElementById('b-ctx');if(ctx)ctx.style.
 function bModal(mode,target){
   _bModalMode=mode;_bModalTarget=target||null;
   const cfg={
-    yt:{title:'YouTube embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube link paste করুন — সরাসরি play হবে'},
+    yt:{title:'YouTube Video Embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube video link paste করুন — সরাসরি play হবে'},
+    channel:{title:'YouTube Channel Card',ph:'https://youtube.com/@channelname',hint:'Channel URL দিন — logo + name দেখাবে, click করলে channel খুলবে'},
     drive:{title:'Google Drive embed',ph:'https://drive.google.com/file/d/FILE_ID/view',hint:'Google Drive file link দিন (Share → Anyone with link)'},
   };
   const c=cfg[mode]||{title:mode,ph:'',hint:''};
@@ -1926,7 +1928,48 @@ function bModalOk(){
   if(!val){document.getElementById('b-modal').style.display='none';return;}
   const wrap=document.getElementById('b-wrap');
   const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:300,y:200};
-  if(_bModalMode==='yt'){
+  if(_bModalMode==='channel'){
+    // Extract channel info from URL
+    const handleMatch=val.match(/@([\w.-]+)/);
+    const handle=handleMatch?('@'+handleMatch[1]):val;
+    const channelUrl=val.startsWith('http')?val:'https://www.youtube.com/'+handle;
+    // Channel name from handle (until API resolves it)
+    const displayName=handleMatch?handleMatch[1]:val.replace(/.*youtube\.com\//,'');
+    // Use YouTube channel avatar via unavatar service
+    const avatarUrl=`https://unavatar.io/youtube/${handle.replace('@','')}`;
+    const c=bAddCard(p.x-100,p.y-100,'note',{w:200,h:200,title:displayName});
+    const el=document.getElementById(c.id);
+    if(el){
+      // Style the card as a channel card
+      el.style.border='2px solid #FF000033';
+      const body=el.querySelector('.b-card-body');
+      const head=el.querySelector('.b-card-ttl');
+      if(head)head.textContent=displayName;
+      if(body){
+        body.contentEditable='false';
+        body.innerHTML=`
+          <a href="${channelUrl}" target="_blank" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;padding:16px 8px;gap:10px">
+            <div style="position:relative">
+              <img src="${avatarUrl}" 
+                style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #FF000044;display:block"
+                onerror="this.onerror=null;this.src='';this.parentElement.innerHTML='<div style=\\'width:72px;height:72px;border-radius:50%;background:#FF0000;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:700\\'>${displayName.charAt(0).toUpperCase()}</div>'"
+              />
+              <div style="position:absolute;bottom:-2px;right:-2px;background:#FF0000;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center">
+                <i class="ti ti-brand-youtube" style="color:white;font-size:11px"></i>
+              </div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:13px;font-weight:700;color:#1A1F3C">${displayName}</div>
+              <div style="font-size:10px;color:#FF0000;margin-top:2px">${handle}</div>
+              <div style="font-size:10px;color:#9CA3AF;margin-top:4px;display:flex;align-items:center;gap:3px;justify-content:center"><i class="ti ti-external-link" style="font-size:10px"></i> Open Channel</div>
+            </div>
+          </a>`;
+        c.body=body.innerHTML;
+      }
+    }
+    document.getElementById('b-modal').style.display='none';bAutoSave();bPushH();
+    return;
+  } else if(_bModalMode==='yt'){
     const m=val.match(/(?:v=|youtu\.be\/|shorts\/)([^&\s?\/]+)/);
     if(!m){toast('Invalid YouTube URL — v= অংশ সহ দিন');return;}
     const c=bAddCard(p.x-160,p.y-130,'note',{w:340,h:260,title:'▶ YouTube Video'});
