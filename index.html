@@ -2112,33 +2112,36 @@ async function bAddChannelCard(val, p){
   const handle=handleMatch?('@'+handleMatch[1]):val.replace(/.*youtube\.com\//,'').replace(/\//,'');
   const channelUrl=val.startsWith('http')?val:`https://www.youtube.com/${handle}`;
   const displayName=handle.replace('@','');
-  const c=bAddCard(p.x-150,p.y-40,'note',{w:300,h:70,title:displayName,color:'#FF0000'});
+  const c=bAddCard(p.x-110,p.y-130,'note',{w:220,h:260,title:displayName,color:'#FF0000'});
   const el=document.getElementById(c.id);
   if(!el)return;
-  el.style.border='2px solid #FF000033';
+  el.style.border='2px solid #f0f0f0';
+  el.style.borderRadius='16px';
   const body=el.querySelector('.b-card-body');
   const head=el.querySelector('.b-card-ttl');
+
   const renderCard=(name,logoUrl,subsText)=>{
     if(!body)return;
     body.contentEditable='false';
     body.style.padding='0';
     const initial=name.charAt(0).toUpperCase();
     const logoHtml=logoUrl
-      ?`<img src="${logoUrl}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div style="display:none;width:42px;height:42px;border-radius:50%;background:#FF0000;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;flex-shrink:0">${initial}</div>`
-      :`<div style="width:42px;height:42px;border-radius:50%;background:#FF0000;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;flex-shrink:0">${initial}</div>`;
+      ?`<img src="${logoUrl}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #FF0000;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+         <div style="display:none;width:100px;height:100px;border-radius:50%;background:#FF0000;align-items:center;justify-content:center;color:white;font-size:40px;font-weight:700">${initial}</div>`
+      :`<div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#FF0000,#FF4444);display:flex;align-items:center;justify-content:center;color:white;font-size:40px;font-weight:700">${initial}</div>`;
+
     body.innerHTML=`
-      <a href="${channelUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;text-decoration:none;padding:10px 12px;background:white;border-radius:0 0 10px 10px">
-        <div style="position:relative;flex-shrink:0">
+      <a href="${channelUrl}" target="_blank" rel="noopener" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;padding:20px 12px 16px;gap:12px">
+        <div style="position:relative">
           ${logoHtml}
-          <div style="position:absolute;bottom:-2px;right:-2px;background:#FF0000;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border:2px solid white">
-            <i class="ti ti-brand-youtube" style="color:white;font-size:8px"></i>
-          </div>
         </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:#0F0F0F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
-          <div style="font-size:11px;color:#606060;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${handle}${subsText?' · '+subsText:''}</div>
+        <div style="text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#0F0F0F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${name}</div>
+          ${subsText?`<div style="font-size:11px;color:#606060;margin-top:3px">${subsText}</div>`:''}
         </div>
-        <div style="flex-shrink:0;background:#FF0000;color:white;font-size:10px;font-weight:700;padding:5px 10px;border-radius:20px;white-space:nowrap">Subscribe</div>
+        <div style="background:#FF0000;color:white;font-size:12px;font-weight:700;padding:8px 20px;border-radius:20px;display:flex;align-items:center;gap:6px;letter-spacing:.3px">
+          <i class="ti ti-bell" style="font-size:13px"></i> SUBSCRIBE
+        </div>
       </a>`;
     c.body=body.innerHTML;
     if(head){head.textContent=name;c.title=name;}
