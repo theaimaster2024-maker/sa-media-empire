@@ -172,6 +172,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .bcd-l:hover{transform:translateY(-50%) scale(1.4)}
 .bcd-r:hover{transform:translateY(-50%) scale(1.4)}
 .b-sticky{position:absolute;border-radius:10px;padding:12px;cursor:move;min-width:160px;min-height:110px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.b-textbox{position:absolute;min-width:120px;min-height:24px;cursor:move;z-index:8;user-select:none}
+.b-textbox-toolbar{display:none;position:absolute;top:-44px;left:0;background:white;border:1px solid #E5E7EB;border-radius:10px;padding:5px 8px;box-shadow:0 4px 20px rgba(0,0,0,.12);white-space:nowrap;align-items:center;gap:2px;z-index:100}
+.b-textbox:focus-within .b-textbox-toolbar,.b-textbox:hover .b-textbox-toolbar{display:flex}
+.b-textbox-content{outline:none;min-width:120px;min-height:24px;cursor:text;word-break:break-word;caret-color:#7C3AED}
+.b-textbox-content:empty::before{content:attr(data-ph);color:#C0C0C0;pointer-events:none}
+.bttb{background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:5px;font-size:13px;color:#374151;font-family:inherit;line-height:1}
+.bttb:hover{background:#F3F4F6}.bttb.on{background:#EDE9FE;color:#7C3AED}
+.bttb-sep{width:1px;height:18px;background:#E5E7EB;margin:0 3px;flex-shrink:0}
 .b-sticky-txt{flex:1;font-size:13px;font-weight:500;outline:none;cursor:text;line-height:1.6;word-break:break-word;white-space:pre-wrap}
 .b-sticky-txt:empty::before{content:'Note...';opacity:.4}
 .b-sdel{align-self:flex-end;background:rgba(0,0,0,.1);border:none;border-radius:5px;cursor:pointer;font-size:13px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s;margin-bottom:4px}
@@ -1345,7 +1353,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 // ── SCRIPT BOARD — canvas
 let _bSc=1,_bPx=0,_bPy=0,_bTool='sel',_bColor='#6C63FF',bPenSz=4;
-let _bCards=[],_bStickies=[],_bConns=[],_bNid=1;
+let _bCards=[],_bStickies=[],_bConns=[],_bTexts=[],_bNid=1;
 let _bDrag=null,_bResize=null,_bPan=false,_bPs={};
 let _bConnFrom=null,_bTmpLine=null;
 let _bDrawing=false,_bDctx=null;
@@ -1415,7 +1423,7 @@ function initBoard(){
   wrap.addEventListener('dblclick',e=>{
     if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
       const p=s2c(e.clientX,e.clientY);
-      bAddCard(p.x-100,p.y-55,'note');
+      bAddTextBox(p.x,p.y);
     }
   });
 
@@ -1462,7 +1470,7 @@ function initBoard(){
       const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox;
       const ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
       el.style.left=nx+'px';el.style.top=ny+'px';
-      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id)||_bImages.find(i=>i.id===_bDrag.id);
+      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id)||_bImages.find(i=>i.id===_bDrag.id)||_bTexts.find(t=>t.id===_bDrag.id);
       if(c){c.x=nx;c.y=ny;} bRedrawConns();
     }
     if(_bResize){
@@ -2038,6 +2046,97 @@ function bUndo(){
   _bStickies.forEach(s=>{bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
   bRedrawConns();toast('Undo ✓');
 }
+// ── Floating Text Box (Miro style) ──────────────────────
+function bAddTextBox(x,y,opts={}){
+  const id='btx'+(++_bNid);
+  const t={id,x,y,html:opts.html||'',fontSize:opts.fontSize||16,color:opts.color||'#1A1F3C'};
+  _bTexts.push(t);bRenderTextBox(t);
+  // Auto-focus
+  setTimeout(()=>document.getElementById(id)?.querySelector('.b-textbox-content')?.focus(),50);
+  bAutoSave();return t;
+}
+
+function bRenderTextBox(t){
+  const el=document.createElement('div');
+  el.className='b-textbox';el.id=t.id;
+  el.style.cssText=`left:${t.x}px;top:${t.y}px`;
+
+  el.innerHTML=`
+    <!-- Rich text toolbar -->
+    <div class="b-textbox-toolbar" onmousedown="event.preventDefault()">
+      <select class="bttb" style="font-size:11px;padding:2px 4px;border:1px solid #E5E7EB;border-radius:5px;cursor:pointer" onchange="document.execCommand('fontSize',false,this.value);this.blur()" title="Font size">
+        <option value="1">10</option><option value="2">12</option><option value="3" selected>14</option>
+        <option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option>
+      </select>
+      <div class="bttb-sep"></div>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('bold')" title="Bold"><b>B</b></button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('italic')" title="Italic"><i>I</i></button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('underline')" title="Underline"><u>U</u></button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('strikeThrough')" title="Strike"><s>S</s></button>
+      <div class="bttb-sep"></div>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList')" title="Bullet list">• List</button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('insertOrderedList')" title="Numbered list">1. List</button>
+      <div class="bttb-sep"></div>
+      ${['#1A1F3C','#EF4444','#7C3AED','#059669','#2563EB','#F59E0B','#EC4899','#FF6B00'].map(clr=>
+        `<div onmousedown="event.preventDefault();document.execCommand('foreColor',false,'${clr}')"
+          style="width:16px;height:16px;border-radius:50%;background:${clr};cursor:pointer;flex-shrink:0;border:2px solid white;box-shadow:0 0 0 1px #ddd"
+          title="${clr}"></div>`).join('')}
+      <div class="bttb-sep"></div>
+      ${['#FEFCE8','#FEE2E2','#EDE9FE','#DCFCE7','#DBEAFE','#FFF'].map((bg,i)=>
+        `<div onmousedown="event.preventDefault();document.execCommand('hiliteColor',false,'${bg}')"
+          style="width:16px;height:16px;border-radius:4px;background:${bg};cursor:pointer;flex-shrink:0;border:1px solid #E5E7EB"
+          title="Highlight"></div>`).join('')}
+      <div class="bttb-sep"></div>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyLeft')" title="Left"><i class="ti ti-align-left"></i></button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyCenter')" title="Center"><i class="ti ti-align-center"></i></button>
+      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyRight')" title="Right"><i class="ti ti-align-right"></i></button>
+      <div class="bttb-sep"></div>
+      <button class="bttb" onmousedown="event.preventDefault();bDelTextBox('${t.id}')" title="Delete" style="color:#EF4444"><i class="ti ti-trash"></i></button>
+    </div>
+    <!-- Editable content -->
+    <div class="b-textbox-content" contenteditable="true" spellcheck="false"
+      data-ph="Type something..."
+      style="font-size:16px;color:#1A1F3C;line-height:1.6;min-width:120px;min-height:28px"
+    >${t.html||''}</div>`;
+
+  const content=el.querySelector('.b-textbox-content');
+  content.addEventListener('input',()=>{t.html=content.innerHTML;bAutoSave();});
+  content.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){content.blur();}
+  });
+
+  // Drag via the element itself (not when editing)
+  let isDragging=false;
+  el.addEventListener('mousedown',e=>{
+    if(e.target===content||content.contains(e.target))return;
+    e.stopPropagation();
+    const wr=document.getElementById('b-wrap').getBoundingClientRect();
+    _bDrag={id:t.id,ox:(e.clientX-wr.left-_bPx)/_bSc-t.x,oy:(e.clientY-wr.top-_bPy)/_bSc-t.y,isTxt:true};
+  });
+
+  // Connection dot support
+  bAddDynPort(el,()=>t.id,()=>t);
+
+  el.addEventListener('mouseup',e=>{
+    if(_bConnFrom&&_bConnFrom.id!==t.id){
+      const wr=document.getElementById('b-wrap').getBoundingClientRect();
+      const cx=(e.clientX-wr.left-_bPx)/_bSc;
+      const cy=(e.clientY-wr.top-_bPy)/_bSc;
+      bAddConnExact(_bConnFrom.id,t.id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
+      bEndConn();
+    }
+  });
+
+  document.getElementById('b-canvas').appendChild(el);
+}
+
+function bDelTextBox(id){
+  _bTexts=_bTexts.filter(t=>t.id!==id);
+  _bConns=_bConns.filter(c=>c.f!==id&&c.t!==id);
+  document.getElementById(id)?.remove();
+  bRedrawConns();bAutoSave();
+}
+
 // ── Floating Image ──────────────────────────────────────
 function bAddBoardImage(src,x,y){
   const id='bimg'+(++_bNid);
@@ -2454,7 +2553,7 @@ async function bSwitchBoard(id){
   _bImages.forEach(img=>document.getElementById(img.id)?.remove());
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
   const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
-  _bCards=[];_bStickies=[];_bConns=[];_bImages=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
+  _bCards=[];_bStickies=[];_bConns=[];_bImages=[];_bTexts=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
   _bCurrentBoardId=id;
   // Load from Supabase
   const {data,error}=await sb.from('script_boards').select('name,data').eq('id',id).single();
@@ -2470,6 +2569,7 @@ async function bSwitchBoard(id){
     (d.cards||[]).forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title||'';el.querySelector('.b-card-body').innerHTML=c.body||'';}});
     (d.stickies||[]).forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||''});
     (d.images||[]).forEach(img=>{_bImages.push(img);bRenderBoardImage(img);});
+    (d.texts||[]).forEach(t=>{_bTexts.push(t);bRenderTextBox(t);const el=document.getElementById(t.id);if(el){const c=el.querySelector('.b-textbox-content');if(c)c.innerHTML=t.html||'';}});
     _bConns=d.conns||[];bRedrawConns();
   } else {
     bAddCard(150,160,'script',{title:'📝 New Script'});bPushH();
@@ -2497,6 +2597,7 @@ async function bSave(silent=false){
   const data={
     cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
     stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
+    texts:_bTexts.map(t=>{const el=document.getElementById(t.id);return{...t,html:el?.querySelector('.b-textbox-content')?.innerHTML||t.html};}),
     images:_bImages,
     conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
   };
