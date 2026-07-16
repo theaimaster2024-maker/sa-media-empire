@@ -2059,20 +2059,33 @@ function bHandleImg(inp){
 // ── YouTube Channel Browser ──────────────────────────────
 let _ytbApiKey='',_ytbChannelId='';
 
-function bYTBrowser(){
+async function bYTBrowser(){
   document.getElementById('b-ytb-modal').style.display='flex';
-  // Restore saved API key
-  const saved=localStorage.getItem('sa_yt_api_key');
-  if(saved)document.getElementById('ytb-api-inp').value=saved;
+  // Load API key from Supabase (owner only)
+  if(!_ytbApiKey){
+    try{
+      const {data}=await sb.from('app_settings').select('value').eq('key','yt_api_key').single();
+      if(data?.value){
+        _ytbApiKey=data.value;
+        const inp=document.getElementById('ytb-api-inp');
+        if(inp)inp.value='••••••••••••••••••••••' ; // masked
+      }
+    }catch(e){}
+    // Also check localStorage fallback
+    const saved=localStorage.getItem('sa_yt_api_key');
+    if(saved&&!_ytbApiKey){_ytbApiKey=saved;document.getElementById('ytb-api-inp').value='••••••••••••••••••••••';}
+  }
 }
 
 async function bYTBSearch(){
   const urlInp=document.getElementById('ytb-url-inp').value.trim();
-  const apiKey=document.getElementById('ytb-api-inp').value.trim();
+  const apiInpVal=document.getElementById('ytb-api-inp').value.trim();
+  // Use cached key if field is masked, else use typed value
+  const apiKey=apiInpVal.includes('•')?_ytbApiKey:apiInpVal;
   if(!urlInp){toast('Channel URL দিন');return;}
   if(!apiKey){toast('API Key দিন');return;}
   _ytbApiKey=apiKey;
-  localStorage.setItem('sa_yt_api_key',apiKey);
+  if(!apiInpVal.includes('•'))localStorage.setItem('sa_yt_api_key',apiKey);
   const res=document.getElementById('ytb-results');
   res.innerHTML=`<div style="text-align:center;padding:40px;color:#9CA3AF"><i class="ti ti-loader" style="font-size:24px;animation:spin 1s linear infinite"></i><br>Loading...</div>`;
   try{
