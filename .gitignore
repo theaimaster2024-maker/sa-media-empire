@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 _background.vbs
 .venv/
+build/
+dist/
+Output/
+*.spec
