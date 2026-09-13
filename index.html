@@ -34,10 +34,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .sidebar.sb-hidden{transform:translateX(-256px)}
 .main{margin-left:256px;min-height:100vh;padding:32px 36px;background:#F9FAFB;transition:margin-left .25s}
 .main.sb-hidden{margin-left:0}
-.main.fin-active{padding:0;background:#F9FAFB}
-#pg-finance{display:none}
-#pg-finance.on{display:flex!important;width:100%}
-.fin-wrap{display:flex;width:100%;min-height:calc(100vh)}
 #fin-sidebar{transition:width .25s,min-width .25s}
 #fin-sidebar.fin-sb-hidden{width:0!important;min-width:0!important;overflow:hidden;padding:0!important;border:none!important}
 .sb-top{padding:16px;border-bottom:1px solid #E5E7EB}
@@ -65,9 +61,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .logout-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:4px;border-radius:6px;transition:.15s;line-height:1}
 .logout-btn:hover{color:#EF4444;background:#FEE2E2}
 .main{margin-left:256px;min-height:100vh;padding:32px 36px;background:#F9FAFB}
-.main.fin-active{padding:0;background:#F9FAFB;display:flex;flex-direction:column}
-#pg-finance.on{display:flex!important;flex:1}
-#pg-finance .finance-content-inner{display:flex;width:100%;min-height:100vh}
 .pg{display:none}
 .pg.on{display:block}
 .pg-h{margin-bottom:24px}
@@ -1168,22 +1161,32 @@ function showPg(pg){
     loadFinance();
   }
   if(pg==='expenses'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
-  document.getElementById('pg-'+pg)?.classList.add('on');
-  document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
 
-  // Finance full-width — remove main div padding
+  // Hide/show finance page (it lives outside .main)
+  const finPage=document.getElementById('pg-finance');
   const mainEl=document.querySelector('.main');
-  if(mainEl){
-    if(pg==='finance'){
-      mainEl.style.padding='0';
-      mainEl.style.background='#F9FAFB';
-    } else {
-      mainEl.style.padding='';
-      mainEl.style.background='';
-    }
+  if(pg==='finance'){
+    // Show finance, hide main content
+    if(finPage) finPage.style.display='flex';
+    if(mainEl) mainEl.style.visibility='hidden';
+    // Sync left with sidebar state
+    const sbHidden=document.getElementById('sb')?.classList.contains('sb-hidden');
+    if(finPage) finPage.style.left=sbHidden?'0':'256px';
+  } else {
+    // Hide finance, show main
+    if(finPage) finPage.style.display='none';
+    if(mainEl) mainEl.style.visibility='visible';
   }
+
+  // Normal pg switching (for non-finance pages inside .main)
+  document.querySelectorAll('.pg').forEach(p=>{
+    if(p.id!=='pg-finance') p.classList.remove('on');
+  });
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
+  if(pg!=='finance'){
+    document.getElementById('pg-'+pg)?.classList.add('on');
+  }
+  document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
 
   if(pg==='users'&&profile?.role==='owner')loadUsers();
   if(pg==='notes')loadSharedNote();
@@ -2739,9 +2742,14 @@ function toggleMainSidebar(){
   const sb=document.getElementById('sb');
   const main=document.querySelector('.main');
   const showBtn=document.getElementById('sb-show-btn');
+  const finPage=document.getElementById('pg-finance');
   const hidden=sb.classList.toggle('sb-hidden');
   main?.classList.toggle('sb-hidden', hidden);
   if(showBtn) showBtn.style.display=hidden?'block':'none';
+  // Sync finance page position
+  if(finPage&&finPage.style.display!=='none'){
+    finPage.style.left=hidden?'0':'256px';
+  }
 }
 
 function toggleFinSidebar(){
@@ -2750,6 +2758,17 @@ function toggleFinSidebar(){
   const hidden=finSb.classList.toggle('fin-sb-hidden');
   if(showBtn) showBtn.style.display=hidden?'flex':'none';
 }
+
+// Move finance page outside .main so it gets full width
+(function moveFinancePage(){
+  const fin=document.getElementById('pg-finance');
+  const app=document.getElementById('app');
+  if(fin&&app&&fin.parentElement!==app){
+    app.appendChild(fin);
+    // Style finance page to sit beside main sidebar (fixed left:256px)
+    fin.style.cssText='display:none;position:fixed;top:0;left:256px;right:0;bottom:0;z-index:90;overflow-y:auto;background:#F9FAFB;transition:left .25s';
+  }
+})();
 
 // ── HOME PAGE
 async function loadHomePage(){
