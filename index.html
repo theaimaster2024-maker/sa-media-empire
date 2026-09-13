@@ -139,25 +139,27 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .tb.on{background:#F5F3FF;color:#7C3AED}
 .bclr{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;flex-shrink:0}
 .bclr.on{border-color:#111827;transform:scale(1.2)}
-.fn-nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#6B7280;cursor:pointer;margin-bottom:2px;transition:.15s}
-.fn-nav:hover{background:#1E2535;color:#9CA3AF}
-.fn-nav.active{background:rgba(0,212,170,.1);color:#00D4AA}
-.fin-card{background:#161B27;border:1px solid #1E2535;border-radius:14px;padding:20px}
-.fin-card-sm{background:#1A2235;border:1px solid #1E2535;border-radius:12px;padding:16px}
-.fin-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.fn-nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#6B7280;cursor:pointer;margin-bottom:2px;transition:.15s}
+.fn-nav:hover{background:#F5F3FF;color:#7C3AED}
+.fn-nav.active{background:#F5F3FF;color:#7C3AED;font-weight:600}
+.fn-nav-owner{display:none}
+.fin-card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px}
+.fin-card-sm{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px}
+.fin-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .fin-table{width:100%;border-collapse:collapse}
-.fin-table th{font-size:11px;font-weight:600;color:#4B5563;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;border-bottom:1px solid #1E2535}
-.fin-table td{font-size:13px;color:#9CA3AF;padding:12px;border-bottom:1px solid #0F1117}
-.fin-table tr:hover td{background:rgba(22,27,39,.6)}
-.fin-inp{width:100%;background:#0F1117;border:1.5px solid #1E2535;border-radius:8px;padding:9px 12px;font-size:13px;color:#E5E7EB;font-family:inherit;outline:none;box-sizing:border-box}
-.fin-inp:focus{border-color:#00D4AA}
-.fin-lbl{font-size:11px;font-weight:600;color:#4B5563;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px}
+.fin-table th{font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;border-bottom:1px solid #F3F4F6}
+.fin-table td{font-size:13px;color:#374151;padding:11px 12px;border-bottom:1px solid #F9FAFB}
+.fin-table tr:hover td{background:#FAFAFA}
+.fin-inp{width:100%;background:#fff;border:1.5px solid #E5E7EB;border-radius:8px;padding:9px 12px;font-size:13px;color:#111827;font-family:inherit;outline:none;box-sizing:border-box}
+.fin-inp:focus{border-color:#7C3AED}
+.fin-lbl{font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
 .fin-btn{border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
-.fin-btn-primary{background:#00D4AA;color:#0F1117}
-.fin-btn-secondary{background:#1E2535;color:#9CA3AF}
-.fin-btn-danger{background:#EF44441A;color:#EF4444;border:1px solid #EF44442A}
-.fin-btn-primary:hover{background:#00C49A}
-.fin-stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.fin-btn-primary{background:#7C3AED;color:#fff}
+.fin-btn-secondary{background:#F3F4F6;color:#374151}
+.fin-btn-danger{background:#FEF2F2;color:#EF4444;border:1px solid #FECACA}
+.fin-btn-primary:hover{background:#6D28D9}
+.fin-btn-secondary:hover{background:#E5E7EB}
+.fin-stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .b-card{position:absolute;background:#fff;border-radius:12px;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);min-width:200px;min-height:110px;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;z-index:2}
 .b-card:hover{border-color:#C4B5FD;box-shadow:0 4px 12px rgba(124,58,237,.12)}
 .b-card.bsel{border-color:#7C3AED!important;box-shadow:0 0 0 2px rgba(124,58,237,.15),0 4px 12px rgba(124,58,237,.12)!important}
@@ -736,7 +738,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 
         <!-- FINANCE (owner only) -->
-    <div class="pg" id="pg-finance" style="padding:0;background:#0F1117;min-height:100vh">
+    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB;min-height:100vh">
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
         <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
@@ -744,20 +746,20 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       </div>
       <div id="finance-content" style="display:flex;min-height:100vh">
         <!-- Finance Sidebar -->
-        <div id="fin-sidebar" style="width:220px;background:#161B27;border-right:1px solid #1E2535;flex-shrink:0;display:flex;flex-direction:column;padding:24px 0">
-          <div style="padding:0 20px 24px;border-bottom:1px solid #1E2535">
+        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0">
+          <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6">
             <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:36px;height:36px;background:linear-gradient(135deg,#00D4AA,#0EA5E9);border-radius:10px;display:flex;align-items:center;justify-content:center">
-                <i class="ti ti-chart-bar" style="color:#fff;font-size:18px"></i>
+              <div style="width:34px;height:34px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);border-radius:9px;display:flex;align-items:center;justify-content:center">
+                <i class="ti ti-chart-bar" style="color:#fff;font-size:17px"></i>
               </div>
               <div>
-                <div style="font-size:13px;font-weight:700;color:#fff">SA Media Empire</div>
-                <div style="font-size:10px;color:#4B5563">Finance</div>
+                <div style="font-size:12px;font-weight:700;color:#111827">SA Media Empire</div>
+                <div style="font-size:10px;color:#9CA3AF">Finance</div>
               </div>
             </div>
           </div>
-          <nav style="padding:16px 12px;flex:1">
-            <div class="fn-nav" onclick="finTab('overview')" id="fn-nav-overview" style="background:#00D4AA1A;color:#00D4AA">
+          <nav style="padding:12px 10px;flex:1">
+            <div class="fn-nav" onclick="finTab('overview')" id="fn-nav-overview">
               <i class="ti ti-home"></i> Overview
             </div>
             <div class="fn-nav" onclick="finTab('channels')" id="fn-nav-channels">
@@ -782,44 +784,44 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <i class="ti ti-settings"></i> Settings
             </div>
           </nav>
-          <div style="padding:16px 20px;border-top:1px solid #1E2535">
-            <div style="font-size:10px;color:#374151;font-style:italic">Discipline<br>Funds Freedom</div>
-            <div style="font-size:9px;color:#1F2937;margin-top:6px">SA MEDIA EMPIRE v1.0.0</div>
+          <div style="padding:14px 16px;border-top:1px solid #F3F4F6">
+            <div style="font-size:10px;color:#D1D5DB;font-style:italic">Discipline · Funds Freedom</div>
+            <div style="font-size:9px;color:#E5E7EB;margin-top:3px">SA MEDIA EMPIRE v1.0.0</div>
           </div>
         </div>
 
         <!-- Finance Main -->
-        <div style="flex:1;overflow-y:auto;background:#0F1117">
+        <div style="flex:1;overflow-y:auto;background:#F9FAFB">
           <!-- Top bar -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid #1E2535;background:#161B27;position:sticky;top:0;z-index:50">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #E5E7EB;background:#fff;position:sticky;top:0;z-index:50">
             <div>
-              <div style="font-size:12px;color:#6B7280" id="fin-greeting">Good evening,</div>
-              <div style="font-size:14px;font-weight:600;color:#fff">Welcome to SA MEDIA EMPIRE</div>
+              <div style="font-size:12px;color:#9CA3AF" id="fin-greeting">Good morning,</div>
+              <div style="font-size:13px;font-weight:600;color:#111827">Welcome to SA MEDIA EMPIRE</div>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
-              <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#1E2535;color:#9CA3AF;border:1px solid #374151;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer">
+              <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
               </select>
-              <button onclick="openFinModal('income')" style="background:#00D4AA;color:#0F1117;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
+              <button onclick="openFinModal('income')" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
                 <i class="ti ti-plus" style="font-size:15px"></i> Add Entry
               </button>
             </div>
           </div>
 
           <!-- Tab pages -->
-          <div id="fin-tab-overview" style="padding:28px;display:block"></div>
-          <div id="fin-tab-channels" style="padding:28px;display:none"></div>
-          <div id="fin-tab-transactions" style="padding:28px;display:none"></div>
-          <div id="fin-tab-requests" style="padding:28px;display:none"></div>
-          <div id="fin-tab-payroll" style="padding:28px;display:none"></div>
-          <div id="fin-tab-subscriptions" style="padding:28px;display:none"></div>
-          <div id="fin-tab-reports" style="padding:28px;display:none"></div>
-          <div id="fin-tab-finsettings" style="padding:28px;display:none"></div>
+          <div id="fin-tab-overview" style="padding:24px;display:block"></div>
+          <div id="fin-tab-channels" style="padding:24px;display:none"></div>
+          <div id="fin-tab-transactions" style="padding:24px;display:none"></div>
+          <div id="fin-tab-requests" style="padding:24px;display:none"></div>
+          <div id="fin-tab-payroll" style="padding:24px;display:none"></div>
+          <div id="fin-tab-subscriptions" style="padding:24px;display:none"></div>
+          <div id="fin-tab-reports" style="padding:24px;display:none"></div>
+          <div id="fin-tab-finsettings" style="padding:24px;display:none"></div>
         </div>
       </div>
 
       <!-- Finance Modals -->
-      <div id="fin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;padding:20px">
-        <div style="background:#161B27;border:1px solid #1E2535;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto" id="fin-modal-body"></div>
+      <div id="fin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto" id="fin-modal-body"></div>
       </div>
     </div>
 
@@ -2166,73 +2168,73 @@ async function loadFinOverview(){
   allExp.filter(e=>e.approval_status==='paid').forEach(e=>{catMap[e.category]=(catMap[e.category]||0)+Number(e.amount);});
 
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px">
-      <div><div style="font-size:26px;font-weight:800;color:#fff;margin-bottom:4px">Finance Overview</div><div style="font-size:13px;color:#4B5563">Track your income, expenses and grow smarter.</div></div>
-      <div style="font-size:11px;color:#374151;font-style:italic;text-align:right">"Better numbers<br>build bigger tomorrows."</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div><div style="font-size:22px;font-weight:800;color:#111827;margin-bottom:4px">Finance Overview</div><div style="font-size:13px;color:#6B7280">Track your income, expenses and grow smarter.</div></div>
+      <div style="font-size:11px;color:#9CA3AF;font-style:italic;text-align:right">"Better numbers<br>build bigger tomorrows."</div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
-      ${finStatCard('Total Balance',fmtBDTFull(totalBalance),'#00D4AA','ti-wallet','rgba(0,212,170,.12)')}
-      ${finStatCard('Monthly Income',fmtBDTFull(monthIncome),'#10B981','ti-trending-up','rgba(16,185,129,.12)')}
-      ${finStatCard('Monthly Expenses',fmtBDTFull(monthExp),'#EF4444','ti-trending-down','rgba(239,68,68,.12)')}
-      ${finStatCard('Net Cash Flow',fmtBDTFull(netFlow),netFlow>=0?'#00D4AA':'#EF4444','ti-chart-bar',netFlow>=0?'rgba(0,212,170,.12)':'rgba(239,68,68,.12)')}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      ${finStatCard('Total Balance',fmtBDTFull(totalBalance),'#7C3AED','ti-wallet','#F5F3FF')}
+      ${finStatCard('Monthly Income',fmtBDTFull(monthIncome),'#10B981','ti-trending-up','#D1FAE5')}
+      ${finStatCard('Monthly Expenses',fmtBDTFull(monthExp),'#EF4444','ti-trending-down','#FEE2E2')}
+      ${finStatCard('Net Cash Flow',fmtBDTFull(netFlow),netFlow>=0?'#10B981':'#EF4444','ti-chart-bar',netFlow>=0?'#D1FAE5':'#FEE2E2')}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px">
-      ${finStatCard('Approved but Unpaid',fmtBDTFull(approvedUnpaid),'#F59E0B','ti-clock','rgba(245,158,11,.12)')}
-      ${finStatCard('Available Balance',fmtBDTFull(availableBalance),'#818CF8','ti-coin','rgba(129,140,248,.12)')}
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px">
+      ${finStatCard('Approved but Unpaid',fmtBDTFull(approvedUnpaid),'#F59E0B','ti-clock','#FEF3C7')}
+      ${finStatCard('Available Balance',fmtBDTFull(availableBalance),'#0EA5E9','ti-coin','#DBEAFE')}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:14px;margin-bottom:20px">
       <div class="fin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="font-size:16px;font-weight:700;color:#fff">Income vs Expense</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:15px;font-weight:700;color:#111827">Income vs Expense</div>
           <div style="display:flex;gap:14px;font-size:12px;color:#6B7280">
-            <span><span style="width:8px;height:8px;background:#00D4AA;border-radius:50%;display:inline-block;margin-right:4px"></span>Income</span>
+            <span><span style="width:8px;height:8px;background:#7C3AED;border-radius:50%;display:inline-block;margin-right:4px"></span>Income</span>
             <span><span style="width:8px;height:8px;background:#EF4444;border-radius:50%;display:inline-block;margin-right:4px"></span>Expenses</span>
           </div>
         </div>
-        <canvas id="fin-chart-incexp" height="180"></canvas>
+        <div style="height:200px;position:relative"><canvas id="fin-chart-incexp"></canvas></div>
       </div>
       <div class="fin-card">
-        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:14px">Expense Breakdown</div>
-        <canvas id="fin-chart-donut" height="160"></canvas>
-        <div id="fin-cat-legend" style="margin-top:12px;display:flex;flex-direction:column;gap:5px"></div>
+        <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:12px">Expense Breakdown</div>
+        <div style="height:140px;position:relative"><canvas id="fin-chart-donut"></canvas></div>
+        <div id="fin-cat-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px"></div>
       </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:18px;font-weight:700;color:#fff">Channel Performance</div>
-      <button onclick="finTab('channels')" style="background:none;border:none;color:#00D4AA;font-size:13px;cursor:pointer;font-family:inherit">View All Channels →</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:16px;font-weight:700;color:#111827">Channel Performance</div>
+      <button onclick="finTab('channels')" style="background:none;border:none;color:#7C3AED;font-size:13px;cursor:pointer;font-family:inherit">View All →</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px" id="fin-channel-cards"></div>
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px" id="fin-channel-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:14px">
       <div class="fin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div style="font-size:16px;font-weight:700;color:#fff">Recent Transactions</div>
-          <button onclick="finTab('transactions')" style="background:none;border:none;color:#00D4AA;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:15px;font-weight:700;color:#111827">Recent Transactions</div>
+          <button onclick="finTab('transactions')" style="background:none;border:none;color:#7C3AED;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
         </div>
         <table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Scope</th><th>Category</th><th>Amount</th><th>Status</th></tr></thead>
         <tbody>${recentAll.map(t=>{const isInc=t._type==='income';return `<tr>
-          <td style="color:#6B7280;white-space:nowrap">${fmtDate(t.date)}</td>
-          <td style="color:#E5E7EB;font-weight:500">${t.description||t.source||t.payee||'—'}</td>
+          <td style="color:#9CA3AF;white-space:nowrap">${fmtDate(t.date)}</td>
+          <td style="color:#111827;font-weight:500">${t.description||t.source||t.payee||'—'}</td>
           <td style="color:#6B7280">${t.scope==='whole_business'||!t.scope?'SA Media Empire':t.channel?.name||'—'}</td>
           <td style="color:#6B7280">${t.category||t.source||'—'}</td>
-          <td style="font-weight:700;color:${isInc?'#00D4AA':'#EF4444'};white-space:nowrap">${isInc?'+':'-'}${fmtBDTFull(t.amount)}</td>
+          <td style="font-weight:700;color:${isInc?'#10B981':'#EF4444'};white-space:nowrap">${isInc?'+':'-'}${fmtBDTFull(t.amount)}</td>
           <td>${finStatusBadge(isInc?t.status:t.approval_status)}</td>
-        </tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;color:#374151;padding:24px">No transactions yet</td></tr>'}</tbody></table>
+        </tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px">No transactions yet</td></tr>'}</tbody></table>
       </div>
       <div class="fin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div style="font-size:16px;font-weight:700;color:#fff">Payment Requests</div>
-          <button onclick="finTab('requests')" style="background:none;border:none;color:#00D4AA;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:15px;font-weight:700;color:#111827">Payment Requests</div>
+          <button onclick="finTab('requests')" style="background:none;border:none;color:#7C3AED;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          ${pendingReqs.length?pendingReqs.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#0F1117;border-radius:8px">
+          ${pendingReqs.length?pendingReqs.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#F9FAFB;border-radius:8px;border:1px solid #F3F4F6">
             <div style="display:flex;align-items:center;gap:8px">
-              <i class="ti ti-file-invoice" style="font-size:15px;color:#4B5563"></i>
-              <div><div style="font-size:13px;color:#E5E7EB;font-weight:500">${r.payee}</div><div style="font-size:10px;color:#4B5563">${r.category||'—'}</div></div>
+              <i class="ti ti-file-invoice" style="font-size:15px;color:#9CA3AF"></i>
+              <div><div style="font-size:13px;color:#111827;font-weight:500">${r.payee}</div><div style="font-size:10px;color:#9CA3AF">${r.category||'—'}</div></div>
             </div>
-            <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#fff">${fmtBDTFull(r.amount)}</div>${finStatusBadge(r.approval_status)}</div>
-          </div>`).join(''):`<div style="text-align:center;padding:20px;color:#374151;font-size:13px">No pending requests</div>`}
+            <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#111827">${fmtBDTFull(r.amount)}</div>${finStatusBadge(r.approval_status)}</div>
+          </div>`).join(''):`<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px">No pending requests</div>`}
         </div>
-        <button onclick="openFinModal('expense')" style="width:100%;margin-top:12px;background:rgba(0,212,170,.1);color:#00D4AA;border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+        <button onclick="openFinModal('expense')" style="width:100%;margin-top:12px;background:#F5F3FF;color:#7C3AED;border:1px solid #EDE9FE;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
           <i class="ti ti-file-invoice" style="font-size:14px"></i> Create Payment Voucher
         </button>
       </div>
@@ -2244,9 +2246,9 @@ async function loadFinOverview(){
 
 function finStatCard(title,val,color,icon,bg){
   return `<div class="fin-card" style="display:flex;align-items:center;gap:14px">
-    <div class="fin-stat-icon" style="background:${bg}"><i class="ti ${icon}" style="color:${color};font-size:22px"></i></div>
-    <div><div style="font-size:11px;color:#4B5563;font-weight:500;margin-bottom:4px">${title}</div>
-    <div style="font-size:20px;font-weight:800;color:#fff;line-height:1">${val}</div></div>
+    <div class="fin-stat-icon" style="background:${bg}"><i class="ti ${icon}" style="color:${color};font-size:20px"></i></div>
+    <div><div style="font-size:11px;color:#9CA3AF;font-weight:500;margin-bottom:4px">${title}</div>
+    <div style="font-size:20px;font-weight:800;color:#111827;line-height:1">${val}</div></div>
   </div>`;
 }
 
@@ -2297,15 +2299,15 @@ function drawFinCharts(allIncome,allExp,catMap){
       expData.push(allExp.filter(x=>x.approval_status==='paid'&&(x.payment_date||x.date)?.startsWith(key)).reduce((s,x)=>s+Number(x.amount),0));
     }
     if(canvas._chart)canvas._chart.destroy();
-    canvas._chart=new Chart(canvas,{type:'line',data:{labels:months,datasets:[{label:'Income',data:incData,borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,.08)',borderWidth:2.5,pointBackgroundColor:'#00D4AA',pointRadius:4,tension:.4,fill:true},{label:'Expenses',data:expData,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,.08)',borderWidth:2.5,pointBackgroundColor:'#EF4444',pointRadius:4,tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1E2535'},ticks:{color:'#4B5563',font:{size:11}}},y:{grid:{color:'#1E2535'},ticks:{color:'#4B5563',font:{size:11},callback:v=>'৳'+(v>=1000?v/1000+'K':v)}}}}});
+    canvas._chart=new Chart(canvas,{type:'line',data:{labels:months,datasets:[{label:'Income',data:incData,borderColor:'#7C3AED',backgroundColor:'rgba(124,58,237,.07)',borderWidth:2.5,pointBackgroundColor:'#7C3AED',pointRadius:4,tension:.4,fill:true},{label:'Expenses',data:expData,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,.08)',borderWidth:2.5,pointBackgroundColor:'#EF4444',pointRadius:4,tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}}},y:{grid:{color:'#F3F4F6'},ticks:{color:'#4B5563',font:{size:11},callback:v=>'৳'+(v>=1000?v/1000+'K':v)}}}}});
   }
   const donut=document.getElementById('fin-chart-donut');
   if(donut){
     const cats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const colors=['#EF4444','#818CF8','#00D4AA','#F59E0B','#0EA5E9'];
+    const colors=['#7C3AED','#EF4444','#10B981','#F59E0B','#0EA5E9'];
     if(donut._chart)donut._chart.destroy();
     if(!cats.length){donut.style.display='none';return;}
-    donut._chart=new Chart(donut,{type:'doughnut',data:{labels:cats.map(c=>c[0]),datasets:[{data:cats.map(c=>c[1]),backgroundColor:colors,borderColor:'#161B27',borderWidth:3,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false}}}});
+    donut._chart=new Chart(donut,{type:'doughnut',data:{labels:cats.map(c=>c[0]),datasets:[{data:cats.map(c=>c[1]),backgroundColor:colors,borderColor:'#fff',borderWidth:3,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}});
     const total=cats.reduce((s,c)=>s+c[1],0);
     const legend=document.getElementById('fin-cat-legend');
     if(legend)legend.innerHTML=cats.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between">
@@ -2609,7 +2611,32 @@ async function saveFinExpense(){
   const voucher=`PAY-${ym}-${String((count||0)+1).padStart(4,'0')}`;
   const{error}=await sb.from('finance_expenses').insert({date:fv('fe-date')||now.toISOString().slice(0,10),due_date:fv('fe-due')||null,payee,amount:amt,description:fv('fe-desc'),category:fv('fe-cat')||'Other',scope:fv('fe-scope')||'whole_business',channel_id:fv('fe-ch')||null,payment_method:fv('fe-pm'),notes:fv('fe-notes'),approval_status:'pending',voucher_number:voucher,requested_by:user?.id});
   if(error){toast('Error: '+error.message);return;}
-  closeFinModal();toast(`✅ Request saved! Voucher: ${voucher}`);
+  
+  // Get the created record and show voucher option
+  const{data:newRec}=await sb.from('finance_expenses').select('*').eq('voucher_number',voucher).single();
+  closeFinModal();
+  
+  // Show success with download option
+  const dlModal=document.createElement('div');
+  dlModal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
+  dlModal.innerHTML=`<div style="background:#fff;border-radius:14px;padding:28px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+    <div style="width:52px;height:52px;background:#D1FAE5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="ti ti-check" style="font-size:24px;color:#10B981"></i></div>
+    <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:6px">Request Submitted!</div>
+    <div style="font-size:13px;color:#6B7280;margin-bottom:6px">Voucher: <span style="font-weight:600;color:#7C3AED">${voucher}</span></div>
+    <div style="font-size:12px;color:#9CA3AF;margin-bottom:20px">Download the voucher and share it with the approver</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button onclick="finGenVoucher('${newRec?.id||''}');this.closest('div[style*=fixed]').remove();" 
+        style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px">
+        <i class="ti ti-download" style="font-size:16px"></i> Download & Print Voucher PDF
+      </button>
+      <button onclick="this.closest('div[style*=fixed]').remove();" 
+        style="background:#F3F4F6;color:#374151;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+        Skip for now
+      </button>
+    </div>
+  </div>`;
+  document.body.appendChild(dlModal);
+  
   if(_finCurrentTab==='requests')loadFinRequests();else loadFinOverview();
 }
 
