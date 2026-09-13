@@ -30,7 +30,16 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .btn-main:hover{background:#6D28D9}
 .btn-main:disabled{opacity:.5;cursor:not-allowed}
 #app{display:none;min-height:100vh;background:#F9FAFB}
-.sidebar{width:256px;background:#fff;border-right:1px solid #E5E7EB;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100}
+.sidebar{width:256px;background:#fff;border-right:1px solid #E5E7EB;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;transition:transform .25s}
+.sidebar.sb-hidden{transform:translateX(-256px)}
+.main{margin-left:256px;min-height:100vh;padding:32px 36px;background:#F9FAFB;transition:margin-left .25s}
+.main.sb-hidden{margin-left:0}
+.main.fin-active{padding:0;background:#F9FAFB}
+#pg-finance{display:none}
+#pg-finance.on{display:flex!important;width:100%}
+.fin-wrap{display:flex;width:100%;min-height:calc(100vh)}
+#fin-sidebar{transition:width .25s,min-width .25s}
+#fin-sidebar.fin-sb-hidden{width:0!important;min-width:0!important;overflow:hidden;padding:0!important;border:none!important}
 .sb-top{padding:16px;border-bottom:1px solid #E5E7EB}
 .sb-logo{display:flex;align-items:center;gap:10px}
 .sb-icon{width:32px;height:32px;border-radius:8px;background:#7C3AED;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0}
@@ -243,13 +252,21 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 <div id="app" style="display:none">
   <button class="mob-btn" onclick="document.getElementById('sb').classList.toggle('open')"><i class="ti ti-menu-2"></i></button>
+  <!-- Show sidebar button (visible when sidebar hidden) -->
+  <button id="sb-show-btn" onclick="toggleMainSidebar()" title="Show sidebar"
+    style="display:none;position:fixed;top:12px;left:12px;z-index:200;background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:7px 9px;cursor:pointer;font-size:18px;color:#7C3AED;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:.2s">
+    <i class="ti ti-layout-sidebar-left-expand"></i>
+  </button>
 
   <div class="sidebar" id="sb">
-    <div class="sb-top">
+    <div class="sb-top" style="display:flex;align-items:center;justify-content:space-between">
       <div class="sb-logo">
         <div class="sb-icon"><i class="ti ti-brand-youtube"></i></div>
         <div><div class="sb-name">SA Media Empire</div><div class="sb-tag">Management System</div></div>
       </div>
+      <button onclick="toggleMainSidebar()" title="Hide sidebar" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px;padding:4px;border-radius:6px;line-height:1;flex-shrink:0" id="sb-toggle-btn">
+        <i class="ti ti-layout-sidebar-left-collapse"></i>
+      </button>
     </div>
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
@@ -741,16 +758,16 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 
         <!-- FINANCE (owner only) -->
-    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB;width:100%">
-      <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
+    <div class="pg" id="pg-finance" style="width:100%">
+      <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center;width:100%">
         <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
         <div style="font-size:13px;color:#9CA3AF;margin-top:8px">Finance section শুধু Owner ও Manager দেখতে পারবে</div>
       </div>
-      <div id="finance-content" class="finance-content-inner">
+      <div id="finance-content" class="fin-wrap">
         <!-- Finance Sidebar -->
-        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0;min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto">
-          <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6">
+        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto">
+          <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:10px">
               <div style="width:34px;height:34px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);border-radius:9px;display:flex;align-items:center;justify-content:center">
                 <i class="ti ti-chart-bar" style="color:#fff;font-size:17px"></i>
@@ -760,6 +777,9 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
                 <div style="font-size:10px;color:#9CA3AF">Finance</div>
               </div>
             </div>
+            <button onclick="toggleFinSidebar()" title="Hide" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:17px;padding:3px;border-radius:5px;line-height:1">
+              <i class="ti ti-layout-sidebar-left-collapse"></i>
+            </button>
           </div>
           <nav style="padding:12px 10px;flex:1">
             <div class="fn-nav" onclick="finTab('overview')" id="fn-nav-overview">
@@ -797,9 +817,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div style="flex:1;overflow-y:auto;background:#F9FAFB">
           <!-- Top bar -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #E5E7EB;background:#fff;position:sticky;top:0;z-index:50">
-            <div>
-              <div style="font-size:12px;color:#9CA3AF" id="fin-greeting">Good morning,</div>
-              <div style="font-size:13px;font-weight:600;color:#111827">Welcome to SA MEDIA EMPIRE</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button id="fin-sb-show-btn" onclick="toggleFinSidebar()" title="Show sidebar" style="display:none;background:#F5F3FF;border:none;border-radius:8px;padding:7px 9px;cursor:pointer;color:#7C3AED;font-size:17px;line-height:1">
+                <i class="ti ti-layout-sidebar-left-expand"></i>
+              </button>
+              <div>
+                <div style="font-size:12px;color:#9CA3AF" id="fin-greeting">Good morning,</div>
+                <div style="font-size:13px;font-weight:600;color:#111827">Welcome to SA MEDIA EMPIRE</div>
+              </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
               <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
@@ -1151,8 +1176,13 @@ function showPg(pg){
   // Finance full-width — remove main div padding
   const mainEl=document.querySelector('.main');
   if(mainEl){
-    if(pg==='finance') mainEl.classList.add('fin-active');
-    else mainEl.classList.remove('fin-active');
+    if(pg==='finance'){
+      mainEl.style.padding='0';
+      mainEl.style.background='#F9FAFB';
+    } else {
+      mainEl.style.padding='';
+      mainEl.style.background='';
+    }
   }
 
   if(pg==='users'&&profile?.role==='owner')loadUsers();
@@ -2702,6 +2732,23 @@ async function finGenVoucher(id){
   <div style="text-align:center;font-size:11px;color:#999;margin-top:40px;border-top:1px solid #eee;padding-top:16px">SA Media Empire · Payment Authorization Voucher · Generated ${new Date().toLocaleDateString('en-GB')}</div>
   </body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+}
+
+// ── SIDEBAR TOGGLES
+function toggleMainSidebar(){
+  const sb=document.getElementById('sb');
+  const main=document.querySelector('.main');
+  const showBtn=document.getElementById('sb-show-btn');
+  const hidden=sb.classList.toggle('sb-hidden');
+  main?.classList.toggle('sb-hidden', hidden);
+  if(showBtn) showBtn.style.display=hidden?'block':'none';
+}
+
+function toggleFinSidebar(){
+  const finSb=document.getElementById('fin-sidebar');
+  const showBtn=document.getElementById('fin-sb-show-btn');
+  const hidden=finSb.classList.toggle('fin-sb-hidden');
+  if(showBtn) showBtn.style.display=hidden?'flex':'none';
 }
 
 // ── HOME PAGE
