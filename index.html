@@ -50,6 +50,9 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .nav-it i{font-size:16px;flex-shrink:0;opacity:.8}
 .nav-it.on i{opacity:1}
 .nav-lock{margin-left:auto;font-size:12px;opacity:.4}
+.nav-sub-it{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;color:#6B7280;font-size:12px;font-weight:500;transition:all .1s;margin-bottom:1px}
+.nav-sub-it:hover{background:#F3F4F6;color:#111827}
+.nav-sub-it.on{background:#F5F3FF;color:#7C3AED;font-weight:600}
 .sb-user{padding:12px;border-top:1px solid #E5E7EB}
 .user-row{display:flex;align-items:center;gap:10px}
 .u-av{width:32px;height:32px;border-radius:8px;background:#EDE9FE;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#7C3AED;flex-shrink:0}
@@ -269,7 +272,37 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div class="nav-it" onclick="showPg('editors')" data-pg="editors"><i class="ti ti-users"></i> Editors</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
       <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
-      <div class="nav-it" id="nav-finance" onclick="showPg('finance')" data-pg="finance" style="display:none"><i class="ti ti-coin"></i> Finance <i class="ti ti-lock nav-lock"></i></div>
+      <div class="nav-it" id="nav-finance" onclick="toggleFinanceMenu()" data-pg="finance" style="display:none;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:9px"><i class="ti ti-coin"></i> Finance</div>
+        <i class="ti ti-chevron-down" id="nav-finance-arrow" style="font-size:13px;transition:.2s;opacity:.5"></i>
+      </div>
+      <!-- Finance Sub-menu -->
+      <div id="nav-finance-sub" style="display:none;padding-left:12px;margin-top:2px">
+        <div class="nav-sub-it" onclick="showFinTab('overview')" id="fnsub-overview" data-fintab="overview">
+          <i class="ti ti-home" style="font-size:14px"></i> Overview
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('channels')" id="fnsub-channels" data-fintab="channels">
+          <i class="ti ti-brand-youtube" style="font-size:14px"></i> Channels
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('transactions')" id="fnsub-transactions" data-fintab="transactions">
+          <i class="ti ti-arrows-exchange" style="font-size:14px"></i> Transactions
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('requests')" id="fnsub-requests" data-fintab="requests">
+          <i class="ti ti-file-invoice" style="font-size:14px"></i> Payment Requests
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('payroll')" id="fnsub-payroll" data-fintab="payroll">
+          <i class="ti ti-users" style="font-size:14px"></i> Payroll
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('subscriptions')" id="fnsub-subscriptions" data-fintab="subscriptions">
+          <i class="ti ti-credit-card" style="font-size:14px"></i> Subscriptions
+        </div>
+        <div class="nav-sub-it" onclick="showFinTab('reports')" id="fnsub-reports" data-fintab="reports">
+          <i class="ti ti-chart-line" style="font-size:14px"></i> Reports
+        </div>
+        <div class="nav-sub-it fin-owner-only" onclick="showFinTab('finsettings')" id="fnsub-finsettings" data-fintab="finsettings" style="display:none">
+          <i class="ti ti-settings" style="font-size:14px"></i> Settings
+        </div>
+      </div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
       <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" id="nav-users" onclick="showPg('users')" data-pg="users" style="display:none"><i class="ti ti-users"></i> Team Members</div>
@@ -757,94 +790,36 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
         <div style="font-size:13px;color:#9CA3AF;margin-top:8px">Finance section শুধু Owner ও Manager দেখতে পারবে</div>
       </div>
-      <div id="finance-content" class="fin-wrap">
-        <!-- Finance Sidebar -->
-        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto">
-          <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:34px;height:34px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);border-radius:9px;display:flex;align-items:center;justify-content:center">
-                <i class="ti ti-chart-bar" style="color:#fff;font-size:17px"></i>
-              </div>
-              <div>
-                <div style="font-size:12px;font-weight:700;color:#111827">SA Media Empire</div>
-                <div style="font-size:10px;color:#9CA3AF">Finance</div>
-              </div>
-            </div>
-            <button onclick="toggleFinSidebar()" title="Hide" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:17px;padding:3px;border-radius:5px;line-height:1">
-              <i class="ti ti-layout-sidebar-left-collapse"></i>
+      <div id="finance-content">
+        <!-- Top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+          <div>
+            <div style="font-size:12px;color:#9CA3AF" id="fin-greeting">Good morning,</div>
+            <div style="font-size:20px;font-weight:700;color:#111827">SA Media Empire Finance</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none"></select>
+            <button onclick="openFinModal('income')" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
+              <i class="ti ti-plus" style="font-size:15px"></i> Add Entry
             </button>
           </div>
-          <nav style="padding:12px 10px;flex:1">
-            <div class="fn-nav" onclick="finTab('overview')" id="fn-nav-overview">
-              <i class="ti ti-home"></i> Overview
-            </div>
-            <div class="fn-nav" onclick="finTab('channels')" id="fn-nav-channels">
-              <i class="ti ti-brand-youtube"></i> Channels
-            </div>
-            <div class="fn-nav" onclick="finTab('transactions')" id="fn-nav-transactions">
-              <i class="ti ti-arrows-exchange"></i> Transactions
-            </div>
-            <div class="fn-nav" onclick="finTab('requests')" id="fn-nav-requests">
-              <i class="ti ti-file-invoice"></i> Payment Requests
-            </div>
-            <div class="fn-nav" onclick="finTab('payroll')" id="fn-nav-payroll">
-              <i class="ti ti-users"></i> Payroll
-            </div>
-            <div class="fn-nav" onclick="finTab('subscriptions')" id="fn-nav-subscriptions">
-              <i class="ti ti-credit-card"></i> Subscriptions
-            </div>
-            <div class="fn-nav" onclick="finTab('reports')" id="fn-nav-reports">
-              <i class="ti ti-chart-line"></i> Reports
-            </div>
-            <div class="fn-nav fn-nav-owner" onclick="finTab('finsettings')" id="fn-nav-finsettings">
-              <i class="ti ti-settings"></i> Settings
-            </div>
-          </nav>
-          <div style="padding:14px 16px;border-top:1px solid #F3F4F6">
-            <div style="font-size:10px;color:#D1D5DB;font-style:italic">Discipline · Funds Freedom</div>
-            <div style="font-size:9px;color:#E5E7EB;margin-top:3px">SA MEDIA EMPIRE v1.0.0</div>
-          </div>
         </div>
-
-        <!-- Finance Main -->
-        <div style="flex:1;overflow-y:auto;background:#F9FAFB">
-          <!-- Top bar -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #E5E7EB;background:#fff;position:sticky;top:0;z-index:50">
-            <div style="display:flex;align-items:center;gap:10px">
-              <button id="fin-sb-show-btn" onclick="toggleFinSidebar()" title="Show sidebar" style="display:none;background:#F5F3FF;border:none;border-radius:8px;padding:7px 9px;cursor:pointer;color:#7C3AED;font-size:17px;line-height:1">
-                <i class="ti ti-layout-sidebar-left-expand"></i>
-              </button>
-              <div>
-                <div style="font-size:12px;color:#9CA3AF" id="fin-greeting">Good morning,</div>
-                <div style="font-size:13px;font-weight:600;color:#111827">Welcome to SA MEDIA EMPIRE</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
-              </select>
-              <button onclick="openFinModal('income')" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
-                <i class="ti ti-plus" style="font-size:15px"></i> Add Entry
-              </button>
-            </div>
-          </div>
-
-          <!-- Tab pages -->
-          <div id="fin-tab-overview" style="padding:24px;display:block"></div>
-          <div id="fin-tab-channels" style="padding:24px;display:none"></div>
-          <div id="fin-tab-transactions" style="padding:24px;display:none"></div>
-          <div id="fin-tab-requests" style="padding:24px;display:none"></div>
-          <div id="fin-tab-payroll" style="padding:24px;display:none"></div>
-          <div id="fin-tab-subscriptions" style="padding:24px;display:none"></div>
-          <div id="fin-tab-reports" style="padding:24px;display:none"></div>
-          <div id="fin-tab-finsettings" style="padding:24px;display:none"></div>
-        </div>
+        <!-- Tab pages -->
+        <div id="fin-tab-overview" style="display:block"></div>
+        <div id="fin-tab-channels" style="display:none"></div>
+        <div id="fin-tab-transactions" style="display:none"></div>
+        <div id="fin-tab-requests" style="display:none"></div>
+        <div id="fin-tab-payroll" style="display:none"></div>
+        <div id="fin-tab-subscriptions" style="display:none"></div>
+        <div id="fin-tab-reports" style="display:none"></div>
+        <div id="fin-tab-finsettings" style="display:none"></div>
       </div>
-
       <!-- Finance Modals -->
       <div id="fin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px">
         <div style="background:#fff;border:1px solid #E5E7EB;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto" id="fin-modal-body"></div>
       </div>
     </div>
+
 
 
     <!-- USERS (owner only) -->
@@ -1154,38 +1129,18 @@ function setupNav(){
   }
 }
 function showPg(pg){
-  // Hard block finance + expenses for non-owners
-  if(pg==='finance'){
-    const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
-    if(!isOwnerManager){toast('🔒 Finance শুধু Owner ও Manager এর জন্য');return;}
-    loadFinance();
-  }
   if(pg==='expenses'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
 
-  // Hide/show finance page (it lives outside .main)
-  const finPage=document.getElementById('pg-finance');
-  const mainEl=document.querySelector('.main');
-  if(pg==='finance'){
-    // Show finance, hide main content
-    if(finPage) finPage.style.display='flex';
-    if(mainEl) mainEl.style.visibility='hidden';
-    // Sync left with sidebar state
-    const sbHidden=document.getElementById('sb')?.classList.contains('sb-hidden');
-    if(finPage) finPage.style.left=sbHidden?'0':'256px';
-  } else {
-    // Hide finance, show main
-    if(finPage) finPage.style.display='none';
-    if(mainEl) mainEl.style.visibility='visible';
+  // Close finance sub-menu when switching to other pages
+  if(pg!=='finance'){
+    const sub=document.getElementById('nav-finance-sub');
+    // Keep sub-menu open if finance was active, close if going elsewhere
   }
 
-  // Normal pg switching (for non-finance pages inside .main)
-  document.querySelectorAll('.pg').forEach(p=>{
-    if(p.id!=='pg-finance') p.classList.remove('on');
-  });
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
-  if(pg!=='finance'){
-    document.getElementById('pg-'+pg)?.classList.add('on');
-  }
+  document.querySelectorAll('.nav-sub-it').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+pg)?.classList.add('on');
   document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
 
   if(pg==='users'&&profile?.role==='owner')loadUsers();
@@ -2141,7 +2096,8 @@ function finGreeting(){const h=new Date().getHours();return h<12?'Good morning,'
 
 async function loadFinance(){
   const isOwner=profile?.role==='owner';
-  document.querySelectorAll('.fn-nav-owner').forEach(el=>el.style.display=isOwner?'flex':'none');
+  // Show settings sub-menu item for owner only
+  document.querySelectorAll('.fin-owner-only').forEach(el=>el.style.display=isOwner?'flex':'none');
   const sel=document.getElementById('fin-month-sel');
   if(sel&&!sel.options.length){
     const now=new Date();
@@ -2162,7 +2118,6 @@ async function loadFinance(){
   ]);
   if(sets)_finSettings=sets;
   _finChannels=chs||[];
-  finTab('overview');
 }
 
 function finTab(tab){
@@ -2742,33 +2697,47 @@ function toggleMainSidebar(){
   const sb=document.getElementById('sb');
   const main=document.querySelector('.main');
   const showBtn=document.getElementById('sb-show-btn');
-  const finPage=document.getElementById('pg-finance');
   const hidden=sb.classList.toggle('sb-hidden');
   main?.classList.toggle('sb-hidden', hidden);
   if(showBtn) showBtn.style.display=hidden?'block':'none';
-  // Sync finance page position
-  if(finPage&&finPage.style.display!=='none'){
-    finPage.style.left=hidden?'0':'256px';
+}
+
+// Finance sub-menu toggle in main sidebar
+function toggleFinanceMenu(){
+  const sub=document.getElementById('nav-finance-sub');
+  const arrow=document.getElementById('nav-finance-arrow');
+  const isOpen=sub&&sub.style.display!=='none';
+  if(isOpen){
+    if(sub)sub.style.display='none';
+    if(arrow)arrow.style.transform='';
+  } else {
+    const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+    if(!isOwnerManager){toast('🔒 Finance শুধু Owner ও Manager এর জন্য');return;}
+    if(sub)sub.style.display='block';
+    if(arrow)arrow.style.transform='rotate(180deg)';
+    document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
+    document.getElementById('nav-finance')?.classList.add('on');
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    document.getElementById('pg-finance')?.classList.add('on');
+    loadFinance().then(()=>showFinTab('overview'));
   }
 }
 
-function toggleFinSidebar(){
-  const finSb=document.getElementById('fin-sidebar');
-  const showBtn=document.getElementById('fin-sb-show-btn');
-  const hidden=finSb.classList.toggle('fin-sb-hidden');
-  if(showBtn) showBtn.style.display=hidden?'flex':'none';
-}
-
-// Move finance page outside .main so it gets full width
-(function moveFinancePage(){
-  const fin=document.getElementById('pg-finance');
-  const app=document.getElementById('app');
-  if(fin&&app&&fin.parentElement!==app){
-    app.appendChild(fin);
-    // Style finance page to sit beside main sidebar (fixed left:256px)
-    fin.style.cssText='display:none;position:fixed;top:0;left:256px;right:0;bottom:0;z-index:90;overflow-y:auto;background:#F9FAFB;transition:left .25s';
+function showFinTab(tab){
+  document.querySelectorAll('.nav-sub-it').forEach(n=>n.classList.remove('on'));
+  document.getElementById('fnsub-'+tab)?.classList.add('on');
+  const sub=document.getElementById('nav-finance-sub');
+  if(sub&&sub.style.display==='none'){
+    sub.style.display='block';
+    const arrow=document.getElementById('nav-finance-arrow');
+    if(arrow)arrow.style.transform='rotate(180deg)';
   }
-})();
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-finance')?.classList.add('on');
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
+  document.getElementById('nav-finance')?.classList.add('on');
+  finTab(tab);
+}
 
 // ── HOME PAGE
 async function loadHomePage(){
