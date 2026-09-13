@@ -56,7 +56,9 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .logout-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:4px;border-radius:6px;transition:.15s;line-height:1}
 .logout-btn:hover{color:#EF4444;background:#FEE2E2}
 .main{margin-left:256px;min-height:100vh;padding:32px 36px;background:#F9FAFB}
-.main.fin-active{padding:0;background:#F9FAFB}
+.main.fin-active{padding:0;background:#F9FAFB;display:flex;flex-direction:column}
+#pg-finance.on{display:flex!important;flex:1}
+#pg-finance .finance-content-inner{display:flex;width:100%;min-height:100vh}
 .pg{display:none}
 .pg.on{display:block}
 .pg-h{margin-bottom:24px}
@@ -739,15 +741,15 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 
         <!-- FINANCE (owner only) -->
-    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB">
+    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB;width:100%">
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
         <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
         <div style="font-size:13px;color:#9CA3AF;margin-top:8px">Finance section শুধু Owner ও Manager দেখতে পারবে</div>
       </div>
-      <div id="finance-content" style="display:flex;min-height:100vh;height:100%">
+      <div id="finance-content" class="finance-content-inner">
         <!-- Finance Sidebar -->
-        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0">
+        <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0;min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto">
           <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6">
             <div style="display:flex;align-items:center;gap:10px">
               <div style="width:34px;height:34px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);border-radius:9px;display:flex;align-items:center;justify-content:center">
