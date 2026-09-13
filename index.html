@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SA Media Empire</title><!-- build-1782123606 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -138,6 +139,25 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .tb.on{background:#F5F3FF;color:#7C3AED}
 .bclr{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;flex-shrink:0}
 .bclr.on{border-color:#111827;transform:scale(1.2)}
+.fn-nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#6B7280;cursor:pointer;margin-bottom:2px;transition:.15s}
+.fn-nav:hover{background:#1E2535;color:#9CA3AF}
+.fn-nav.active{background:rgba(0,212,170,.1);color:#00D4AA}
+.fin-card{background:#161B27;border:1px solid #1E2535;border-radius:14px;padding:20px}
+.fin-card-sm{background:#1A2235;border:1px solid #1E2535;border-radius:12px;padding:16px}
+.fin-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.fin-table{width:100%;border-collapse:collapse}
+.fin-table th{font-size:11px;font-weight:600;color:#4B5563;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;border-bottom:1px solid #1E2535}
+.fin-table td{font-size:13px;color:#9CA3AF;padding:12px;border-bottom:1px solid #0F1117}
+.fin-table tr:hover td{background:rgba(22,27,39,.6)}
+.fin-inp{width:100%;background:#0F1117;border:1.5px solid #1E2535;border-radius:8px;padding:9px 12px;font-size:13px;color:#E5E7EB;font-family:inherit;outline:none;box-sizing:border-box}
+.fin-inp:focus{border-color:#00D4AA}
+.fin-lbl{font-size:11px;font-weight:600;color:#4B5563;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px}
+.fin-btn{border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.fin-btn-primary{background:#00D4AA;color:#0F1117}
+.fin-btn-secondary{background:#1E2535;color:#9CA3AF}
+.fin-btn-danger{background:#EF44441A;color:#EF4444;border:1px solid #EF44442A}
+.fin-btn-primary:hover{background:#00C49A}
+.fin-stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .b-card{position:absolute;background:#fff;border-radius:12px;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);min-width:200px;min-height:110px;display:flex;flex-direction:column;transition:box-shadow .15s,border-color .15s;z-index:2}
 .b-card:hover{border-color:#C4B5FD;box-shadow:0 4px 12px rgba(124,58,237,.12)}
 .b-card.bsel{border-color:#7C3AED!important;box-shadow:0 0 0 2px rgba(124,58,237,.15),0 4px 12px rgba(124,58,237,.12)!important}
@@ -172,14 +192,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .bcd-l:hover{transform:translateY(-50%) scale(1.4)}
 .bcd-r:hover{transform:translateY(-50%) scale(1.4)}
 .b-sticky{position:absolute;border-radius:10px;padding:12px;cursor:move;min-width:160px;min-height:110px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.b-textbox{position:absolute;min-width:120px;min-height:24px;cursor:move;z-index:8;user-select:none}
-.b-textbox-toolbar{display:none;position:absolute;top:-44px;left:0;background:white;border:1px solid #E5E7EB;border-radius:10px;padding:5px 8px;box-shadow:0 4px 20px rgba(0,0,0,.12);white-space:nowrap;align-items:center;gap:2px;z-index:100}
-.b-textbox:focus-within .b-textbox-toolbar,.b-textbox:hover .b-textbox-toolbar{display:flex}
-.b-textbox-content{outline:none;min-width:120px;min-height:24px;cursor:text;word-break:break-word;caret-color:#7C3AED}
-.b-textbox-content:empty::before{content:attr(data-ph);color:#C0C0C0;pointer-events:none}
-.bttb{background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:5px;font-size:13px;color:#374151;font-family:inherit;line-height:1}
-.bttb:hover{background:#F3F4F6}.bttb.on{background:#EDE9FE;color:#7C3AED}
-.bttb-sep{width:1px;height:18px;background:#E5E7EB;margin:0 3px;flex-shrink:0}
 .b-sticky-txt{flex:1;font-size:13px;font-weight:500;outline:none;cursor:text;line-height:1.6;word-break:break-word;white-space:pre-wrap}
 .b-sticky-txt:empty::before{content:'Note...';opacity:.4}
 .b-sdel{align-self:flex-end;background:rgba(0,0,0,.1);border:none;border-radius:5px;cursor:pointer;font-size:13px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s;margin-bottom:4px}
@@ -724,22 +736,93 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 
         <!-- FINANCE (owner only) -->
-    <div class="pg" id="pg-finance">
-      <!-- Owner check happens in JS, this is extra safety -->
+    <div class="pg" id="pg-finance" style="padding:0;background:#0F1117;min-height:100vh">
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
         <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
-        <div style="font-size:13px;color:#9CA3AF;margin-top:8px">এই section শুধু Owner দেখতে পারবে</div>
+        <div style="font-size:13px;color:#9CA3AF;margin-top:8px">Finance section শুধু Owner ও Manager দেখতে পারবে</div>
       </div>
-      <div id="finance-content">
-        <div class="pg-h"><div class="pg-t">Finance <span style="font-size:14px;color:#9CA3AF;font-weight:400">· Owner only</span></div><div class="pg-s">Personal financial records — শুধু তুমি দেখতে পাবে</div></div>
-        <div class="panel">
-          <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
-          <textarea class="f-inp" id="fin-notes" rows="7" style="resize:vertical;margin-top:14px" placeholder="Personal finance notes, income records, private expenses...&#10;&#10;এখানে যা লিখবে শুধু তুমিই দেখতে পাবে।" oninput="saveNotes()"></textarea>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:6px"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Auto-saved locally</div>
+      <div id="finance-content" style="display:flex;min-height:100vh">
+        <!-- Finance Sidebar -->
+        <div id="fin-sidebar" style="width:220px;background:#161B27;border-right:1px solid #1E2535;flex-shrink:0;display:flex;flex-direction:column;padding:24px 0">
+          <div style="padding:0 20px 24px;border-bottom:1px solid #1E2535">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;background:linear-gradient(135deg,#00D4AA,#0EA5E9);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                <i class="ti ti-chart-bar" style="color:#fff;font-size:18px"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#fff">SA Media Empire</div>
+                <div style="font-size:10px;color:#4B5563">Finance</div>
+              </div>
+            </div>
+          </div>
+          <nav style="padding:16px 12px;flex:1">
+            <div class="fn-nav" onclick="finTab('overview')" id="fn-nav-overview" style="background:#00D4AA1A;color:#00D4AA">
+              <i class="ti ti-home"></i> Overview
+            </div>
+            <div class="fn-nav" onclick="finTab('channels')" id="fn-nav-channels">
+              <i class="ti ti-brand-youtube"></i> Channels
+            </div>
+            <div class="fn-nav" onclick="finTab('transactions')" id="fn-nav-transactions">
+              <i class="ti ti-arrows-exchange"></i> Transactions
+            </div>
+            <div class="fn-nav" onclick="finTab('requests')" id="fn-nav-requests">
+              <i class="ti ti-file-invoice"></i> Payment Requests
+            </div>
+            <div class="fn-nav" onclick="finTab('payroll')" id="fn-nav-payroll">
+              <i class="ti ti-users"></i> Payroll
+            </div>
+            <div class="fn-nav" onclick="finTab('subscriptions')" id="fn-nav-subscriptions">
+              <i class="ti ti-credit-card"></i> Subscriptions
+            </div>
+            <div class="fn-nav" onclick="finTab('reports')" id="fn-nav-reports">
+              <i class="ti ti-chart-line"></i> Reports
+            </div>
+            <div class="fn-nav fn-nav-owner" onclick="finTab('finsettings')" id="fn-nav-finsettings">
+              <i class="ti ti-settings"></i> Settings
+            </div>
+          </nav>
+          <div style="padding:16px 20px;border-top:1px solid #1E2535">
+            <div style="font-size:10px;color:#374151;font-style:italic">Discipline<br>Funds Freedom</div>
+            <div style="font-size:9px;color:#1F2937;margin-top:6px">SA MEDIA EMPIRE v1.0.0</div>
+          </div>
+        </div>
+
+        <!-- Finance Main -->
+        <div style="flex:1;overflow-y:auto;background:#0F1117">
+          <!-- Top bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid #1E2535;background:#161B27;position:sticky;top:0;z-index:50">
+            <div>
+              <div style="font-size:12px;color:#6B7280" id="fin-greeting">Good evening,</div>
+              <div style="font-size:14px;font-weight:600;color:#fff">Welcome to SA MEDIA EMPIRE</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#1E2535;color:#9CA3AF;border:1px solid #374151;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer">
+              </select>
+              <button onclick="openFinModal('income')" style="background:#00D4AA;color:#0F1117;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
+                <i class="ti ti-plus" style="font-size:15px"></i> Add Entry
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab pages -->
+          <div id="fin-tab-overview" style="padding:28px;display:block"></div>
+          <div id="fin-tab-channels" style="padding:28px;display:none"></div>
+          <div id="fin-tab-transactions" style="padding:28px;display:none"></div>
+          <div id="fin-tab-requests" style="padding:28px;display:none"></div>
+          <div id="fin-tab-payroll" style="padding:28px;display:none"></div>
+          <div id="fin-tab-subscriptions" style="padding:28px;display:none"></div>
+          <div id="fin-tab-reports" style="padding:28px;display:none"></div>
+          <div id="fin-tab-finsettings" style="padding:28px;display:none"></div>
         </div>
       </div>
+
+      <!-- Finance Modals -->
+      <div id="fin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#161B27;border:1px solid #1E2535;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto" id="fin-modal-body"></div>
+      </div>
     </div>
+
 
     <!-- USERS (owner only) -->
     <div class="pg" id="pg-users">
@@ -782,7 +865,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
     <!-- CANVAS BOARD PAGE -->
     <div class="pg" id="pg-board" style="padding:0;margin:-28px;position:relative;height:100vh;overflow:hidden">
-      <div id="board-container" style="width:100%;height:100vh;display:none;flex-direction:row">
+      <div id="board-container" style="width:100%;height:100vh;display:none;flex-direction:column">
 
         <!-- TOOLBAR — Claude style -->
         <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:100;
@@ -797,7 +880,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <button class="tb" id="bt-sticky" title="Sticky note" onclick="bTool('sticky')"><i class="ti ti-sticky-note"></i></button>
           <button class="tb" title="Add image" onclick="document.getElementById('b-img-inp').click()"><i class="ti ti-photo"></i></button>
           <button class="tb" title="YouTube embed" onclick="bModal('yt')"><i class="ti ti-brand-youtube"></i></button>
-          <button class="tb" title="Add YouTube Channel Card" onclick="bModal('channel')" style="color:#FF0000"><i class="ti ti-broadcast"></i></button>
           <button class="tb" title="Google Drive link" onclick="bModal('drive')"><i class="ti ti-brand-google-drive"></i></button>
 
           <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
@@ -838,67 +920,46 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <button class="tb" title="Clear board" onclick="bClear()" style="color:#FF4E6A"><i class="ti ti-trash"></i></button>
         </div>
 
-        <!-- MAIN CANVAS AREA -->
-        <div style="flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden">
-          <!-- ZOOM BADGE -->
-          <div id="b-zoom" style="position:absolute;top:12px;left:12px;z-index:100;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#5A6080;box-shadow:0 2px 10px rgba(108,99,255,.1)">100%</div>
+        <!-- ZOOM BADGE -->
+        <div id="b-zoom" style="position:absolute;top:12px;left:12px;z-index:100;
+          background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;
+          padding:6px 12px;font-size:12px;font-weight:600;color:#5A6080;
+          box-shadow:0 2px 10px rgba(108,99,255,.1)">100%</div>
 
-          <!-- SAVE STATUS -->
-          <span id="b-save-status" style="position:absolute;top:16px;left:80px;z-index:100;font-size:11px;color:#9CA3AF"></span>
+        <!-- BOARDS BUTTON -->
+        <button id="b-boards-btn" onclick="bShowBoardPicker()" style="position:absolute;top:14px;right:14px;z-index:100;
+          background:#7C3AED;color:white;border:none;border-radius:8px;
+          padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+          display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(108,99,255,.3)">
+          <i class="ti ti-layout-board"></i>
+          <span id="b-board-name">Default Board</span>
+          <i class="ti ti-chevron-down" style="font-size:11px"></i>
+        </button>
 
-          <!-- CANVAS WRAP -->
-          <div id="b-wrap" style="flex:1;width:100%;height:100%;overflow:hidden;cursor:grab;position:relative;background-color:#FAFAFA;background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);background-size:24px 24px">
-            <div id="b-canvas" style="position:absolute;transform-origin:0 0">
-              <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
-              <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none;z-index:50"></canvas>
-            </div>
-          </div>
-
-          <!-- HELP BAR -->
-          <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(255,255,255,.95);border:1px solid #E5E7EB;border-radius:12px;padding:7px 16px;font-size:11px;color:#8B92B8;box-shadow:0 2px 12px rgba(108,99,255,.08);white-space:nowrap">
-            <b style="color:#6C63FF">Double-click</b> → card &nbsp;·&nbsp;
-            <b style="color:#6C63FF">Blue dot drag</b> → connect &nbsp;·&nbsp;
-            <b style="color:#6C63FF">Scroll</b> → zoom &nbsp;·&nbsp;
-            <b style="color:#6C63FF">Ctrl+S</b> → save
+        <!-- CANVAS WRAP — light dot grid like Claude -->
+        <div id="b-wrap" style="width:100%;height:100%;overflow:hidden;cursor:grab;position:relative;
+          background-color:#FAFAFA;
+          background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);
+          background-size:24px 24px">
+          <div id="b-canvas" style="position:absolute;transform-origin:0 0">
+            <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
+            <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none;z-index:50"></canvas>
           </div>
         </div>
 
-        <!-- RIGHT SIDEBAR — Script Boards -->
-        <div id="b-sidebar" style="width:200px;min-width:200px;height:100%;background:linear-gradient(180deg,#F5F3FF,#EDE9FE);border-left:1.5px solid #DDD6FE;display:flex;flex-direction:column;z-index:200;overflow:hidden;box-shadow:-2px 0 10px rgba(124,58,237,.06)">
-          <div style="padding:12px 10px 8px;border-bottom:1.5px solid #DDD6FE">
-            <div style="font-size:11px;font-weight:700;color:#6D28D9;margin-bottom:8px;display:flex;align-items:center;gap:5px;letter-spacing:.02em"><i class="ti ti-layout-board" style="font-size:14px;color:#7C3AED"></i> Script Boards</div>
-            <button onclick="bCreateNewBoard()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#A78BFA);color:white;border:none;border-radius:7px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 6px rgba(124,58,237,.2)" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"><i class="ti ti-plus"></i> New Board</button>
-          </div>
-          <div id="b-boards-list" style="flex:1;overflow-y:auto;padding:6px 5px"></div>
-        </div>
-      </div>
-
-      <!-- YouTube Channel Board Modal -->
-      <div id="b-ytb-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;flex-direction:column;backdrop-filter:blur(4px)">
-        <div style="display:flex;flex-direction:column;height:100%;max-width:100vw">
-          <!-- Header -->
-          <div style="background:#0F0F0F;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;border-bottom:1px solid #272727">
-            <i class="ti ti-brand-youtube" style="color:#FF0000;font-size:22px"></i>
-            <span style="color:white;font-size:14px;font-weight:700">YouTube Channel Board</span>
-            <span style="color:#717171;font-size:12px">— Competitor channels side by side</span>
-            <div style="flex:1"></div>
-            <!-- Add channel input -->
-            <div style="display:flex;gap:6px;align-items:center">
-              <input id="ytb-ch-inp" class="f-inp" type="text" placeholder="Channel URL বা @handle" style="width:260px;margin:0;background:#272727;border-color:#3f3f3f;color:white;font-size:12px" onkeydown="if(event.key==='Enter')bYTBAddChannel()"/>
-              <button onclick="bYTBAddChannel()" style="background:#FF0000;color:white;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap"><i class="ti ti-plus"></i> Add Channel</button>
-            </div>
-            <button onclick="document.getElementById('b-ytb-modal').style.display='none'" style="background:#272727;border:none;color:#aaa;border-radius:8px;padding:7px 12px;cursor:pointer;font-family:inherit;font-size:13px;margin-left:4px"><i class="ti ti-x"></i></button>
-          </div>
-          <!-- Channels Board — horizontal scroll, each channel is a column -->
-          <div id="ytb-board" style="flex:1;display:flex;gap:0;overflow-x:auto;overflow-y:hidden;background:#0F0F0F;padding:0">
-            <div id="ytb-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;color:#717171;gap:12px">
-              <i class="ti ti-brand-youtube" style="font-size:48px;color:#272727"></i>
-              <div style="font-size:14px">Channel URL দিয়ে Add করুন</div>
-              <div style="font-size:12px;color:#444">যত channel add করবেন, পাশাপাশি দেখাবে</div>
-            </div>
-          </div>
+        <!-- HELP BAR -->
+        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;
+          background:rgba(255,255,255,.95);border:1px solid #E5E7EB;border-radius:12px;
+          padding:7px 16px;font-size:11px;color:#8B92B8;
+          box-shadow:0 2px 12px rgba(108,99,255,.08);white-space:nowrap">
+          <b style="color:#6C63FF">Double-click</b> → card &nbsp;·&nbsp;
+          <b style="color:#6C63FF">Dot drag</b> → connect &nbsp;·&nbsp;
+          <b style="color:#6C63FF">Scroll</b> → zoom &nbsp;·&nbsp;
+          <b style="color:#6C63FF">Ctrl+S</b> → save
         </div>
       </div>
+
+      <!-- MODAL -->
       <div id="b-modal" style="display:none;position:absolute;inset:0;background:rgba(26,31,60,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
         <div style="background:white;border-radius:18px;padding:26px;width:380px;
           box-shadow:0 20px 60px rgba(108,99,255,.25);border:1px solid #E5E7EB">
@@ -1033,6 +1094,7 @@ function setupNav(){
   if(role==='owner'){
     document.getElementById('nav-finance').style.display='flex';
     document.getElementById('nav-admin-sec').style.display='block';
+    document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
     document.getElementById('nav-private-notes').style.display='flex';
     document.getElementById('nav-expenses').style.display='flex';
@@ -1070,7 +1132,11 @@ function setupNav(){
 }
 function showPg(pg){
   // Hard block finance + expenses for non-owners
-  if(pg==='finance'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
+  if(pg==='finance'){
+    const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
+    if(!isOwnerManager){toast('🔒 Finance শুধু Owner ও Manager এর জন্য');return;}
+    loadFinance();
+  }
   if(pg==='expenses'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
@@ -1353,7 +1419,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 // ── SCRIPT BOARD — canvas
 let _bSc=1,_bPx=0,_bPy=0,_bTool='sel',_bColor='#6C63FF',bPenSz=4;
-let _bCards=[],_bStickies=[],_bConns=[],_bTexts=[],_bNid=1;
+let _bCards=[],_bStickies=[],_bConns=[],_bNid=1;
 let _bDrag=null,_bResize=null,_bPan=false,_bPs={};
 let _bConnFrom=null,_bTmpLine=null;
 let _bDrawing=false,_bDctx=null;
@@ -1392,7 +1458,6 @@ function initBoard(){
       <div class="bctx-it" onclick="bAddSticky(${p.x},${p.y});hideBCtx()"><i class="ti ti-sticky-note"></i> Sticky note</div>
       <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
       <div class="bctx-it" onclick="bModal('yt');hideBCtx()"><i class="ti ti-brand-youtube"></i> YouTube embed</div>
-      <div class="bctx-it" onclick="bModal('channel');hideBCtx()" style="color:#FF0000"><i class="ti ti-broadcast"></i> YouTube Channel Card</div>
       <div class="bctx-it" onclick="bModal('drive');hideBCtx()"><i class="ti ti-brand-google-drive"></i> Google Drive</div>
       <div class="bctx-it" onclick="document.getElementById('b-img-inp').click();hideBCtx()"><i class="ti ti-photo"></i> Add image</div>
       <div style="height:1px;background:rgba(108,99,255,.1);margin:4px 6px"></div>
@@ -1423,7 +1488,7 @@ function initBoard(){
   wrap.addEventListener('dblclick',e=>{
     if(e.target===wrap||e.target===canvas||e.target===svg||e.target===dc){
       const p=s2c(e.clientX,e.clientY);
-      bAddTextBox(p.x,p.y);
+      bAddCard(p.x-100,p.y-55,'note');
     }
   });
 
@@ -1465,19 +1530,16 @@ function initBoard(){
   document.addEventListener('mousemove',e=>{
     if(_bPan){_bPx=_bPs.px+(e.clientX-_bPs.x);_bPy=_bPs.py+(e.clientY-_bPs.y);applyT();}
     if(_bDrag){
-      const el=document.getElementById(_bDrag.id);if(!el)return;
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const nx=(e.clientX-wr.left-_bPx)/_bSc-_bDrag.ox;
-      const ny=(e.clientY-wr.top-_bPy)/_bSc-_bDrag.oy;
+      const el=document.getElementById(_bDrag.id);
+      const nx=(e.clientX-_bPx)/_bSc-_bDrag.ox, ny=(e.clientY-_bPy)/_bSc-_bDrag.oy;
       el.style.left=nx+'px';el.style.top=ny+'px';
-      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id)||_bImages.find(i=>i.id===_bDrag.id)||_bTexts.find(t=>t.id===_bDrag.id);
+      const c=_bCards.find(c=>c.id===_bDrag.id)||_bStickies.find(s=>s.id===_bDrag.id);
       if(c){c.x=nx;c.y=ny;} bRedrawConns();
     }
     if(_bResize){
       const el=document.getElementById(_bResize.id);
       const c=_bCards.find(c=>c.id===_bResize.id);if(!el||!c)return;
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const mx=(e.clientX-wr.left-_bPx)/_bSc,my=(e.clientY-wr.top-_bPy)/_bSc;
+      const mx=(e.clientX-_bPx)/_bSc,my=(e.clientY-_bPy)/_bSc;
       const dx=mx-_bResize.sx,dy=my-_bResize.sy,dir=_bResize.dir;
       let nw=_bResize.sw,nh=_bResize.sh,nx=_bResize.cx,ny=_bResize.cy;
       if(dir.includes('e'))nw=Math.max(180,_bResize.sw+dx);
@@ -1492,25 +1554,13 @@ function initBoard(){
       _bDctx.lineTo(p.x,p.y);
       _bDctx.stroke();
     }
-    if(_bConnFrom&&_bTmpLine){
-      const wr2=document.getElementById('b-wrap').getBoundingClientRect();
-      const px=(e.clientX-wr2.left-_bPx)/_bSc;
-      const py=(e.clientY-wr2.top-_bPy)/_bSc;
-      const fx=_bConnFrom.cx,fy=_bConnFrom.cy;
-      const dx=px-fx,dy=py-fy;
-      _bTmpLine.setAttribute('d',`M${fx},${fy} C${fx+dx*.3},${fy+dy*.1} ${px-dx*.3},${py-dy*.1} ${px},${py}`);
-    }
+    if(_bConnFrom&&_bTmpLine){const p=s2c(e.clientX,e.clientY);_bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);}
   });
 
   document.addEventListener('mouseup',e=>{
     if(_bPan){_bPan=false;wrap.style.cursor='';}
-    if(_bDrag){
-      // Hide iframe overlay
-      document.getElementById(_bDrag.id)?.querySelector('.b-drag-overlay')&&
-        (document.getElementById(_bDrag.id).querySelector('.b-drag-overlay').style.display='none');
-      bPushH();bAutoSave();_bDrag=null;
-    }
-    if(_bResize){bPushH();bAutoSave();_bResize=null;}
+    if(_bDrag){bPushH();_bDrag=null;}
+    if(_bResize){bPushH();_bResize=null;}
     if(_bDrawing){_bDrawing=false;_bDctx.globalCompositeOperation='source-over';dc.style.pointerEvents='none';bPushH();}
     if(_bLineStart){
       const end=s2c(e.clientX,e.clientY);
@@ -1526,24 +1576,7 @@ function initBoard(){
       g.appendChild(line);g.appendChild(arr);svg.appendChild(g);
       _bLineStart=null;bPushH();
     }
-    if(_bConnFrom&&_bTmpLine){
-      // Dropped on empty space → create new connected card
-      const from=_bConnFrom;
-      bEndConn();
-      const wr2=wrap.getBoundingClientRect();
-      const dropX=(e.clientX-wr2.left-_bPx)/_bSc;
-      const dropY=(e.clientY-wr2.top-_bPy)/_bSc;
-      const fromEl=document.getElementById(from.id);
-      const fromCard=_bCards.find(c=>c.id===from.id)||_bStickies.find(s=>s.id===from.id);
-      const newType=fromCard?.type||'note';
-      const newW=230, newH=150;
-      const nc=bAddCard(dropX-newW/2, dropY-newH/2, newType);
-      setTimeout(()=>{
-        const tcx=nc.x+newW/2, tcy=nc.y+newH/2;
-        bAddConnExact(from.id,nc.id,from.cx,from.cy,tcx,tcy);
-        document.getElementById(nc.id)?.querySelector('.b-card-ttl')?.focus();
-      },30);
-    }
+    if(_bConnFrom&&_bTmpLine){svg.removeChild(_bTmpLine);_bTmpLine=null;_bConnFrom=null;}
   });
 
   applyT();
@@ -1553,22 +1586,19 @@ function initBoard(){
     // First time - create default board
     bSaveIndex([{id:'default',name:'Main Board',created:Date.now(),updated:Date.now()}]);
   }
-  // Load boards from Supabase
-  bInitPaste();
-  (async()=>{
-    const boards=await bGetAllBoards();
-    if(boards.length>0){
-      await bSwitchBoard(boards[0].id);
-    } else {
-      const id='b'+Date.now();
-      await sb.from('script_boards').insert({id,name:'Main Script',created_by:user.id,data:{cards:[],stickies:[],images:[],conns:[],nid:1,vp:{px:0,py:0,sc:1}}});
-      _bCurrentBoardId=id;
-      bAddCard(150,160,'script',{title:'🎬 My Script',body:'Intro:\n\nMain:\n\nOutro:'});
-      bAddCard(430,150,'note',{title:'📌 Notes',color:'#00C2CB'});
-      bPushH();
-      bRenderSidebar();
-    }
-  })();
+  _bCurrentBoardId='default';
+  const nameEl=document.getElementById('b-board-name');
+  const allBoards=bGetAllBoards();
+  const curBoard=allBoards.find(b=>b.id==='default');
+  if(nameEl&&curBoard)nameEl.textContent=curBoard.name;
+  if(!bLoadBoard()){
+    bAddCard(150,160,'script',{title:'🎬 My Script',body:'Intro:\n\nMain:\n\nOutro:'});
+    bAddCard(430,150,'note',{title:'📌 Notes',color:'#00C2CB'});
+    bAddSticky(680,180);
+    const st=document.querySelectorAll('.b-sticky-txt')[0];
+    if(st){st.innerText='💡 Idea here!';_bStickies[0].text=st.innerText;}
+    bPushH();
+  }
 }
 
 function bTool(t){
@@ -1634,17 +1664,15 @@ function bAddCard(x,y,type,opts={}){
 function bRenderCard(c){
   const el=document.createElement('div');
   el.className='b-card';el.id=c.id;
-  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w||230}px;min-height:${c.h||150}px`;
+  el.style.cssText=`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px`;
   const col=c.color||'#6C63FF';
   el.innerHTML=`
-    <div class="b-card-head" style="background:${col}12;cursor:grab">
+    <div class="b-card-head" style="background:${col}12">
       <div class="b-card-ico" style="background:${col}22;color:${col}"><i class="ti ${c.type==='script'?'ti-writing':'ti-notes'}"></i></div>
       <div class="b-card-ttl" contenteditable="true" spellcheck="false">${c.title}</div>
       <button class="b-del" onclick="bDelCard('${c.id}')"><i class="ti ti-trash"></i></button>
     </div>
     <div class="b-card-body" contenteditable="true" spellcheck="false" data-ph="Write here...">${c.body||''}</div>
-    <!-- Transparent overlay shown during drag to capture events over iframes -->
-    <div class="b-drag-overlay" style="display:none;position:absolute;inset:0;z-index:100;cursor:grabbing"></div>
     <div class="bcd bcd-t" data-id="${c.id}"></div>
     <div class="bcd bcd-r" data-id="${c.id}"></div>
     <div class="bcd bcd-b" data-id="${c.id}"></div>
@@ -1654,46 +1682,32 @@ function bRenderCard(c){
     <div class="brh brh-ne" data-dir="ne"></div><div class="brh brh-nw" data-dir="nw"></div>
     <div class="brh brh-se" data-dir="se"></div><div class="brh brh-sw" data-dir="sw"></div>`;
 
-  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;bAutoSave();});
-  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;bAutoSave();});
+  el.querySelector('.b-card-ttl').addEventListener('input',e=>{c.title=e.target.textContent;});
+  el.querySelector('.b-card-body').addEventListener('input',e=>{c.body=e.target.innerHTML;});
 
-  // Drag via header — use wrap rect for correct coordinates
   el.querySelector('.b-card-head').addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-del'))return;
     e.stopPropagation();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bDrag={id:c.id,ox:(e.clientX-wr.left-_bPx)/_bSc-c.x,oy:(e.clientY-wr.top-_bPy)/_bSc-c.y};
-    // Show overlay to capture mouse over iframes
-    el.querySelector('.b-drag-overlay').style.display='block';
+    _bDrag={id:c.id,ox:(e.clientX-_bPx)/_bSc-c.x,oy:(e.clientY-_bPy)/_bSc-c.y};
     bSelCard(c.id);
   });
 
-  // Resize handles
   el.querySelectorAll('.brh').forEach(rh=>{
     rh.addEventListener('mousedown',e=>{
       e.stopPropagation();e.preventDefault();
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      _bResize={id:c.id,dir:rh.dataset.dir,
-        sx:(e.clientX-wr.left-_bPx)/_bSc,sy:(e.clientY-wr.top-_bPy)/_bSc,
-        sw:el.offsetWidth||c.w||230,sh:el.offsetHeight||c.h||150,cx:c.x,cy:c.y};
+      _bResize={id:c.id,dir:rh.dataset.dir,sx:(e.clientX-_bPx)/_bSc,sy:(e.clientY-_bPy)/_bSc,sw:c.w,sh:c.h,cx:c.x,cy:c.y};
     });
   });
 
-  // Connection dots
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,c.id));
-
-  // Receive connection drop
   el.addEventListener('mouseup',e=>{
-    // Hide drag overlay
-    el.querySelector('.b-drag-overlay').style.display='none';
     if(e.target.classList.contains('bcd'))return;
-    if(_bConnFrom&&_bConnFrom.id!==c.id){
-      const[tx,ty]=bGetSideCenter(c.id,_bConnFrom);
-      bAddConnExact(_bConnFrom.id,c.id,_bConnFrom.cx,_bConnFrom.cy,tx,ty);
-      bEndConn();
+    if(_bConnFrom&&_bConnFrom!==c.id){
+      bAddConn(_bConnFrom,c.id);
+      _bConnFrom=null;
+      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
     }
   });
-
   el.addEventListener('click',()=>bSelCard(c.id));
   document.getElementById('b-canvas').appendChild(el);
 }
@@ -1701,60 +1715,26 @@ function bRenderCard(c){
 // Setup connector dot — shared for cards + stickies
 function bSetupDot(dot, nodeId){
   const svg=document.getElementById('b-svg');
-  // Which side is this dot?
-  const side=dot.classList.contains('bcd-t')?'t':dot.classList.contains('bcd-b')?'b':dot.classList.contains('bcd-l')?'l':'r';
-
   dot.addEventListener('mousedown',e=>{
     e.stopPropagation();e.preventDefault();
-    // Get exact canvas position of dot center
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
     const r=dot.getBoundingClientRect();
-    const cx=(r.left+r.width/2-wr.left-_bPx)/_bSc;
-    const cy=(r.top+r.height/2-wr.top-_bPy)/_bSc;
-    _bConnFrom={id:nodeId, side, cx, cy};
-    // Start dashed bezier preview line
-    _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
-    _bTmpLine.setAttribute('stroke','#7C3AED');
-    _bTmpLine.setAttribute('stroke-width','2.5');
-    _bTmpLine.setAttribute('fill','none');
-    _bTmpLine.setAttribute('stroke-dasharray','8 4');
-    _bTmpLine.setAttribute('opacity','0.8');
-    _bTmpLine.setAttribute('d',`M${cx},${cy} L${cx},${cy}`);
+    const p=s2c((r.left+r.right)/2,(r.top+r.bottom)/2);
+    _bConnFrom=nodeId;
+    _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+    _bTmpLine.setAttribute('x1',p.x);_bTmpLine.setAttribute('y1',p.y);
+    _bTmpLine.setAttribute('x2',p.x);_bTmpLine.setAttribute('y2',p.y);
+    _bTmpLine.setAttribute('stroke','#7C3AED');_bTmpLine.setAttribute('stroke-width','2');
+    _bTmpLine.setAttribute('stroke-dasharray','6 4');_bTmpLine.setAttribute('opacity','0.8');
     svg?.appendChild(_bTmpLine);
   });
-
   dot.addEventListener('mouseup',e=>{
     e.stopPropagation();
-    if(_bConnFrom&&_bConnFrom.id!==nodeId){
-      // Connect to this node
-      bAddConnExact(_bConnFrom.id,nodeId,_bConnFrom.cx,_bConnFrom.cy,
-        ...bGetSideCenter(nodeId, _bConnFrom));
-      bEndConn();
+    if(_bConnFrom&&_bConnFrom!==nodeId){
+      bAddConn(_bConnFrom,nodeId);
+      _bConnFrom=null;
+      if(_bTmpLine){svg?.removeChild(_bTmpLine);_bTmpLine=null;}
     }
   });
-}
-
-// Get the best side center of target card relative to source
-function bGetSideCenter(targetId, from){
-  const el=document.getElementById(targetId);
-  const c=_bCards.find(x=>x.id===targetId)||_bStickies.find(x=>x.id===targetId)||_bImages.find(x=>x.id===targetId);
-  if(!el||!c)return[0,0];
-  const w=el.offsetWidth,h=el.offsetHeight;
-  const cx=c.x+w/2, cy=c.y+h/2;
-  // Find nearest side to source point
-  const sides={
-    t:{x:cx,y:c.y},
-    b:{x:cx,y:c.y+h},
-    l:{x:c.x,y:cy},
-    r:{x:c.x+w,y:cy}
-  };
-  const fx=from?.cx||cx, fy=from?.cy||cy;
-  let best='t', bestDist=Infinity;
-  for(const [s,pt] of Object.entries(sides)){
-    const d=Math.hypot(pt.x-fx,pt.y-fy);
-    if(d<bestDist){bestDist=d;best=s;}
-  }
-  return[sides[best].x, sides[best].y];
 }
 function bDelCard(id){
   _bCards=_bCards.filter(c=>c.id!==id);
@@ -1791,18 +1771,17 @@ function bRenderSticky(s){
   el.addEventListener('mousedown',e=>{
     if(e.target.isContentEditable||e.target.closest('.b-sdel')||e.target.classList.contains('bcd'))return;
     e.stopPropagation();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bDrag={id:s.id,ox:(e.clientX-wr.left-_bPx)/_bSc-s.x,oy:(e.clientY-wr.top-_bPy)/_bSc-s.y};
+    _bDrag={id:s.id,ox:(e.clientX-_bPx)/_bSc-s.x,oy:(e.clientY-_bPy)/_bSc-s.y};
   });
 
   el.querySelectorAll('.bcd').forEach(dot=>bSetupDot(dot,s.id));
 
   el.addEventListener('mouseup',e=>{
     if(e.target.classList.contains('bcd'))return;
-    if(_bConnFrom&&_bConnFrom.id!==s.id){
-      const[tx,ty]=bGetSideCenter(s.id,_bConnFrom);
-      bAddConnExact(_bConnFrom.id,s.id,_bConnFrom.cx,_bConnFrom.cy,tx,ty);
-      bEndConn();
+    if(_bConnFrom&&_bConnFrom!==s.id){
+      bAddConn(_bConnFrom,s.id);
+      _bConnFrom=null;
+      if(_bTmpLine){document.getElementById('b-svg')?.removeChild(_bTmpLine);_bTmpLine=null;}
     }
   });
 
@@ -1812,105 +1791,75 @@ function bDelSticky(id){_bStickies=_bStickies.filter(s=>s.id!==id);document.getE
 
 function bAddConn(f,t){
   if(_bConns.find(c=>(c.f===f&&c.t===t)||(c.f===t&&c.t===f)))return;
-  // Save center as 50% offset so it follows cards when moved
-  _bConns.push({id:'bcn'+(++_bNid),f,t,fpx:.5,fpy:.5,tpx:.5,tpy:.5,color:_bColor||'#7C3AED'});
-  bRedrawConns();bPushH();bAutoSave();
+  _bConns.push({id:'bcn'+(++_bNid),f,t,color:'#7C3AED'});
+  bRedrawConns();bPushH();
 }
 function bGetCenter(id){
   const el=document.getElementById(id);
-  const c=_bCards.find(c=>c.id===id)||_bStickies.find(s=>s.id===id)||_bImages.find(i=>i.id===id);
+  const c=_bCards.find(c=>c.id===id)||_bStickies.find(s=>s.id===id);
   if(!el||!c)return null;
   return{x:c.x+el.offsetWidth/2,y:c.y+el.offsetHeight/2};
-}
-function bGetPortCenter(cardId,side){
-  const el=document.getElementById(cardId);
-  const c=_bCards.find(x=>x.id===cardId)||_bStickies.find(x=>x.id===cardId)||_bImages.find(x=>x.id===cardId);
-  if(!el||!c)return null;
-  const w=el.offsetWidth||(c.w||240);
-  const h=el.offsetHeight||(c.h||160);
-  if(side==='t')return{x:c.x+w/2,y:c.y};
-  if(side==='b')return{x:c.x+w/2,y:c.y+h};
-  if(side==='l')return{x:c.x,y:c.y+h/2};
-  if(side==='r')return{x:c.x+w,y:c.y+h/2};
-  return{x:c.x+w/2,y:c.y+h/2};
 }
 function bRedrawConns(){
   const svg=document.getElementById('b-svg');
   if(!svg)return;
   svg.querySelectorAll('.bcg').forEach(e=>e.remove());
+  _bConns=_bConns.filter(conn=>bGetCenter(conn.f)&&bGetCenter(conn.t));
   _bConns.forEach(conn=>{
-    // Always recalculate from live card positions
-    let ax,ay,bx2,by2;
-    if(conn.fside){
-      // Has side info — use side center
-      const fp=bGetPortCenter(conn.f,conn.fside);
-      if(!fp)return;
-      ax=fp.x;ay=fp.y;
-    } else if(conn.fpx!==undefined&&conn.fpy!==undefined){
-      // Has percentage offset from card top-left
-      const fc=_bCards.find(x=>x.id===conn.f)||_bStickies.find(x=>x.id===conn.f)||_bImages.find(x=>x.id===conn.f);
-      const fel=document.getElementById(conn.f);
-      if(!fc||!fel)return;
-      ax=fc.x+conn.fpx*fel.offsetWidth;
-      ay=fc.y+conn.fpy*fel.offsetHeight;
-    } else {
-      // Fallback: center
-      const fp=bGetCenter(conn.f);if(!fp)return;ax=fp.x;ay=fp.y;
-    }
-    if(conn.tside){
-      const tp=bGetPortCenter(conn.t,conn.tside);
-      if(!tp)return;
-      bx2=tp.x;by2=tp.y;
-    } else if(conn.tpx!==undefined&&conn.tpy!==undefined){
-      const tc=_bCards.find(x=>x.id===conn.t)||_bStickies.find(x=>x.id===conn.t)||_bImages.find(x=>x.id===conn.t);
-      const tel=document.getElementById(conn.t);
-      if(!tc||!tel)return;
-      bx2=tc.x+conn.tpx*tel.offsetWidth;
-      by2=tc.y+conn.tpy*tel.offsetHeight;
-    } else {
-      const tp=bGetCenter(conn.t);if(!tp)return;bx2=tp.x;by2=tp.y;
-    }
-    const dx=bx2-ax,dy=by2-ay;
-    const cpLen=Math.max(60,Math.sqrt(dx*dx+dy*dy)*.4);
-    const cp1x=ax+dx*.35,cp1y=ay+dy*.05;
-    const cp2x=bx2-dx*.35,cp2y=by2-dy*.05;
+    const a=bGetCenter(conn.f),b=bGetCenter(conn.t);
+    if(!a||!b)return;
+    const dx=b.x-a.x,dy=b.y-a.y;
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');
     g.className.baseVal='bcg';g.style.cursor='pointer';
-    // Hit zone
+
+    // Invisible wide hit zone
     const hit=document.createElementNS('http://www.w3.org/2000/svg','path');
-    hit.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx2},${by2}`);
-    hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.setAttribute('fill','none');hit.style.pointerEvents='stroke';
-    // Visible path
+    hit.setAttribute('d',`M${a.x},${a.y} C${a.x+dx*.5},${a.y} ${b.x-dx*.5},${b.y} ${b.x},${b.y}`);
+    hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.setAttribute('fill','none');
+
+    // Visible bezier curve
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${ax},${ay} C${cp1x},${cp1y} ${cp2x},${cp2y} ${bx2},${by2}`);
-    path.setAttribute('stroke',conn.color||'#7C3AED');path.setAttribute('stroke-width','2.5');path.setAttribute('fill','none');path.setAttribute('stroke-linecap','round');
-    // Arrowhead marker
-    const defs=svg.querySelector('defs')||svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'),svg.firstChild);
-    const mid=`arr-${conn.id}`;
-    if(!svg.querySelector(`#${mid}`)){
-      const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
-      marker.setAttribute('id',mid);marker.setAttribute('markerWidth','8');marker.setAttribute('markerHeight','8');
-      marker.setAttribute('refX','6');marker.setAttribute('refY','3');marker.setAttribute('orient','auto');
-      const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly.setAttribute('points','0,0 6,3 0,6');poly.setAttribute('fill',conn.color||'#7C3AED');
-      marker.appendChild(poly);defs.appendChild(marker);
-    }
-    path.setAttribute('marker-end',`url(#${mid})`);
-    // Delete button at midpoint
-    const t2=.5;
-    const mxp=Math.pow(1-t2,3)*ax+3*Math.pow(1-t2,2)*t2*cp1x+3*(1-t2)*Math.pow(t2,2)*cp2x+Math.pow(t2,3)*bx2;
-    const myp=Math.pow(1-t2,3)*ay+3*Math.pow(1-t2,2)*t2*cp1y+3*(1-t2)*Math.pow(t2,2)*cp2y+Math.pow(t2,3)*by2;
+    path.setAttribute('d',`M${a.x},${a.y} C${a.x+dx*.5},${a.y} ${b.x-dx*.5},${b.y} ${b.x},${b.y}`);
+    path.setAttribute('stroke',conn.color||'#7C3AED');
+    path.setAttribute('stroke-width','2.5');
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity','0.75');
+    path.setAttribute('stroke-linecap','round');
+
+    // Arrowhead
+    const ang=Math.atan2(dy,dx),aw=11;
+    const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    arr.setAttribute('points',`${b.x},${b.y} ${b.x-aw*Math.cos(ang-.4)},${b.y-aw*Math.sin(ang-.4)} ${b.x-aw*Math.cos(ang+.4)},${b.y-aw*Math.sin(ang+.4)}`);
+    arr.setAttribute('fill',conn.color||'#7C3AED');arr.setAttribute('opacity','0.75');
+
+    // Delete X at midpoint (shown on hover)
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
     const del=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    del.setAttribute('cx',mxp);del.setAttribute('cy',myp);del.setAttribute('r','9');
-    del.setAttribute('fill','#EF4444');del.style.cursor='pointer';del.style.opacity='0';del.style.pointerEvents='all';
+    del.setAttribute('cx',mx);del.setAttribute('cy',my);del.setAttribute('r','9');
+    del.setAttribute('fill','#EF4444');del.setAttribute('opacity','0');del.style.cursor='pointer';
     const delTxt=document.createElementNS('http://www.w3.org/2000/svg','text');
-    delTxt.setAttribute('x',mxp);delTxt.setAttribute('y',myp+4);delTxt.setAttribute('text-anchor','middle');
-    delTxt.setAttribute('fill','white');delTxt.setAttribute('font-size','12');delTxt.setAttribute('font-weight','700');delTxt.style.pointerEvents='none';
-    delTxt.textContent='×';
-    del.addEventListener('click',e=>{e.stopPropagation();_bConns=_bConns.filter(c=>c.id!==conn.id);bRedrawConns();bAutoSave();});
-    g.addEventListener('mouseenter',()=>{path.setAttribute('stroke-width','3.5');del.style.opacity='1';});
-    g.addEventListener('mouseleave',()=>{path.setAttribute('stroke-width','2.5');del.style.opacity='0';});
-    g.appendChild(hit);g.appendChild(path);g.appendChild(del);g.appendChild(delTxt);svg.appendChild(g);
+    delTxt.setAttribute('x',mx);delTxt.setAttribute('y',my+4);
+    delTxt.setAttribute('text-anchor','middle');delTxt.setAttribute('font-size','11');
+    delTxt.setAttribute('fill','#fff');delTxt.setAttribute('opacity','0');
+    delTxt.setAttribute('pointer-events','none');delTxt.textContent='×';
+
+    g.addEventListener('mouseenter',()=>{
+      path.setAttribute('stroke-width','4');
+      del.setAttribute('opacity','0.9');delTxt.setAttribute('opacity','1');
+    });
+    g.addEventListener('mouseleave',()=>{
+      path.setAttribute('stroke-width','2.5');
+      del.setAttribute('opacity','0');delTxt.setAttribute('opacity','0');
+    });
+    del.addEventListener('click',e=>{
+      e.stopPropagation();
+      _bConns=_bConns.filter(c=>c.id!==conn.id);
+      bRedrawConns();bPushH();
+    });
+
+    g.appendChild(hit);g.appendChild(path);g.appendChild(arr);
+    g.appendChild(del);g.appendChild(delTxt);
+    svg.appendChild(g);
   });
 }
 
@@ -1919,8 +1868,7 @@ function hideBCtx(){const ctx=document.getElementById('b-ctx');if(ctx)ctx.style.
 function bModal(mode,target){
   _bModalMode=mode;_bModalTarget=target||null;
   const cfg={
-    yt:{title:'YouTube Video Embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube video link paste করুন — সরাসরি play হবে'},
-    channel:{title:'YouTube Channel Card',ph:'https://youtube.com/@channelname',hint:'Channel URL দিন — logo + name দেখাবে, click করলে channel খুলবে'},
+    yt:{title:'YouTube embed',ph:'https://youtube.com/watch?v=...',hint:'YouTube link paste করুন — সরাসরি play হবে'},
     drive:{title:'Google Drive embed',ph:'https://drive.google.com/file/d/FILE_ID/view',hint:'Google Drive file link দিন (Share → Anyone with link)'},
   };
   const c=cfg[mode]||{title:mode,ph:'',hint:''};
@@ -1936,51 +1884,7 @@ function bModalOk(){
   if(!val){document.getElementById('b-modal').style.display='none';return;}
   const wrap=document.getElementById('b-wrap');
   const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:300,y:200};
-  if(_bModalMode==='channel'){
-    bAddChannelCard(val,p);
-    document.getElementById('b-modal').style.display='none';
-    return;
-  } else if(_bModalMode==='channel_DISABLED'){
-    const handleMatch=val.match(/@([\w.-]+)/);
-    const handle=handleMatch?('@'+handleMatch[1]):val;
-    const channelUrl=val.startsWith('http')?val:'https://www.youtube.com/'+handle;
-    // Channel name from handle (until API resolves it)
-    const displayName=handleMatch?handleMatch[1]:val.replace(/.*youtube\.com\//,'');
-    // Use YouTube channel avatar via unavatar service
-    const avatarUrl=`https://unavatar.io/youtube/${handle.replace('@','')}`;
-    const c=bAddCard(p.x-100,p.y-100,'note',{w:200,h:200,title:displayName});
-    const el=document.getElementById(c.id);
-    if(el){
-      // Style the card as a channel card
-      el.style.border='2px solid #FF000033';
-      const body=el.querySelector('.b-card-body');
-      const head=el.querySelector('.b-card-ttl');
-      if(head)head.textContent=displayName;
-      if(body){
-        body.contentEditable='false';
-        body.innerHTML=`
-          <a href="${channelUrl}" target="_blank" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;padding:16px 8px;gap:10px">
-            <div style="position:relative">
-              <img src="${avatarUrl}" 
-                style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #FF000044;display:block"
-                onerror="this.onerror=null;this.src='';this.parentElement.innerHTML='<div style=\\'width:72px;height:72px;border-radius:50%;background:#FF0000;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:700\\'>${displayName.charAt(0).toUpperCase()}</div>'"
-              />
-              <div style="position:absolute;bottom:-2px;right:-2px;background:#FF0000;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center">
-                <i class="ti ti-brand-youtube" style="color:white;font-size:11px"></i>
-              </div>
-            </div>
-            <div style="text-align:center">
-              <div style="font-size:13px;font-weight:700;color:#1A1F3C">${displayName}</div>
-              <div style="font-size:10px;color:#FF0000;margin-top:2px">${handle}</div>
-              <div style="font-size:10px;color:#9CA3AF;margin-top:4px;display:flex;align-items:center;gap:3px;justify-content:center"><i class="ti ti-external-link" style="font-size:10px"></i> Open Channel</div>
-            </div>
-          </a>`;
-        c.body=body.innerHTML;
-      }
-    }
-    document.getElementById('b-modal').style.display='none';bAutoSave();bPushH();
-    return;
-  } else if(_bModalMode==='yt'){
+  if(_bModalMode==='yt'){
     const m=val.match(/(?:v=|youtu\.be\/|shorts\/)([^&\s?\/]+)/);
     if(!m){toast('Invalid YouTube URL — v= অংশ সহ দিন');return;}
     const c=bAddCard(p.x-160,p.y-130,'note',{w:340,h:260,title:'▶ YouTube Video'});
@@ -2046,585 +1950,124 @@ function bUndo(){
   _bStickies.forEach(s=>{bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
   bRedrawConns();toast('Undo ✓');
 }
-// ── Floating Text Box (Miro style) ──────────────────────
-function bAddTextBox(x,y,opts={}){
-  const id='btx'+(++_bNid);
-  const t={id,x,y,html:opts.html||'',fontSize:opts.fontSize||16,color:opts.color||'#1A1F3C'};
-  _bTexts.push(t);bRenderTextBox(t);
-  // Auto-focus
-  setTimeout(()=>document.getElementById(id)?.querySelector('.b-textbox-content')?.focus(),50);
-  bAutoSave();return t;
-}
+// ── MULTI-BOARD SYSTEM
+let _bCurrentBoardId='default';
 
-function bRenderTextBox(t){
-  const el=document.createElement('div');
-  el.className='b-textbox';el.id=t.id;
-  el.style.cssText=`left:${t.x}px;top:${t.y}px`;
+function bGetAllBoards(){try{return JSON.parse(localStorage.getItem('sa_boards_index')||'[]');}catch{return[];}}
+function bSaveIndex(boards){localStorage.setItem('sa_boards_index',JSON.stringify(boards));}
 
-  el.innerHTML=`
-    <!-- Rich text toolbar -->
-    <div class="b-textbox-toolbar" onmousedown="event.preventDefault()">
-      <select class="bttb" style="font-size:11px;padding:2px 4px;border:1px solid #E5E7EB;border-radius:5px;cursor:pointer" onchange="document.execCommand('fontSize',false,this.value);this.blur()" title="Font size">
-        <option value="1">10</option><option value="2">12</option><option value="3" selected>14</option>
-        <option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option>
-      </select>
-      <div class="bttb-sep"></div>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('bold')" title="Bold"><b>B</b></button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('italic')" title="Italic"><i>I</i></button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('underline')" title="Underline"><u>U</u></button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('strikeThrough')" title="Strike"><s>S</s></button>
-      <div class="bttb-sep"></div>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList')" title="Bullet list">• List</button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('insertOrderedList')" title="Numbered list">1. List</button>
-      <div class="bttb-sep"></div>
-      ${['#1A1F3C','#EF4444','#7C3AED','#059669','#2563EB','#F59E0B','#EC4899','#FF6B00'].map(clr=>
-        `<div onmousedown="event.preventDefault();document.execCommand('foreColor',false,'${clr}')"
-          style="width:16px;height:16px;border-radius:50%;background:${clr};cursor:pointer;flex-shrink:0;border:2px solid white;box-shadow:0 0 0 1px #ddd"
-          title="${clr}"></div>`).join('')}
-      <div class="bttb-sep"></div>
-      ${['#FEFCE8','#FEE2E2','#EDE9FE','#DCFCE7','#DBEAFE','#FFF'].map((bg,i)=>
-        `<div onmousedown="event.preventDefault();document.execCommand('hiliteColor',false,'${bg}')"
-          style="width:16px;height:16px;border-radius:4px;background:${bg};cursor:pointer;flex-shrink:0;border:1px solid #E5E7EB"
-          title="Highlight"></div>`).join('')}
-      <div class="bttb-sep"></div>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyLeft')" title="Left"><i class="ti ti-align-left"></i></button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyCenter')" title="Center"><i class="ti ti-align-center"></i></button>
-      <button class="bttb" onmousedown="event.preventDefault();document.execCommand('justifyRight')" title="Right"><i class="ti ti-align-right"></i></button>
-      <div class="bttb-sep"></div>
-      <button class="bttb" onmousedown="event.preventDefault();bDelTextBox('${t.id}')" title="Delete" style="color:#EF4444"><i class="ti ti-trash"></i></button>
+function bShowBoardPicker(){
+  const boards=bGetAllBoards();
+  let menu=document.getElementById('b-board-picker');
+  if(!menu){menu=document.createElement('div');menu.id='b-board-picker';menu.style.cssText='position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:300;background:white;border:1px solid rgba(108,99,255,.2);border-radius:16px;padding:12px;min-width:300px;box-shadow:0 8px 32px rgba(108,99,255,.2);max-height:420px;overflow-y:auto';document.getElementById('pg-board').appendChild(menu);}
+  menu.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 4px">
+      <span style="font-size:13px;font-weight:700;color:#1A1F3C">📋 My Boards</span>
+      <button onclick="bCreateNewBoard()" style="background:linear-gradient(135deg,#6C63FF,#00C2CB);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit"><i class="ti ti-plus"></i> New Board</button>
     </div>
-    <!-- Editable content -->
-    <div class="b-textbox-content" contenteditable="true" spellcheck="false"
-      data-ph="Type something..."
-      style="font-size:16px;color:#1A1F3C;line-height:1.6;min-width:120px;min-height:28px"
-    >${t.html||''}</div>`;
-
-  const content=el.querySelector('.b-textbox-content');
-  content.addEventListener('input',()=>{t.html=content.innerHTML;bAutoSave();});
-  content.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){content.blur();}
-  });
-
-  // Drag via the element itself (not when editing)
-  let isDragging=false;
-  el.addEventListener('mousedown',e=>{
-    if(e.target===content||content.contains(e.target))return;
-    e.stopPropagation();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bDrag={id:t.id,ox:(e.clientX-wr.left-_bPx)/_bSc-t.x,oy:(e.clientY-wr.top-_bPy)/_bSc-t.y,isTxt:true};
-  });
-
-  // Connection dot support
-  bAddDynPort(el,()=>t.id,()=>t);
-
-  el.addEventListener('mouseup',e=>{
-    if(_bConnFrom&&_bConnFrom.id!==t.id){
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const cx=(e.clientX-wr.left-_bPx)/_bSc;
-      const cy=(e.clientY-wr.top-_bPy)/_bSc;
-      bAddConnExact(_bConnFrom.id,t.id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
-      bEndConn();
-    }
-  });
-
-  document.getElementById('b-canvas').appendChild(el);
-}
-
-function bDelTextBox(id){
-  _bTexts=_bTexts.filter(t=>t.id!==id);
-  _bConns=_bConns.filter(c=>c.f!==id&&c.t!==id);
-  document.getElementById(id)?.remove();
-  bRedrawConns();bAutoSave();
-}
-
-// ── Floating Image ──────────────────────────────────────
-function bAddBoardImage(src,x,y){
-  const id='bimg'+(++_bNid);
-  const img={id,x,y,w:300,src};
-  _bImages.push(img);bRenderBoardImage(img);bAutoSave();bPushH();
-}
-function bRenderBoardImage(img){
-  const el=document.createElement('div');
-  el.id=img.id;
-  el.style.cssText=`position:absolute;left:${img.x}px;top:${img.y}px;width:${img.w||300}px;z-index:5;cursor:move`;
-  el.innerHTML=`<div style="position:relative"><img src="${img.src}" style="width:100%;border-radius:10px;display:block;box-shadow:0 4px 16px rgba(0,0,0,.12);pointer-events:none" draggable="false"/>
-    <button onclick="bDelBoardImage('${img.id}')" style="position:absolute;top:-8px;right:-8px;background:#EF4444;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;z-index:10;padding:0" class="bimg-del"><i class="ti ti-x"></i></button>
-    <div class="bimg-rh" style="position:absolute;bottom:-6px;right:-6px;width:16px;height:16px;background:transparent;border-radius:50%;cursor:se-resize;opacity:0"></div></div>`;
-  el.addEventListener('mouseenter',()=>{el.querySelector('.bimg-del').style.opacity='1';el.querySelector('.bimg-rh').style.opacity='1';});
-  el.addEventListener('mouseleave',()=>{el.querySelector('.bimg-del').style.opacity='0';el.querySelector('.bimg-rh').style.opacity='0';});
-  el.addEventListener('mousedown',e=>{
-    if(e.target.closest('.bimg-del')||e.target.closest('.bimg-rh'))return;
-    e.stopPropagation();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bDrag={id:img.id,ox:(e.clientX-wr.left-_bPx)/_bSc-img.x,oy:(e.clientY-wr.top-_bPy)/_bSc-img.y,isImg:true};
-  });
-  el.querySelector('.bimg-rh').addEventListener('mousedown',e=>{
-    e.stopPropagation();e.preventDefault();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    _bResize={id:img.id,isImg:true,sx:(e.clientX-wr.left-_bPx)/_bSc,sw:img.w};
-  });
-  bAddDynPort(el,()=>img.id,()=>img);
-  document.getElementById('b-canvas').appendChild(el);
-}
-function bDelBoardImage(id){_bImages=_bImages.filter(i=>i.id!==id);document.getElementById(id)?.remove();bAutoSave();}
-
-// ── Paste image from clipboard ──────────────────────────
-function bInitPaste(){
-  document.addEventListener('paste',e=>{
-    if(!window._boardInit)return;
-    const tag=document.activeElement?.tagName;
-    if(tag==='INPUT'||tag==='TEXTAREA'||document.activeElement?.isContentEditable)return;
-    const items=e.clipboardData?.items||[];
-    for(const item of items){
-      if(item.type.startsWith('image/')){
-        e.preventDefault();
-        const blob=item.getAsFile();if(!blob)return;
-        const reader=new FileReader();
-        reader.onload=ev=>{
-          const wr=document.getElementById('b-wrap');
-          const cx=window._bs2c?.(wr.clientWidth/2,wr.clientHeight/2+24)||{x:300,y:200};
-          bAddBoardImage(ev.target.result,cx.x-150,cx.y-100);
-          toast('Image added ✓');
-        };
-        reader.readAsDataURL(blob);break;
-      }
-    }
-  });
-}
-
-function bHandleImg(inp){
-  const f=inp.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    const wr=document.getElementById('b-wrap');
-    const cx=window._bs2c?.(wr.clientWidth/2,wr.clientHeight/2)||{x:300,y:200};
-    bAddBoardImage(e.target.result,cx.x-150,cx.y-100);toast('Image added ✓');
-  };
-  r.readAsDataURL(f);inp.value='';
-}
-
-// ── YouTube Channel Card ─────────────────────────────────
-async function bAddChannelCard(val, p){
-  const wrap=document.getElementById('b-wrap');
-  if(!p)p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:300,y:200};
-  const handleMatch=val.match(/@([\w.-]+)/);
-  const handle=handleMatch?('@'+handleMatch[1]):val.replace(/.*youtube\.com\//,'').replace(/\//,'');
-  const channelUrl=val.startsWith('http')?val:`https://www.youtube.com/${handle}`;
-  const displayName=handle.replace('@','');
-  const c=bAddCard(p.x-100,p.y-110,'note',{w:200,h:230,title:displayName,color:'#FF0000'});
-  const el=document.getElementById(c.id);
-  if(!el)return;
-  el.style.border='2px solid #f0f0f0';
-  el.style.borderRadius='16px';
-  const body=el.querySelector('.b-card-body');
-  const head=el.querySelector('.b-card-ttl');
-
-  const renderCard=(name,logoUrl,subsText)=>{
-    if(!body)return;
-    body.contentEditable='false';
-    body.style.padding='0';
-    const initial=name.charAt(0).toUpperCase();
-    const logoHtml=logoUrl
-      ?`<img src="${logoUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2.5px solid #FF0000;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-         <div style="display:none;width:80px;height:80px;border-radius:50%;background:#FF0000;align-items:center;justify-content:center;color:white;font-size:32px;font-weight:700">${initial}</div>`
-      :`<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#FF0000,#FF4444);display:flex;align-items:center;justify-content:center;color:white;font-size:32px;font-weight:700">${initial}</div>`;
-
-    body.innerHTML=`
-      <a href="${channelUrl}" target="_blank" rel="noopener" style="display:flex;flex-direction:column;align-items:center;text-decoration:none;padding:16px 12px 14px;gap:6px">
-        ${logoHtml}
-        <div style="font-size:13px;font-weight:700;color:#0F0F0F;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;margin-top:2px">${name}</div>
-        ${subsText?`<div style="font-size:10px;color:#606060">${subsText}</div>`:''}
-        <div style="background:#FF0000;color:white;font-size:11px;font-weight:700;padding:7px 24px;border-radius:20px;display:flex;align-items:center;gap:5px;margin-top:4px;letter-spacing:.3px">
-          <i class="ti ti-player-play-filled" style="font-size:11px"></i> Watch
-        </div>
-      </a>`;
-    c.body=body.innerHTML;
-    if(head){head.textContent=name;c.title=name;}
-    bAutoSave();
-  };
-  renderCard(displayName,null,'');bPushH();
-  // Load real info via API
-  if(_ytbApiKey){
-    try{
-      const q=handle.startsWith('@')?handle.slice(1):handle;
-      const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(q)}&maxResults=1&key=${_ytbApiKey}`);
-      const d=await r.json();
-      const item=d.items?.[0];
-      if(item){
-        const name=item.snippet.channelTitle||displayName;
-        const logo=item.snippet.thumbnails?.high?.url||item.snippet.thumbnails?.default?.url;
-        const chId=item.id.channelId;
-        let subs='';
-        try{
-          const r2=await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${chId}&key=${_ytbApiKey}`);
-          const d2=await r2.json();
-          const n=parseInt(d2.items?.[0]?.statistics?.subscriberCount||0);
-          if(n)subs=n>=1e6?`${(n/1e6).toFixed(1)}M subs`:n>=1000?`${(n/1000).toFixed(0)}K subs`:`${n} subs`;
-        }catch(e){}
-        renderCard(name,logo,subs);
-      }
-    }catch(e){}
-  } else {
-    renderCard(displayName,`https://unavatar.io/youtube/${displayName}`,'');
-  }
-}
-
-// ── YouTube Channel Board ────────────────────────────────
-let _ytbApiKey='', _ytbChannels={}; // {channelId: {name, handle, videos}}
-
-async function bYTBrowser(){
-  document.getElementById('b-ytb-modal').style.display='flex';
-  // Auto-load API key from Supabase
-  if(!_ytbApiKey){
-    try{
-      const {data}=await sb.from('app_settings').select('value').eq('key','yt_api_key').single();
-      if(data?.value)_ytbApiKey=data.value;
-    }catch(e){}
-    if(!_ytbApiKey){const s=localStorage.getItem('sa_yt_api_key');if(s)_ytbApiKey=s;}
-  }
-  // Restore saved channels from localStorage
-  const saved=localStorage.getItem('sa_ytb_channels');
-  if(saved&&!Object.keys(_ytbChannels).length){
-    try{
-      const chs=JSON.parse(saved);
-      for(const ch of chs) await bYTBLoadChannel(ch.handle,ch.channelId,false);
-    }catch(e){}
-  }
-}
-
-async function bYTBAddChannel(){
-  const inp=document.getElementById('ytb-ch-inp');
-  const val=inp.value.trim();
-  if(!val){toast('Channel URL দিন');return;}
-  if(!_ytbApiKey){toast('API Key নেই — Admin কে বলুন');return;}
-  inp.value='';
-  const loadingId='ytb-loading-'+Date.now();
-  // Add loading column
-  const board=document.getElementById('ytb-board');
-  const empty=document.getElementById('ytb-empty');
-  if(empty)empty.style.display='none';
-  const loadCol=document.createElement('div');
-  loadCol.id=loadingId;
-  loadCol.style.cssText='min-width:300px;width:300px;height:100%;background:#181818;border-right:1px solid #272727;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#717171;font-size:13px;flex-shrink:0';
-  loadCol.innerHTML=`<i class="ti ti-loader" style="font-size:24px;animation:spin 1s linear infinite;color:#FF0000"></i>Loading...`;
-  board.appendChild(loadCol);
-  try{
-    // Resolve channel
-    let channelId='', handle=val;
-    const idMatch=val.match(/channel\/(UC[\w-]+)/);
-    const hMatch=val.match(/@([\w.-]+)/);
-    if(idMatch){
-      channelId=idMatch[1];
-    } else {
-      const q=hMatch?hMatch[1]:val;
-      handle='@'+q;
-      const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(q)}&maxResults=1&key=${_ytbApiKey}`);
-      const d=await r.json();
-      if(d.error)throw new Error(d.error.message);
-      channelId=d.items?.[0]?.id?.channelId;
-      if(!channelId)throw new Error('Channel পাওয়া যায়নি');
-    }
-    loadCol.remove();
-    await bYTBLoadChannel(handle, channelId, true);
-  }catch(err){
-    loadCol.innerHTML=`<i class="ti ti-alert-triangle" style="color:#EF4444;font-size:20px"></i><span style="color:#EF4444;font-size:12px;text-align:center;padding:0 10px">${err.message}</span><button onclick="this.closest('[id]').remove()" style="background:#272727;border:none;color:#aaa;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;margin-top:4px">Remove</button>`;
-  }
-}
-
-async function bYTBLoadChannel(handle, channelId, save=true){
-  const board=document.getElementById('ytb-board');
-  if(document.getElementById('ytb-col-'+channelId)){toast('Channel already added');return;}
-
-  // Fetch latest videos
-  const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=12&key=${_ytbApiKey}`);
-  const d=await r.json();
-  if(d.error)throw new Error(d.error.message);
-  const items=d.items||[];
-  const channelName=items[0]?.snippet?.channelTitle||handle;
-
-  // Build column
-  const col=document.createElement('div');
-  col.id='ytb-col-'+channelId;
-  col.style.cssText='min-width:280px;width:280px;height:100%;background:#0F0F0F;border-right:1px solid #1a1a1a;display:flex;flex-direction:column;flex-shrink:0';
-  col.innerHTML=`
-    <div style="padding:10px 12px;background:#181818;border-bottom:1px solid #272727;display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <div style="width:32px;height:32px;border-radius:50%;background:#FF0000;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">${channelName.charAt(0).toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="color:white;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${channelName}</div>
-        <div style="color:#717171;font-size:10px">${handle}</div>
+    ${boards.length===0?`<div style="text-align:center;padding:20px;color:#9BA3C2;font-size:13px">No saved boards yet</div>`:
+      boards.map(b=>`<div onclick="bSwitchBoard('${b.id}');document.getElementById('b-board-picker').style.display='none'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid ${b.id===_bCurrentBoardId?'#6C63FF':'rgba(108,99,255,.1)'};background:${b.id===_bCurrentBoardId?'rgba(108,99,255,.06)':'white'};margin-bottom:6px;cursor:pointer">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6C63FF22,#00C2CB22);display:flex;align-items:center;justify-content:center">📋</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1F3C">${b.name}</div><div style="font-size:11px;color:#9BA3C2">${new Date(b.updated||b.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div></div>
+        ${b.id===_bCurrentBoardId?'<span style="font-size:10px;background:#6C63FF;color:white;padding:2px 8px;border-radius:20px;font-weight:600">Active</span>':''}
+        <button onclick="event.stopPropagation();bDeleteBoard('${b.id}')" style="background:none;border:none;cursor:pointer;color:#9BA3C2;font-size:15px;padding:4px;border-radius:6px" onmouseover="this.style.color='#FF4E6A'" onmouseout="this.style.color='#9BA3C2'"><i class="ti ti-trash"></i></button>
+      </div>`).join('')}
+    <div style="margin-top:10px;padding:10px 12px;background:rgba(108,99,255,.05);border-radius:10px;border:1px solid rgba(108,99,255,.1)">
+      <div style="font-size:10px;font-weight:700;color:#9BA3C2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🔗 Share (view-only)</div>
+      <div style="display:flex;gap:6px">
+        <input id="b-share-url" class="f-inp" value="${location.origin+location.pathname}?board=${_bCurrentBoardId}" readonly style="font-size:11px;flex:1;cursor:pointer" onclick="this.select()"/>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('b-share-url').value);toast('Link copied ✓')" style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:0 10px;cursor:pointer;color:#6C63FF;font-size:14px"><i class="ti ti-copy"></i></button>
       </div>
-      <button onclick="bYTBRefresh('${channelId}','${handle}')" style="background:none;border:none;color:#717171;cursor:pointer;font-size:14px;padding:4px" title="Refresh"><i class="ti ti-refresh"></i></button>
-      <button onclick="document.getElementById('ytb-col-${channelId}').remove();bYTBSaveChannels()" style="background:none;border:none;color:#717171;cursor:pointer;font-size:14px;padding:4px" title="Remove"><i class="ti ti-x"></i></button>
-    </div>
-    <div class="ytb-videos" style="flex:1;overflow-y:auto;padding:8px">
-      ${items.map(item=>{
-        const vid=item.id?.videoId;
-        const snip=item.snippet;
-        if(!vid)return'';
-        const thumb=snip.thumbnails?.medium?.url||snip.thumbnails?.default?.url;
-        const ago=bYTBAgo(snip.publishedAt);
-        return `<div onclick="bYTBAddToBoard('${vid}','${snip.title.replace(/'/g,"\\'")}','${thumb}','${channelName.replace(/'/g,"\\'")}','${channelId}')" style="cursor:pointer;margin-bottom:10px;border-radius:8px;overflow:hidden;transition:background .15s" onmouseover="this.style.background='#272727'" onmouseout="this.style.background='transparent'">
-          <div style="position:relative">
-            <img src="${thumb}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:6px"/>
-            <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.8);color:white;font-size:9px;padding:1px 4px;border-radius:3px">▶</div>
-          </div>
-          <div style="padding:6px 4px 2px">
-            <div style="color:#e0e0e0;font-size:11px;font-weight:500;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${snip.title}</div>
-            <div style="color:#717171;font-size:10px;margin-top:2px">${ago}</div>
-          </div>
-        </div>`;
-      }).join('')}
+      <div style="font-size:10px;color:#9BA3C2;margin-top:4px">Link পেলে শুধু দেখতে পাবে · Manager ও Owner সব দেখবে</div>
     </div>`;
-  board.appendChild(col);
-
-  // Save channels list
-  if(save){
-    _ytbChannels[channelId]={handle,channelId};
-    bYTBSaveChannels();
-  }
+  menu.style.display=menu.style.display==='none'||!menu.style.display?'block':'none';
 }
 
-async function bYTBRefresh(channelId, handle){
-  const col=document.getElementById('ytb-col-'+channelId);
-  if(!col)return;
-  col.remove();
-  await bYTBLoadChannel(handle,channelId,false);
-}
-
-function bYTBSaveChannels(){
-  const chs=Object.values(_ytbChannels);
-  localStorage.setItem('sa_ytb_channels',JSON.stringify(chs));
-}
-
-function bYTBAgo(dateStr){
-  const diff=Date.now()-new Date(dateStr);
-  const d=Math.floor(diff/86400000);
-  if(d===0)return'Today';
-  if(d===1)return'Yesterday';
-  if(d<7)return d+' days ago';
-  if(d<30)return Math.floor(d/7)+' weeks ago';
-  if(d<365)return Math.floor(d/30)+' months ago';
-  return Math.floor(d/365)+' years ago';
-}
-
-function bYTBAddToBoard(videoId,title,thumb,channel,channelId){
-  const wrap=document.getElementById('b-wrap');
-  const p=window._bs2c?.(wrap.clientWidth/2,wrap.clientHeight/2)||{x:300,y:200};
-  const c=bAddCard(p.x-170,p.y-130,'note',{w:340,h:270,title:`▶ ${title.slice(0,45)}${title.length>45?'...':''}`});
-  const el=document.getElementById(c.id);
-  const body=el?.querySelector('.b-card-body');
-  if(body){
-    body.innerHTML=`<iframe src="https://www.youtube.com/embed/${videoId}?rel=0" style="width:100%;aspect-ratio:16/9;border-radius:8px;border:none;display:block" allowfullscreen loading="lazy"></iframe><div style="font-size:10px;color:#9CA3AF;margin-top:4px;text-align:center">${channel}</div>`;
-    c.body=body.innerHTML;
-  }
-  bAutoSave();bPushH();
-  toast(`Video added to board ✓`);
-  document.getElementById('b-ytb-modal').style.display='none';
-}
-
-// spin animation
-if(!document.getElementById('ytb-spin-style')){
-  const s=document.createElement('style');
-  s.id='ytb-spin-style';
-  s.textContent='@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
-  document.head.appendChild(s);
-}
-
-function bStartTmpLine(pt){
-  const svg=document.getElementById('b-svg');
-  _bTmpLine=document.createElementNS('http://www.w3.org/2000/svg','path');
-  _bTmpLine.setAttribute('stroke',_bColor||'#6C63FF');
-  _bTmpLine.setAttribute('stroke-width','2.5');
-  _bTmpLine.setAttribute('fill','none');
-  _bTmpLine.setAttribute('stroke-dasharray','8 4');
-  _bTmpLine.setAttribute('opacity','.8');
-  _bTmpLine.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
-  svg.appendChild(_bTmpLine);
-}
-function bEndConn(){
-  _bConnFrom=null;
-  if(_bTmpLine){_bTmpLine.remove();_bTmpLine=null;}
-}
-function bAddConnExact(fId,tId,fx,fy,tx,ty){
-  if(_bConns.find(c=>(c.f===fId&&c.t===tId)||(c.f===tId&&c.t===fId)))return;
-  const fel=document.getElementById(fId);
-  const tel=document.getElementById(tId);
-  const fc=_bCards.find(x=>x.id===fId)||_bStickies.find(x=>x.id===fId)||_bImages.find(x=>x.id===fId);
-  const tc=_bCards.find(x=>x.id===tId)||_bStickies.find(x=>x.id===tId)||_bImages.find(x=>x.id===tId);
-  const conn={id:'bcn'+(++_bNid),f:fId,t:tId,color:_bColor||'#6C63FF'};
-  // Save as percentage offsets so line follows card on move
-  if(fc&&fel&&fel.offsetWidth>0){
-    conn.fpx=(fx-fc.x)/fel.offsetWidth;
-    conn.fpy=(fy-fc.y)/fel.offsetHeight;
-  }
-  if(tc&&tel&&tel.offsetWidth>0){
-    conn.tpx=(tx-tc.x)/tel.offsetWidth;
-    conn.tpy=(ty-tc.y)/tel.offsetHeight;
-  }
-  _bConns.push(conn);
-  bRedrawConns();bPushH();bAutoSave();
-}
-function bAddDynPort(el,getId,getItem){
-  el.addEventListener('mousemove',e=>{
-    if(_bDrag||_bResize)return;
-    const r=el.getBoundingClientRect();
-    const mx=e.clientX-r.left,my=e.clientY-r.top;
-    const w=r.width,h=r.height;
-    const edgeDist=Math.min(mx,my,w-mx,h-my);
-    if(edgeDist<16){el.style.cursor='crosshair';el.dataset.connZone='1';}
-    else{el.style.cursor='';el.dataset.connZone='0';}
-  });
-  el.addEventListener('mouseleave',()=>{el.style.cursor='';el.dataset.connZone='0';});
-  el.addEventListener('mousedown',e=>{
-    if(el.dataset.connZone!=='1')return;
-    e.stopPropagation();e.preventDefault();
-    const id=getId();
-    const wr=document.getElementById('b-wrap').getBoundingClientRect();
-    const cx=(e.clientX-wr.left-_bPx)/_bSc;
-    const cy=(e.clientY-wr.top-_bPy)/_bSc;
-    _bConnFrom={id,cx,cy};
-    bStartTmpLine({x:cx,y:cy});
-  });
-  el.addEventListener('mouseup',e=>{
-    const id=getId();
-    if(_bConnFrom&&_bConnFrom.id!==id){
-      const wr=document.getElementById('b-wrap').getBoundingClientRect();
-      const cx=(e.clientX-wr.left-_bPx)/_bSc;
-      const cy=(e.clientY-wr.top-_bPy)/_bSc;
-      bAddConnExact(_bConnFrom.id,id,_bConnFrom.cx,_bConnFrom.cy,cx,cy);
-      bEndConn();
-    }
-  });
-}
-
-// ── MULTI-BOARD SYSTEM (Supabase)
-let _bCurrentBoardId=null;
-let _bImages=[];
-let _bSaveTimer=null;
-
-function bAutoSave(){
-  const st=document.getElementById('b-save-status');
-  if(st){st.textContent='saving...';st.style.color='#9CA3AF';}
-  clearTimeout(_bSaveTimer);
-  _bSaveTimer=setTimeout(()=>bSave(true),1000);
-}
-
-async function bGetAllBoards(){
-  if(!user)return[];
-  const {data,error}=await sb.from('script_boards').select('id,name,updated_at,is_public').eq('created_by',user.id).order('updated_at',{ascending:false});
-  if(error){console.error('bGetAllBoards:',error.message);return[];}
-  return data||[];
-}
-
-async function bRenderSidebar(){
-  const list=document.getElementById('b-boards-list');
-  if(!list)return;
-  const boards=await bGetAllBoards();
-  if(!boards.length){
-    list.innerHTML='<div style="padding:20px 8px;text-align:center;color:#A78BFA;font-size:12px">No boards yet<br><span style="font-size:10px;opacity:.7">Click + New Board</span></div>';
-    return;
-  }
-  list.innerHTML=boards.map(b=>{
-    const active=b.id===_bCurrentBoardId;
-    return `<div onclick="bSwitchBoard('${b.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;background:${active?'rgba(124,58,237,.15)':'transparent'};border:1px solid ${active?'#C4B5FD':'transparent'};transition:all .15s" onmouseover="if('${b.id}'!=='${_bCurrentBoardId||''}')this.style.background='rgba(124,58,237,.07)'" onmouseout="if('${b.id}'!=='${_bCurrentBoardId||''}')this.style.background='transparent'">
-      <i class="ti ti-layout-board" style="font-size:13px;color:${active?'#7C3AED':'#A78BFA'};flex-shrink:0"></i>
-      <span style="flex:1;font-size:12px;font-weight:${active?'600':'400'};color:${active?'#4C1D95':'#6D28D9'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.name}</span>
-      <button onclick="event.stopPropagation();bDeleteBoard('${b.id}')" style="background:none;border:none;cursor:pointer;color:transparent;font-size:12px;padding:2px 4px;border-radius:4px;flex-shrink:0" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='transparent'"><i class="ti ti-trash"></i></button>
-    </div>`;
-  }).join('');
-}
-
-async function bCreateNewBoard(){
-  const name=prompt('Board এর নাম দিন:','New Script');
-  if(!name||!user)return;
+function bCreateNewBoard(){
+  const name=prompt('Board এর নাম দিন:','New Board');
+  if(!name)return;
   const id='b'+Date.now();
-  const emptyData={cards:[],stickies:[],images:[],conns:[],nid:1,vp:{px:0,py:0,sc:1}};
-  const {error}=await sb.from('script_boards').insert({id,name,created_by:user.id,data:emptyData});
-  if(error){toast('Error: '+error.message);return;}
-  toast('"'+ name +'" তৈরি হয়েছে ✓');
-  await bSwitchBoard(id);
+  const boards=bGetAllBoards();
+  boards.push({id,name,created:Date.now(),updated:Date.now()});
+  bSaveIndex(boards);
+  bSwitchBoard(id);
+  document.getElementById('b-board-picker')&&(document.getElementById('b-board-picker').style.display='none');
+  toast(`"${name}" তৈরি হয়েছে ✓`);
 }
 
-async function bSwitchBoard(id){
-  if(_bCurrentBoardId&&_bCurrentBoardId!==id)await bSave(true);
-  // Clear canvas
+function bSwitchBoard(id){
+  bSave(true);
   _bCards.forEach(c=>document.getElementById(c.id)?.remove());
   _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
-  _bImages.forEach(img=>document.getElementById(img.id)?.remove());
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
-  const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
-  _bCards=[];_bStickies=[];_bConns=[];_bImages=[];_bTexts=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
+  const dc=document.getElementById('b-dc');if(dc){const ctx=dc.getContext('2d');ctx.clearRect(0,0,10000,10000);}
+  _bCards=[];_bStickies=[];_bConns=[];_bNid=1;_bPx=0;_bPy=0;_bSc=1;
   _bCurrentBoardId=id;
-  // Load from Supabase
-  const {data,error}=await sb.from('script_boards').select('name,data').eq('id',id).single();
-  if(error){console.error('bSwitchBoard:',error.message);}
-  // Update badge
-  const badge=document.getElementById('b-board-name-badge');
-  if(badge)badge.textContent=data?.name||'Board';
-  // Render content
-  if(data?.data){
-    const d=data.data;
-    _bNid=d.nid||1;
-    if(d.vp){_bPx=d.vp.px||0;_bPy=d.vp.py||0;_bSc=d.vp.sc||1;}
-    (d.cards||[]).forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title||'';el.querySelector('.b-card-body').innerHTML=c.body||'';}});
-    (d.stickies||[]).forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||''});
-    (d.images||[]).forEach(img=>{_bImages.push(img);bRenderBoardImage(img);});
-    (d.texts||[]).forEach(t=>{_bTexts.push(t);bRenderTextBox(t);const el=document.getElementById(t.id);if(el){const c=el.querySelector('.b-textbox-content');if(c)c.innerHTML=t.html||'';}});
-    _bConns=d.conns||[];bRedrawConns();
-  } else {
-    bAddCard(150,160,'script',{title:'📝 New Script'});bPushH();
-  }
+  const boards=bGetAllBoards();
+  const board=boards.find(b=>b.id===id);
+  const nameEl=document.getElementById('b-board-name');
+  if(nameEl)nameEl.textContent=board?.name||'Board';
+  if(!bLoadBoard()){bAddCard(150,150,'note',{title:'📝 Start here'});bPushH();}
   window._bApplyT?.();
-  bRenderSidebar();
 }
 
-async function bDeleteBoard(id){
+function bDeleteBoard(id){
   if(!confirm('এই board delete করবে?'))return;
-  const {error}=await sb.from('script_boards').delete().eq('id',id).eq('created_by',user.id);
-  if(error){toast('Delete failed');return;}
+  localStorage.removeItem('sa_board_'+id);
+  const boards=bGetAllBoards().filter(b=>b.id!==id);
+  bSaveIndex(boards);
   if(_bCurrentBoardId===id){
-    const boards=await bGetAllBoards();
-    const next=boards.find(b=>b.id!==id);
-    if(next)await bSwitchBoard(next.id);
-    else{_bCurrentBoardId=null;_bCards=[];_bStickies=[];_bConns=[];_bImages=[];const b2=document.getElementById('b-board-name-badge');if(b2)b2.textContent='No board';}
+    _bCurrentBoardId=boards[0]?.id||'default';
+    bSwitchBoard(_bCurrentBoardId);
   }
-  bRenderSidebar();toast('Deleted');
+  bShowBoardPicker();toast('Deleted');
 }
 
-async function bSave(silent=false){
-  if(!user||!_bCurrentBoardId)return;
-  const st=document.getElementById('b-save-status');
+function bSave(silent=false){
+  const id=_bCurrentBoardId||'default';
   const data={
     cards:_bCards.map(c=>{const el=document.getElementById(c.id);return{...c,title:el?.querySelector('.b-card-ttl')?.textContent||c.title,body:el?.querySelector('.b-card-body')?.innerHTML||c.body};}),
     stickies:_bStickies.map(s=>{const el=document.getElementById(s.id);return{...s,text:el?.querySelector('.b-sticky-txt')?.innerText||s.text};}),
-    texts:_bTexts.map(t=>{const el=document.getElementById(t.id);return{...t,html:el?.querySelector('.b-textbox-content')?.innerHTML||t.html};}),
-    images:_bImages,
     conns:_bConns,nid:_bNid,vp:{px:_bPx,py:_bPy,sc:_bSc}
   };
-  const {error}=await sb.from('script_boards').update({data,updated_at:new Date().toISOString()}).eq('id',_bCurrentBoardId).eq('created_by',user.id);
-  if(error){
-    console.error('bSave:',error.message);
-    if(st){st.textContent='Save failed!';st.style.color='#EF4444';setTimeout(()=>{st.textContent='';},3000);}
-    if(!silent)toast('Save failed: '+error.message);
-    return;
-  }
-  if(st){st.textContent='Saved ✓';st.style.color='#059669';setTimeout(()=>{if(st)st.textContent='';},2000);}
-  if(!silent)toast('Saved ✓');
+  try{
+    localStorage.setItem('sa_board_'+id,JSON.stringify(data));
+    const boards=bGetAllBoards();
+    const b=boards.find(b=>b.id===id);
+    if(b)b.updated=Date.now();
+    else boards.push({id,name:'Default Board',created:Date.now(),updated:Date.now()});
+    bSaveIndex(boards);
+    if(!silent)toast('Saved ✓');
+  }catch(e){if(!silent)toast('Save failed');}
+}
+
+function bLoadBoard(){
+  const id=_bCurrentBoardId||'default';
+  const raw=localStorage.getItem('sa_board_'+id);
+  if(!raw)return false;
+  try{
+    const d=JSON.parse(raw);
+    _bNid=d.nid||1;
+    if(d.vp){_bPx=d.vp.px;_bPy=d.vp.py;_bSc=d.vp.sc;}
+    d.cards?.forEach(c=>{_bCards.push(c);bRenderCard(c);const el=document.getElementById(c.id);if(el){el.querySelector('.b-card-ttl').textContent=c.title;el.querySelector('.b-card-body').innerHTML=c.body||'';}});
+    d.stickies?.forEach(s=>{_bStickies.push(s);bRenderSticky(s);const el=document.getElementById(s.id);if(el)el.querySelector('.b-sticky-txt').innerText=s.text||'';});
+    _bConns=d.conns||[];bRedrawConns();window._bApplyT?.();
+    return true;
+  }catch(e){return false;}
 }
 
 function bClear(){
-  if(!confirm('Board clear করবে? সব cards মুছে যাবে।'))return;
+  if(!confirm('Board clear করবে?'))return;
   _bCards.forEach(c=>document.getElementById(c.id)?.remove());
   _bStickies.forEach(s=>document.getElementById(s.id)?.remove());
-  _bImages.forEach(img=>document.getElementById(img.id)?.remove());
   document.querySelectorAll('.bcg').forEach(e=>e.remove());
   const dc=document.getElementById('b-dc');if(dc)dc.getContext('2d').clearRect(0,0,10000,10000);
-  _bCards=[];_bStickies=[];_bConns=[];_bImages=[];
-  bAutoSave();toast('Cleared');
+  _bCards=[];_bStickies=[];_bConns=[];
+  toast('Cleared');
 }
 
 // Auto-save every 30 seconds
-setInterval(()=>{if(window._boardInit&&_bCurrentBoardId)bSave(true);},30000);
+setInterval(()=>{if(window._boardInit&&_bCards.length)bSave(true);},30000);
 
 function togglePass(inputId, iconId){
   const inp=document.getElementById(inputId);
@@ -2637,6 +2080,591 @@ function togglePass(inputId, iconId){
     inp.type='password';
     if(ico){ico.classList.remove('ti-eye-off');ico.classList.add('ti-eye');}
   }
+}
+
+function loadNotes(){const v=localStorage.getItem('sa_fn_'+user?.id)||'';if(document.getElementById('fin-notes'))document.getElementById('fin-notes').value=v;}
+function saveNotes(){if(document.getElementById('fin-notes'))localStorage.setItem('sa_fn_'+user?.id,document.getElementById('fin-notes').value);}
+
+// ── FINANCE MODULE
+let _finChannels=[], _finSettings={opening_balance:500000};
+let _finCurrentTab='overview';
+
+function fmtBDT(n){n=Number(n||0);if(n>=100000)return '৳'+(n/100000).toFixed(1)+'L';if(n>=1000)return '৳'+(n/1000).toFixed(0)+'K';return '৳'+n.toLocaleString('en-IN');}
+function fmtBDTFull(n){return '৳'+Number(n||0).toLocaleString('en-IN');}
+function fmtDate(d){return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';}
+function finGreeting(){const h=new Date().getHours();return h<12?'Good morning,':h<17?'Good afternoon,':'Good evening,';}
+
+async function loadFinance(){
+  const isOwner=profile?.role==='owner';
+  document.querySelectorAll('.fn-nav-owner').forEach(el=>el.style.display=isOwner?'flex':'none');
+  const sel=document.getElementById('fin-month-sel');
+  if(sel&&!sel.options.length){
+    const now=new Date();
+    for(let i=0;i<12;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      const opt=document.createElement('option');
+      opt.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      opt.textContent=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+      if(i===0)opt.selected=true;
+      sel.appendChild(opt);
+    }
+  }
+  const g=document.getElementById('fin-greeting');
+  if(g)g.textContent=finGreeting();
+  const [{data:sets},{data:chs}]=await Promise.all([
+    sb.from('finance_settings').select('*').single(),
+    sb.from('finance_channels').select('*').order('name')
+  ]);
+  if(sets)_finSettings=sets;
+  _finChannels=chs||[];
+  finTab('overview');
+}
+
+function finTab(tab){
+  _finCurrentTab=tab;
+  document.querySelectorAll('[id^="fin-tab-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.fn-nav').forEach(el=>el.classList.remove('active'));
+  const tabEl=document.getElementById('fin-tab-'+tab);
+  const navEl=document.getElementById('fn-nav-'+tab);
+  if(tabEl)tabEl.style.display='block';
+  if(navEl)navEl.classList.add('active');
+  if(tab==='overview')loadFinOverview();
+  else if(tab==='channels')loadFinChannels();
+  else if(tab==='transactions')loadFinTransactions();
+  else if(tab==='requests')loadFinRequests();
+  else if(tab==='payroll')loadFinPayroll();
+  else if(tab==='subscriptions')loadFinSubscriptions();
+  else if(tab==='reports')loadFinReports();
+  else if(tab==='finsettings')loadFinSettings();
+}
+
+async function loadFinOverview(){
+  const el=document.getElementById('fin-tab-overview');
+  if(!el)return;
+  const month=document.getElementById('fin-month-sel')?.value||new Date().toISOString().slice(0,7);
+  const [y,m]=month.split('-');
+  const monthStart=`${y}-${m}-01`;
+  const monthEnd=`${y}-${m}-31`;
+  el.innerHTML=`<div style="text-align:center;color:#4B5563;padding:40px"><div style="font-size:13px">Loading...</div></div>`;
+  const [{data:income},{data:expenses}]=await Promise.all([
+    sb.from('finance_income').select('*,channel:finance_channels(name)').order('date',{ascending:false}),
+    sb.from('finance_expenses').select('*,channel:finance_channels(name)').order('date',{ascending:false})
+  ]);
+  const allIncome=income||[];
+  const allExp=expenses||[];
+  const totalReceived=allIncome.filter(i=>i.status==='received').reduce((s,i)=>s+Number(i.amount),0);
+  const totalPaid=allExp.filter(e=>e.approval_status==='paid').reduce((s,e)=>s+Number(e.amount),0);
+  const totalBalance=Number(_finSettings.opening_balance||0)+totalReceived-totalPaid;
+  const monthIncome=allIncome.filter(i=>i.status==='received'&&i.date>=monthStart&&i.date<=monthEnd).reduce((s,i)=>s+Number(i.amount),0);
+  const monthExp=allExp.filter(e=>e.approval_status==='paid'&&(e.payment_date||e.date)>=monthStart&&(e.payment_date||e.date)<=monthEnd).reduce((s,e)=>s+Number(e.amount),0);
+  const netFlow=monthIncome-monthExp;
+  const approvedUnpaid=allExp.filter(e=>e.approval_status==='approved').reduce((s,e)=>s+Number(e.amount),0);
+  const availableBalance=totalBalance-approvedUnpaid;
+  const recentAll=[...allIncome.map(i=>({...i,_type:'income'})),...allExp.map(e=>({...e,_type:'expense'}))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  const pendingReqs=allExp.filter(e=>e.approval_status==='pending').slice(0,4);
+  const catMap={};
+  allExp.filter(e=>e.approval_status==='paid').forEach(e=>{catMap[e.category]=(catMap[e.category]||0)+Number(e.amount);});
+
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px">
+      <div><div style="font-size:26px;font-weight:800;color:#fff;margin-bottom:4px">Finance Overview</div><div style="font-size:13px;color:#4B5563">Track your income, expenses and grow smarter.</div></div>
+      <div style="font-size:11px;color:#374151;font-style:italic;text-align:right">"Better numbers<br>build bigger tomorrows."</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+      ${finStatCard('Total Balance',fmtBDTFull(totalBalance),'#00D4AA','ti-wallet','rgba(0,212,170,.12)')}
+      ${finStatCard('Monthly Income',fmtBDTFull(monthIncome),'#10B981','ti-trending-up','rgba(16,185,129,.12)')}
+      ${finStatCard('Monthly Expenses',fmtBDTFull(monthExp),'#EF4444','ti-trending-down','rgba(239,68,68,.12)')}
+      ${finStatCard('Net Cash Flow',fmtBDTFull(netFlow),netFlow>=0?'#00D4AA':'#EF4444','ti-chart-bar',netFlow>=0?'rgba(0,212,170,.12)':'rgba(239,68,68,.12)')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px">
+      ${finStatCard('Approved but Unpaid',fmtBDTFull(approvedUnpaid),'#F59E0B','ti-clock','rgba(245,158,11,.12)')}
+      ${finStatCard('Available Balance',fmtBDTFull(availableBalance),'#818CF8','ti-coin','rgba(129,140,248,.12)')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:24px">
+      <div class="fin-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:16px;font-weight:700;color:#fff">Income vs Expense</div>
+          <div style="display:flex;gap:14px;font-size:12px;color:#6B7280">
+            <span><span style="width:8px;height:8px;background:#00D4AA;border-radius:50%;display:inline-block;margin-right:4px"></span>Income</span>
+            <span><span style="width:8px;height:8px;background:#EF4444;border-radius:50%;display:inline-block;margin-right:4px"></span>Expenses</span>
+          </div>
+        </div>
+        <canvas id="fin-chart-incexp" height="180"></canvas>
+      </div>
+      <div class="fin-card">
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:14px">Expense Breakdown</div>
+        <canvas id="fin-chart-donut" height="160"></canvas>
+        <div id="fin-cat-legend" style="margin-top:12px;display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:18px;font-weight:700;color:#fff">Channel Performance</div>
+      <button onclick="finTab('channels')" style="background:none;border:none;color:#00D4AA;font-size:13px;cursor:pointer;font-family:inherit">View All Channels →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px" id="fin-channel-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+      <div class="fin-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700;color:#fff">Recent Transactions</div>
+          <button onclick="finTab('transactions')" style="background:none;border:none;color:#00D4AA;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
+        </div>
+        <table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Scope</th><th>Category</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>${recentAll.map(t=>{const isInc=t._type==='income';return `<tr>
+          <td style="color:#6B7280;white-space:nowrap">${fmtDate(t.date)}</td>
+          <td style="color:#E5E7EB;font-weight:500">${t.description||t.source||t.payee||'—'}</td>
+          <td style="color:#6B7280">${t.scope==='whole_business'||!t.scope?'SA Media Empire':t.channel?.name||'—'}</td>
+          <td style="color:#6B7280">${t.category||t.source||'—'}</td>
+          <td style="font-weight:700;color:${isInc?'#00D4AA':'#EF4444'};white-space:nowrap">${isInc?'+':'-'}${fmtBDTFull(t.amount)}</td>
+          <td>${finStatusBadge(isInc?t.status:t.approval_status)}</td>
+        </tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;color:#374151;padding:24px">No transactions yet</td></tr>'}</tbody></table>
+      </div>
+      <div class="fin-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700;color:#fff">Payment Requests</div>
+          <button onclick="finTab('requests')" style="background:none;border:none;color:#00D4AA;font-size:12px;cursor:pointer;font-family:inherit">View All →</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${pendingReqs.length?pendingReqs.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#0F1117;border-radius:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <i class="ti ti-file-invoice" style="font-size:15px;color:#4B5563"></i>
+              <div><div style="font-size:13px;color:#E5E7EB;font-weight:500">${r.payee}</div><div style="font-size:10px;color:#4B5563">${r.category||'—'}</div></div>
+            </div>
+            <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#fff">${fmtBDTFull(r.amount)}</div>${finStatusBadge(r.approval_status)}</div>
+          </div>`).join(''):`<div style="text-align:center;padding:20px;color:#374151;font-size:13px">No pending requests</div>`}
+        </div>
+        <button onclick="openFinModal('expense')" style="width:100%;margin-top:12px;background:rgba(0,212,170,.1);color:#00D4AA;border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+          <i class="ti ti-file-invoice" style="font-size:14px"></i> Create Payment Voucher
+        </button>
+      </div>
+    </div>`;
+
+  await loadFinChannelCards(allIncome,allExp);
+  drawFinCharts(allIncome,allExp,catMap);
+}
+
+function finStatCard(title,val,color,icon,bg){
+  return `<div class="fin-card" style="display:flex;align-items:center;gap:14px">
+    <div class="fin-stat-icon" style="background:${bg}"><i class="ti ${icon}" style="color:${color};font-size:22px"></i></div>
+    <div><div style="font-size:11px;color:#4B5563;font-weight:500;margin-bottom:4px">${title}</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;line-height:1">${val}</div></div>
+  </div>`;
+}
+
+function finStatusBadge(status){
+  const map={received:{bg:'rgba(16,185,129,.15)',color:'#10B981',label:'Received'},paid:{bg:'rgba(16,185,129,.15)',color:'#10B981',label:'Paid'},pending:{bg:'rgba(245,158,11,.15)',color:'#F59E0B',label:'Pending'},approved:{bg:'rgba(129,140,248,.15)',color:'#818CF8',label:'Approved'},rejected:{bg:'rgba(239,68,68,.15)',color:'#EF4444',label:'Rejected'},cancelled:{bg:'rgba(107,114,128,.15)',color:'#6B7280',label:'Cancelled'},voided:{bg:'rgba(107,114,128,.15)',color:'#6B7280',label:'Voided'},draft:{bg:'rgba(75,85,99,.2)',color:'#4B5563',label:'Draft'}};
+  const s=map[status?.toLowerCase()]||{bg:'rgba(75,85,99,.2)',color:'#4B5563',label:status||'—'};
+  return `<span class="fin-badge" style="background:${s.bg};color:${s.color};font-size:10px">${s.label}</span>`;
+}
+
+async function loadFinChannelCards(allIncome,allExp){
+  const el=document.getElementById('fin-channel-cards');if(!el)return;
+  const cards=_finChannels.map(ch=>{
+    const chInc=(allIncome||[]).filter(i=>i.channel_id===ch.id&&i.status==='received').reduce((s,i)=>s+Number(i.amount),0);
+    const chExp=(allExp||[]).filter(e=>e.channel_id===ch.id&&e.approval_status==='paid').reduce((s,e)=>s+Number(e.amount),0);
+    const net=chInc-chExp;
+    return `<div class="fin-card" style="cursor:pointer" onclick="finTab('channels')">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:42px;height:42px;border-radius:12px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff">${ch.initials||ch.name.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}</div></div>
+        <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'rgba(0,212,170,.12)':'rgba(59,130,246,.12)'};color:${ch.monetization_status==='monetized'?'#00D4AA':'#3B82F6'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New Channel'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#9CA3AF">${ch.subscriber_count?.toLocaleString()||0}</div><div style="font-size:9px;color:#374151">Subs</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#10B981">${fmtBDT(chInc)}</div><div style="font-size:9px;color:#374151">Income</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#EF4444">${fmtBDT(chExp)}</div><div style="font-size:9px;color:#374151">Expenses</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:${net>=0?'#00D4AA':'#EF4444'}">${fmtBDT(net)}</div><div style="font-size:9px;color:#374151">Net</div></div>
+      </div>
+    </div>`;
+  });
+  cards.push(`<div class="fin-card" style="border:1px dashed #1E2535;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:130px" onclick="openAddChannel()">
+    <div style="width:36px;height:36px;border:2px solid #1E2535;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti ti-plus" style="font-size:16px;color:#374151"></i></div>
+    <div style="font-size:13px;color:#4B5563">Add Channel</div>
+  </div>`);
+  el.innerHTML=cards.join('');
+}
+
+function drawFinCharts(allIncome,allExp,catMap){
+  if(typeof Chart==='undefined')return;
+  const canvas=document.getElementById('fin-chart-incexp');
+  if(canvas){
+    const months=[],incData=[],expData=[];
+    const now=new Date();
+    for(let i=5;i>=0;i--){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      months.push(d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}));
+      incData.push(allIncome.filter(x=>x.status==='received'&&x.date?.startsWith(key)).reduce((s,x)=>s+Number(x.amount),0));
+      expData.push(allExp.filter(x=>x.approval_status==='paid'&&(x.payment_date||x.date)?.startsWith(key)).reduce((s,x)=>s+Number(x.amount),0));
+    }
+    if(canvas._chart)canvas._chart.destroy();
+    canvas._chart=new Chart(canvas,{type:'line',data:{labels:months,datasets:[{label:'Income',data:incData,borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,.08)',borderWidth:2.5,pointBackgroundColor:'#00D4AA',pointRadius:4,tension:.4,fill:true},{label:'Expenses',data:expData,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,.08)',borderWidth:2.5,pointBackgroundColor:'#EF4444',pointRadius:4,tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1E2535'},ticks:{color:'#4B5563',font:{size:11}}},y:{grid:{color:'#1E2535'},ticks:{color:'#4B5563',font:{size:11},callback:v=>'৳'+(v>=1000?v/1000+'K':v)}}}}});
+  }
+  const donut=document.getElementById('fin-chart-donut');
+  if(donut){
+    const cats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const colors=['#EF4444','#818CF8','#00D4AA','#F59E0B','#0EA5E9'];
+    if(donut._chart)donut._chart.destroy();
+    if(!cats.length){donut.style.display='none';return;}
+    donut._chart=new Chart(donut,{type:'doughnut',data:{labels:cats.map(c=>c[0]),datasets:[{data:cats.map(c=>c[1]),backgroundColor:colors,borderColor:'#161B27',borderWidth:3,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false}}}});
+    const total=cats.reduce((s,c)=>s+c[1],0);
+    const legend=document.getElementById('fin-cat-legend');
+    if(legend)legend.innerHTML=cats.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:50%;background:${colors[i]};display:inline-block"></span><span style="font-size:11px;color:#6B7280">${c[0]}</span></div>
+      <div style="display:flex;gap:8px"><span style="font-size:11px;color:#9CA3AF">${fmtBDT(c[1])}</span><span style="font-size:11px;color:#374151">${Math.round(c[1]/total*100)}%</span></div>
+    </div>`).join('');
+  }
+}
+
+async function loadFinTransactions(){
+  const el=document.getElementById('fin-tab-transactions');if(!el)return;
+  el.innerHTML=`<div style="color:#4B5563;text-align:center;padding:40px">Loading...</div>`;
+  const [{data:income},{data:expenses}]=await Promise.all([
+    sb.from('finance_income').select('*,channel:finance_channels(name)').order('date',{ascending:false}),
+    sb.from('finance_expenses').select('*,channel:finance_channels(name)').order('date',{ascending:false})
+  ]);
+  const rows=[...(income||[]).map(i=>({...i,_type:'income',_status:i.status})),...(expenses||[]).map(e=>({...e,_type:'expense',_status:e.approval_status}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const isOwner=profile?.role==='owner';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div><div style="font-size:22px;font-weight:800;color:#fff">Transactions</div><div style="font-size:13px;color:#4B5563">${rows.length} records</div></div>
+    <div style="display:flex;gap:8px">
+      ${isOwner?`<button onclick="openFinModal('income')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Income</button><button onclick="openFinModal('expense')" class="fin-btn" style="background:#1E2535;color:#9CA3AF"><i class="ti ti-plus"></i> Expense</button>`:''}
+    </div>
+  </div>
+  <div class="fin-card" style="overflow-x:auto">
+    <table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Scope</th><th>Category</th><th>Payee/Source</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td style="color:#6B7280;white-space:nowrap">${fmtDate(r.date)}</td>
+      <td style="color:#E5E7EB;font-weight:500">${r.description||'—'}</td>
+      <td><span class="fin-badge" style="background:${r._type==='income'?'rgba(0,212,170,.1)':'rgba(239,68,68,.1)'};color:${r._type==='income'?'#00D4AA':'#EF4444'};font-size:10px">${r._type==='income'?'Income':'Expense'}</span></td>
+      <td style="color:#6B7280">${r.scope==='whole_business'||!r.scope?'SA Media Empire':r.channel?.name||'—'}</td>
+      <td style="color:#6B7280">${r.category||r.source||'—'}</td>
+      <td style="color:#6B7280">${r.payee||r.source||'—'}</td>
+      <td style="font-weight:700;color:${r._type==='income'?'#00D4AA':'#EF4444'};white-space:nowrap">${r._type==='income'?'+':'-'}${fmtBDTFull(r.amount)}</td>
+      <td>${finStatusBadge(r._status)}</td>
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:#374151;padding:32px">No transactions yet</td></tr>'}</tbody></table>
+  </div>`;
+}
+
+async function loadFinRequests(){
+  const el=document.getElementById('fin-tab-requests');if(!el)return;
+  const {data}=await sb.from('finance_expenses').select('*,channel:finance_channels(name)').order('created_at',{ascending:false});
+  const isOwner=profile?.role==='owner';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div><div style="font-size:22px;font-weight:800;color:#fff">Payment Requests</div></div>
+    <button onclick="openFinModal('expense')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> New Request</button>
+  </div>
+  <div class="fin-card" style="overflow-x:auto">
+    <table class="fin-table"><thead><tr><th>Date</th><th>Voucher</th><th>Payee</th><th>Category</th><th>Scope</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${(data||[]).map(r=>`<tr>
+      <td style="color:#6B7280">${fmtDate(r.date)}</td>
+      <td style="color:#374151;font-size:11px">${r.voucher_number||'—'}</td>
+      <td style="color:#E5E7EB;font-weight:500">${r.payee}</td>
+      <td style="color:#6B7280">${r.category}</td>
+      <td style="color:#6B7280">${r.scope==='whole_business'?'SA Media Empire':r.channel?.name||'—'}</td>
+      <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
+      <td>${finStatusBadge(r.approval_status)}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        ${isOwner&&r.approval_status==='pending'?`<button onclick="finApprove('${r.id}')" class="fin-btn fin-btn-primary" style="padding:3px 8px;font-size:11px">Approve</button>`:''}
+        ${isOwner&&r.approval_status==='approved'?`<button onclick="finMarkPaid('${r.id}')" class="fin-btn" style="background:rgba(16,185,129,.15);color:#10B981;padding:3px 8px;font-size:11px">Mark Paid</button>`:''}
+        <button onclick="finGenVoucher('${r.id}')" class="fin-btn fin-btn-secondary" style="padding:3px 8px;font-size:11px"><i class="ti ti-printer" style="font-size:12px"></i></button>
+      </td>
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:#374151;padding:32px">No requests yet</td></tr>'}</tbody></table>
+  </div>`;
+}
+
+async function finApprove(id){const{error}=await sb.from('finance_expenses').update({approval_status:'approved'}).eq('id',id);if(!error){toast('✅ Approved!');loadFinRequests();}else toast(error.message);}
+async function finMarkPaid(id){const ref=prompt('Payment reference:');const{error}=await sb.from('finance_expenses').update({approval_status:'paid',payment_date:new Date().toISOString().slice(0,10),reference_no:ref}).eq('id',id);if(!error){toast('✅ Marked Paid!');loadFinRequests();}else toast(error.message);}
+
+async function loadFinPayroll(){
+  const el=document.getElementById('fin-tab-payroll');if(!el)return;
+  const{data}=await sb.from('finance_payroll').select('*,channel:finance_channels(name)').order('created_at',{ascending:false});
+  const isOwner=profile?.role==='owner';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div><div style="font-size:22px;font-weight:800;color:#fff">Payroll</div></div>
+    ${isOwner?`<button onclick="openFinModal('payroll')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Payroll</button>`:''}
+  </div>
+  <div class="fin-card" style="overflow-x:auto">
+    <table class="fin-table"><thead><tr><th>Member</th><th>Role</th><th>Month</th><th>Amount</th><th>Scope</th><th>Status</th><th>Payment Date</th></tr></thead>
+    <tbody>${(data||[]).map(r=>`<tr>
+      <td style="color:#E5E7EB;font-weight:500">${r.member_name}</td>
+      <td style="color:#6B7280">${r.role||'—'}</td>
+      <td style="color:#6B7280">${r.salary_month}</td>
+      <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
+      <td style="color:#6B7280">${r.scope==='whole_business'?'SA Media Empire':r.channel?.name||'—'}</td>
+      <td>${finStatusBadge(r.payment_status)}</td>
+      <td style="color:#6B7280">${fmtDate(r.payment_date)}</td>
+    </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#374151;padding:32px">No payroll records</td></tr>'}</tbody></table>
+  </div>`;
+}
+
+async function loadFinSubscriptions(){
+  const el=document.getElementById('fin-tab-subscriptions');if(!el)return;
+  const{data}=await sb.from('finance_subscriptions').select('*,channel:finance_channels(name)').order('renewal_date');
+  const isOwner=profile?.role==='owner';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div><div style="font-size:22px;font-weight:800;color:#fff">Subscriptions</div></div>
+    ${isOwner?`<button onclick="openFinModal('subscription')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add</button>`:''}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+    ${(data||[]).map(s=>`<div class="fin-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:15px;font-weight:700;color:#fff">${s.service_name}</div>
+        <span class="fin-badge" style="background:${s.status==='active'?'rgba(0,212,170,.12)':'rgba(107,114,128,.12)'};color:${s.status==='active'?'#00D4AA':'#6B7280'};font-size:10px">${s.status}</span>
+      </div>
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">${fmtBDTFull(s.amount)}<span style="font-size:11px;color:#374151;font-weight:400">/${s.billing_cycle}</span></div>
+      <div style="font-size:11px;color:#374151">Scope: ${s.scope==='whole_business'?'Whole Business':s.channel?.name||'—'}</div>
+      <div style="font-size:11px;color:#374151;margin-top:3px">Next: ${fmtDate(s.next_payment||s.renewal_date)}</div>
+    </div>`).join('')||''}
+    ${isOwner?`<div class="fin-card" style="border:1px dashed #1E2535;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px" onclick="openFinModal('subscription')">
+      <i class="ti ti-plus" style="font-size:22px;color:#374151"></i>
+      <div style="font-size:13px;color:#4B5563">Add Subscription</div>
+    </div>`:''}
+  </div>`;
+}
+
+async function loadFinChannels(){
+  const el=document.getElementById('fin-tab-channels');if(!el)return;
+  const isOwner=profile?.role==='owner';
+  const[{data:income},{data:expenses}]=await Promise.all([
+    sb.from('finance_income').select('*').eq('status','received'),
+    sb.from('finance_expenses').select('*').eq('approval_status','paid')
+  ]);
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div><div style="font-size:22px;font-weight:800;color:#fff">Channels</div></div>
+    ${isOwner?`<button onclick="openAddChannel()" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Channel</button>`:''}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+    ${_finChannels.map(ch=>{
+      const chInc=(income||[]).filter(i=>i.channel_id===ch.id).reduce((s,i)=>s+Number(i.amount),0);
+      const chExp=(expenses||[]).filter(e=>e.channel_id===ch.id).reduce((s,e)=>s+Number(e.amount),0);
+      const net=chInc-chExp;
+      return `<div class="fin-card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:46px;height:46px;border-radius:13px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${ch.initials||ch.name.slice(0,2).toUpperCase()}</div>
+          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}${ch.subscriber_count?' · '+ch.subscriber_count.toLocaleString()+' subs':''}</div></div>
+          <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'rgba(0,212,170,.12)':'rgba(59,130,246,.12)'};color:${ch.monetization_status==='monetized'?'#00D4AA':'#3B82F6'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#10B981">${fmtBDT(chInc)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Income</div></div>
+          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#EF4444">${fmtBDT(chExp)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Expenses</div></div>
+          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:${net>=0?'#00D4AA':'#EF4444'}">${fmtBDT(net)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Net</div></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function loadFinReports(){
+  const el=document.getElementById('fin-tab-reports');if(!el)return;
+  el.innerHTML=`<div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Reports & Exports</div>
+  <div style="font-size:13px;color:#4B5563;margin-bottom:24px">Download financial reports</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+    ${[{icon:'ti-chart-bar',title:'Transaction Ledger',sub:'Complete transaction list',fn:'finExportTransactions'},{icon:'ti-brand-youtube',title:'Channel P&L',sub:'Profit/loss per channel',fn:'finExportTransactions'},{icon:'ti-category',title:'Expense by Category',sub:'Category-wise breakdown',fn:'finExportTransactions'},{icon:'ti-users',title:'Payroll Report',sub:'Team salary records',fn:'finExportTransactions'},{icon:'ti-credit-card',title:'Subscriptions',sub:'All recurring costs',fn:'finExportTransactions'},{icon:'ti-file-invoice',title:'Payment Requests',sub:'Voucher history',fn:'finExportTransactions'}].map(r=>`
+    <div class="fin-card" style="cursor:pointer" onclick="${r.fn}()">
+      <div style="width:40px;height:40px;background:rgba(0,212,170,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ${r.icon}" style="font-size:20px;color:#00D4AA"></i></div>
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">${r.title}</div>
+      <div style="font-size:12px;color:#4B5563;margin-bottom:12px">${r.sub}</div>
+      <div style="display:flex;gap:6px"><span class="fin-badge" style="background:#1E2535;color:#6B7280;font-size:10px">PDF</span><span class="fin-badge" style="background:#1E2535;color:#6B7280;font-size:10px">CSV</span></div>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function finExportTransactions(){
+  const[{data:inc},{data:exp}]=await Promise.all([sb.from('finance_income').select('*').order('date'),sb.from('finance_expenses').select('*').order('date')]);
+  const rows=[['Date','Type','Description','Source/Payee','Category','Scope','Amount (BDT)','Status'],...(inc||[]).map(i=>[i.date,'Income',i.description||'',i.source||'','',i.scope||'whole_business',i.amount,i.status]),...(exp||[]).map(e=>[e.date,'Expense',e.description||'',e.payee||'',e.category||'',e.scope||'whole_business',e.amount,e.approval_status])];
+  const csv=rows.map(r=>r.map(v=>`"${v||''}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='sa_media_finance_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('Downloaded ✓');
+}
+
+async function loadFinSettings(){
+  if(profile?.role!=='owner'){document.getElementById('fin-tab-finsettings').innerHTML=`<div style="text-align:center;padding:60px;color:#374151"><i class="ti ti-lock" style="font-size:40px;display:block;margin-bottom:12px"></i>Owner only</div>`;return;}
+  const el=document.getElementById('fin-tab-finsettings');
+  el.innerHTML=`<div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:24px">Finance Settings</div>
+  <div class="fin-card" style="max-width:440px">
+    <div style="margin-bottom:16px"><label class="fin-lbl">Opening Balance (BDT)</label>
+      <input class="fin-inp" id="fin-set-ob" type="number" value="${_finSettings.opening_balance||500000}"/>
+      <div style="font-size:11px;color:#374151;margin-top:6px">Total Balance = Opening Balance + Received Income − Paid Expenses</div>
+    </div>
+    <div style="margin-bottom:16px"><label class="fin-lbl">Currency</label><input class="fin-inp" value="BDT (৳)" disabled style="opacity:.5"/></div>
+    <button onclick="saveFinSettings()" class="fin-btn fin-btn-primary">Save Settings</button>
+  </div>`;
+}
+async function saveFinSettings(){
+  const ob=Number(document.getElementById('fin-set-ob')?.value||0);
+  const{error}=await sb.from('finance_settings').update({opening_balance:ob,updated_by:user?.id,updated_at:new Date().toISOString()}).eq('id',_finSettings.id);
+  if(!error){_finSettings.opening_balance=ob;toast('✅ Saved!');}else toast('Error: '+error.message);
+}
+
+function openFinModal(type){
+  const modal=document.getElementById('fin-modal');const body=document.getElementById('fin-modal-body');
+  if(!modal||!body)return;
+  const chOpts=_finChannels.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const g=(id)=>document.getElementById(id)?.value?.trim()||'';
+  if(type==='income'){
+    body.innerHTML=`<div style="padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;color:#fff">Add Income</div>
+        <button onclick="closeFinModal()" style="background:none;border:none;color:#4B5563;cursor:pointer;font-size:20px"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fin-lbl">Date *</label><input class="fin-inp" type="date" id="fi-date" value="${new Date().toISOString().slice(0,10)}"/></div>
+        <div><label class="fin-lbl">Amount (BDT) *</label><input class="fin-inp" type="number" id="fi-amt" placeholder="0"/></div>
+        <div><label class="fin-lbl">Source *</label><select class="fin-inp" id="fi-src"><option>YouTube AdSense</option><option>Client Payment</option><option>Sponsorship</option><option>Channel Sale</option><option>Affiliate Income</option><option>Other</option></select></div>
+        <div><label class="fin-lbl">Channel</label><select class="fin-inp" id="fi-ch"><option value="">Whole Business</option>${chOpts}</select></div>
+        <div style="grid-column:1/-1"><label class="fin-lbl">Description</label><input class="fin-inp" type="text" id="fi-desc" placeholder="Description..."/></div>
+        <div><label class="fin-lbl">Payment Method</label><select class="fin-inp" id="fi-pm"><option>Bank Transfer</option><option>bKash</option><option>Cash</option><option>PayPal</option><option>Other</option></select></div>
+        <div><label class="fin-lbl">Reference No</label><input class="fin-inp" type="text" id="fi-ref" placeholder="TXN-123..."/></div>
+        <div><label class="fin-lbl">Status *</label><select class="fin-inp" id="fi-status"><option value="pending">Pending</option><option value="received">Received</option></select></div>
+        <div><label class="fin-lbl">Notes</label><input class="fin-inp" type="text" id="fi-notes" placeholder="Optional notes..."/></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="saveFinIncome()" class="fin-btn fin-btn-primary" style="flex:1">Save Income</button>
+        <button onclick="closeFinModal()" class="fin-btn fin-btn-secondary">Cancel</button>
+      </div>
+    </div>`;
+  } else if(type==='expense'){
+    body.innerHTML=`<div style="padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;color:#fff">Payment Request / Expense</div>
+        <button onclick="closeFinModal()" style="background:none;border:none;color:#4B5563;cursor:pointer;font-size:20px"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fin-lbl">Date *</label><input class="fin-inp" type="date" id="fe-date" value="${new Date().toISOString().slice(0,10)}"/></div>
+        <div><label class="fin-lbl">Due Date</label><input class="fin-inp" type="date" id="fe-due"/></div>
+        <div><label class="fin-lbl">Payee *</label><input class="fin-inp" type="text" id="fe-payee" placeholder="Person or company..."/></div>
+        <div><label class="fin-lbl">Amount (BDT) *</label><input class="fin-inp" type="number" id="fe-amt" placeholder="0"/></div>
+        <div style="grid-column:1/-1"><label class="fin-lbl">Description</label><input class="fin-inp" type="text" id="fe-desc" placeholder="What is this for?"/></div>
+        <div><label class="fin-lbl">Category *</label><select class="fin-inp" id="fe-cat"><option>Salary</option><option>Partnership Payment</option><option>Editor Payment</option><option>AI Subscription</option><option>Software Subscription</option><option>Production Cost</option><option>Thumbnail</option><option>Voiceover</option><option>Research</option><option>Marketing</option><option>Equipment</option><option>Professional Service</option><option>Other</option></select></div>
+        <div><label class="fin-lbl">Scope *</label><select class="fin-inp" id="fe-scope" onchange="document.getElementById('fe-ch-row').style.display=this.value==='channel'?'block':'none'"><option value="whole_business">Whole Business</option><option value="channel">Specific Channel</option></select></div>
+        <div id="fe-ch-row" style="display:none;grid-column:1/-1"><label class="fin-lbl">Channel *</label><select class="fin-inp" id="fe-ch"><option value="">Select...</option>${chOpts}</select></div>
+        <div><label class="fin-lbl">Payment Method</label><select class="fin-inp" id="fe-pm"><option>Bank Transfer</option><option>bKash</option><option>Cash</option><option>Other</option></select></div>
+        <div><label class="fin-lbl">Notes</label><input class="fin-inp" type="text" id="fe-notes" placeholder="Notes..."/></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="saveFinExpense()" class="fin-btn fin-btn-primary" style="flex:1">Submit Request</button>
+        <button onclick="closeFinModal()" class="fin-btn fin-btn-secondary">Cancel</button>
+      </div>
+    </div>`;
+  } else if(type==='payroll'){
+    body.innerHTML=`<div style="padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;color:#fff">Add Payroll</div>
+        <button onclick="closeFinModal()" style="background:none;border:none;color:#4B5563;cursor:pointer;font-size:20px"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fin-lbl">Member Name *</label><input class="fin-inp" id="fp-name" placeholder="Full name"/></div>
+        <div><label class="fin-lbl">Role</label><input class="fin-inp" id="fp-role" placeholder="Editor, Manager..."/></div>
+        <div><label class="fin-lbl">Amount (BDT) *</label><input class="fin-inp" type="number" id="fp-amt"/></div>
+        <div><label class="fin-lbl">Salary Month *</label><input class="fin-inp" type="month" id="fp-month" value="${new Date().toISOString().slice(0,7)}"/></div>
+        <div><label class="fin-lbl">Scope</label><select class="fin-inp" id="fp-scope"><option value="whole_business">Whole Business</option><option value="channel">Specific Channel</option></select></div>
+        <div><label class="fin-lbl">Channel</label><select class="fin-inp" id="fp-ch"><option value="">—</option>${chOpts}</select></div>
+        <div style="grid-column:1/-1"><label class="fin-lbl">Notes</label><input class="fin-inp" id="fp-notes" placeholder="Notes..."/></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="saveFinPayroll()" class="fin-btn fin-btn-primary" style="flex:1">Save Payroll</button>
+        <button onclick="closeFinModal()" class="fin-btn fin-btn-secondary">Cancel</button>
+      </div>
+    </div>`;
+  } else if(type==='subscription'){
+    body.innerHTML=`<div style="padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;color:#fff">Add Subscription</div>
+        <button onclick="closeFinModal()" style="background:none;border:none;color:#4B5563;cursor:pointer;font-size:20px"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="fin-lbl">Service Name *</label><input class="fin-inp" id="fs-name" placeholder="ChatGPT, ElevenLabs..."/></div>
+        <div><label class="fin-lbl">Amount (BDT) *</label><input class="fin-inp" type="number" id="fs-amt"/></div>
+        <div><label class="fin-lbl">Billing Cycle</label><select class="fin-inp" id="fs-cycle"><option value="monthly">Monthly</option><option value="annual">Annual</option></select></div>
+        <div><label class="fin-lbl">Next Payment</label><input class="fin-inp" type="date" id="fs-next"/></div>
+        <div><label class="fin-lbl">Scope</label><select class="fin-inp" id="fs-scope"><option value="whole_business">Whole Business</option><option value="channel">Specific Channel</option></select></div>
+        <div><label class="fin-lbl">Channel</label><select class="fin-inp" id="fs-ch"><option value="">—</option>${chOpts}</select></div>
+        <div><label class="fin-lbl">Payment Method</label><select class="fin-inp" id="fs-pm"><option>Credit Card</option><option>Bank Transfer</option><option>PayPal</option><option>Other</option></select></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="saveFinSubscription()" class="fin-btn fin-btn-primary" style="flex:1">Save</button>
+        <button onclick="closeFinModal()" class="fin-btn fin-btn-secondary">Cancel</button>
+      </div>
+    </div>`;
+  }
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeFinModal();};
+}
+
+function closeFinModal(){const m=document.getElementById('fin-modal');if(m)m.style.display='none';}
+function fv(id){return document.getElementById(id)?.value?.trim()||'';}
+
+async function saveFinIncome(){
+  const amt=Number(fv('fi-amt'));if(!amt){toast('Amount দিন');return;}
+  const{error}=await sb.from('finance_income').insert({date:fv('fi-date')||new Date().toISOString().slice(0,10),amount:amt,source:fv('fi-src'),channel_id:fv('fi-ch')||null,description:fv('fi-desc'),payment_method:fv('fi-pm'),reference_no:fv('fi-ref'),status:fv('fi-status')||'pending',notes:fv('fi-notes'),created_by:user?.id});
+  if(error){toast('Error: '+error.message);return;}
+  closeFinModal();toast('✅ Income saved!');
+  if(_finCurrentTab==='overview')loadFinOverview();else if(_finCurrentTab==='transactions')loadFinTransactions();
+}
+
+async function saveFinExpense(){
+  const amt=Number(fv('fe-amt'));const payee=fv('fe-payee');
+  if(!amt||!payee){toast('Payee ও Amount দিন');return;}
+  const now=new Date();const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+  const{count}=await sb.from('finance_expenses').select('id',{count:'exact',head:true});
+  const voucher=`PAY-${ym}-${String((count||0)+1).padStart(4,'0')}`;
+  const{error}=await sb.from('finance_expenses').insert({date:fv('fe-date')||now.toISOString().slice(0,10),due_date:fv('fe-due')||null,payee,amount:amt,description:fv('fe-desc'),category:fv('fe-cat')||'Other',scope:fv('fe-scope')||'whole_business',channel_id:fv('fe-ch')||null,payment_method:fv('fe-pm'),notes:fv('fe-notes'),approval_status:'pending',voucher_number:voucher,requested_by:user?.id});
+  if(error){toast('Error: '+error.message);return;}
+  closeFinModal();toast(`✅ Request saved! Voucher: ${voucher}`);
+  if(_finCurrentTab==='requests')loadFinRequests();else loadFinOverview();
+}
+
+async function saveFinPayroll(){
+  const amt=Number(fv('fp-amt'));const name=fv('fp-name');if(!amt||!name){toast('Name ও Amount দিন');return;}
+  const{error}=await sb.from('finance_payroll').insert({member_name:name,role:fv('fp-role'),amount:amt,salary_month:fv('fp-month'),scope:fv('fp-scope')||'whole_business',channel_id:fv('fp-ch')||null,notes:fv('fp-notes'),payment_status:'pending',created_by:user?.id});
+  if(error){toast('Error: '+error.message);return;}
+  closeFinModal();toast('✅ Payroll saved!');loadFinPayroll();
+}
+
+async function saveFinSubscription(){
+  const amt=Number(fv('fs-amt'));const name=fv('fs-name');if(!amt||!name){toast('Service name ও Amount দিন');return;}
+  const{error}=await sb.from('finance_subscriptions').insert({service_name:name,amount:amt,billing_cycle:fv('fs-cycle')||'monthly',scope:fv('fs-scope')||'whole_business',channel_id:fv('fs-ch')||null,payment_method:fv('fs-pm'),next_payment:fv('fs-next')||null,status:'active'});
+  if(error){toast('Error: '+error.message);return;}
+  closeFinModal();toast('✅ Subscription saved!');loadFinSubscriptions();
+}
+
+async function openAddChannel(){
+  if(profile?.role!=='owner'){toast('🔒 Owner only');return;}
+  const name=prompt('Channel name:');if(!name)return;
+  const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const{error}=await sb.from('finance_channels').insert({name,initials,status:'active',monetization_status:'not_monetized',subscriber_count:0});
+  if(!error){const{data}=await sb.from('finance_channels').select('*').order('name');_finChannels=data||[];toast('✅ Channel added!');finTab(_finCurrentTab);}
+  else toast('Error: '+error.message);
+}
+
+async function finGenVoucher(id){
+  const{data:r}=await sb.from('finance_expenses').select('*,channel:finance_channels(name)').eq('id',id).single();
+  if(!r){toast('Not found');return;}
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment Voucher ${r.voucher_number||''}</title>
+  <style>body{font-family:Arial,sans-serif;color:#111;max-width:680px;margin:40px auto;padding:24px}h1{font-size:22px;margin:0}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #111}
+  .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}.lbl{color:#666;font-size:13px}.val{font-weight:600;font-size:13px}
+  .amt{font-size:32px;font-weight:800;text-align:center;padding:20px;background:#f8f8f8;border-radius:8px;margin:20px 0}
+  .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${r.approval_status==='paid'?'#D1FAE5':'#FEF3C7'};color:${r.approval_status==='paid'?'#059669':'#D97706'}}
+  .sig{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}.sig-b{border-top:1px solid #333;padding-top:8px;font-size:12px;color:#666}
+  </style></head><body>
+  <div class="hdr"><div><h1>SA Media Empire</h1><div style="font-size:12px;color:#666;margin-top:3px">Payment Authorization Voucher</div></div>
+  <div style="text-align:right"><div style="font-size:20px;font-weight:800">${r.voucher_number||'PAY-000000-0001'}</div>
+  <div style="font-size:12px;color:#666">${new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <span class="badge">${(r.approval_status||'PENDING').toUpperCase()}</span></div></div>
+  <div class="amt">৳ ${Number(r.amount).toLocaleString('en-IN')} BDT</div>
+  <div class="row"><span class="lbl">Payee</span><span class="val">${r.payee}</span></div>
+  <div class="row"><span class="lbl">Description</span><span class="val">${r.description||'—'}</span></div>
+  <div class="row"><span class="lbl">Category</span><span class="val">${r.category}</span></div>
+  <div class="row"><span class="lbl">Scope</span><span class="val">${r.scope==='whole_business'?'Whole Business':r.channel?.name||'—'}</span></div>
+  <div class="row"><span class="lbl">Payment Method</span><span class="val">${r.payment_method||'—'}</span></div>
+  <div class="row"><span class="lbl">Request Date</span><span class="val">${fmtDate(r.date)}</span></div>
+  <div class="row"><span class="lbl">Payment Date</span><span class="val">${fmtDate(r.payment_date)}</span></div>
+  <div class="row"><span class="lbl">Reference No</span><span class="val">${r.reference_no||'—'}</span></div>
+  <div class="row"><span class="lbl">Notes</span><span class="val">${r.notes||'—'}</span></div>
+  <div class="sig"><div class="sig-b">Requested By<br><br><br>${profile?.name||user?.email||'—'}</div>
+  <div class="sig-b">Approved By<br><br><br>________________________</div></div>
+  <div style="text-align:center;font-size:11px;color:#999;margin-top:40px;border-top:1px solid #eee;padding-top:16px">SA Media Empire · Payment Authorization Voucher · Generated ${new Date().toLocaleDateString('en-GB')}</div>
+  </body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 }
 
 // ── HOME PAGE
