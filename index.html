@@ -56,6 +56,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .logout-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:4px;border-radius:6px;transition:.15s;line-height:1}
 .logout-btn:hover{color:#EF4444;background:#FEE2E2}
 .main{margin-left:256px;min-height:100vh;padding:32px 36px;background:#F9FAFB}
+.main.fin-active{padding:0;background:#F9FAFB}
 .pg{display:none}
 .pg.on{display:block}
 .pg-h{margin-bottom:24px}
@@ -738,13 +739,13 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 
         <!-- FINANCE (owner only) -->
-    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB;margin:-32px -36px;min-height:calc(100vh - 0px)">
+    <div class="pg" id="pg-finance" style="padding:0;background:#F9FAFB">
       <div id="finance-blocked" style="display:none;padding:60px 20px;text-align:center">
         <i class="ti ti-lock" style="font-size:52px;color:#9CA3AF;opacity:.3;display:block;margin-bottom:16px"></i>
         <div style="font-size:18px;font-weight:700;color:#6B7280">Access Denied</div>
         <div style="font-size:13px;color:#9CA3AF;margin-top:8px">Finance section শুধু Owner ও Manager দেখতে পারবে</div>
       </div>
-      <div id="finance-content" style="display:flex;min-height:100vh">
+      <div id="finance-content" style="display:flex;min-height:100vh;height:100%">
         <!-- Finance Sidebar -->
         <div id="fin-sidebar" style="width:210px;background:#fff;border-right:1px solid #E5E7EB;flex-shrink:0;display:flex;flex-direction:column;padding:20px 0">
           <div style="padding:0 16px 20px;border-bottom:1px solid #F3F4F6">
@@ -1144,8 +1145,15 @@ function showPg(pg){
   document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('on'));
   document.getElementById('pg-'+pg)?.classList.add('on');
   document.querySelector(`[data-pg="${pg}"]`)?.classList.add('on');
+
+  // Finance full-width — remove main div padding
+  const mainEl=document.querySelector('.main');
+  if(mainEl){
+    if(pg==='finance') mainEl.classList.add('fin-active');
+    else mainEl.classList.remove('fin-active');
+  }
+
   if(pg==='users'&&profile?.role==='owner')loadUsers();
-  if(pg==='finance'&&profile?.role==='owner')loadNotes();
   if(pg==='notes')loadSharedNote();
   if(pg==='editors')loadEditors();
   if(pg==='home')loadHomePage();
