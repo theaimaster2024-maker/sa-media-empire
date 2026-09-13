@@ -2265,7 +2265,7 @@ async function loadFinChannelCards(allIncome,allExp){
     return `<div class="fin-card" style="cursor:pointer" onclick="finTab('channels')">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
         <div style="width:42px;height:42px;border-radius:12px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff">${ch.initials||ch.name.slice(0,2).toUpperCase()}</div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}</div></div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111827">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}</div></div>
         <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'rgba(0,212,170,.12)':'rgba(59,130,246,.12)'};color:${ch.monetization_status==='monetized'?'#00D4AA':'#3B82F6'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New Channel'}</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
@@ -2276,8 +2276,8 @@ async function loadFinChannelCards(allIncome,allExp){
       </div>
     </div>`;
   });
-  cards.push(`<div class="fin-card" style="border:1px dashed #1E2535;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:130px" onclick="openAddChannel()">
-    <div style="width:36px;height:36px;border:2px solid #1E2535;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti ti-plus" style="font-size:16px;color:#374151"></i></div>
+  cards.push(`<div class="fin-card" style="border:1px dashed #E5E7EB;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:130px" onclick="openAddChannel()">
+    <div style="width:36px;height:36px;border:2px solid #E5E7EB;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti ti-plus" style="font-size:16px;color:#374151"></i></div>
     <div style="font-size:13px;color:#4B5563">Add Channel</div>
   </div>`);
   el.innerHTML=cards.join('');
@@ -2325,16 +2325,16 @@ async function loadFinTransactions(){
   const rows=[...(income||[]).map(i=>({...i,_type:'income',_status:i.status})),...(expenses||[]).map(e=>({...e,_type:'expense',_status:e.approval_status}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
   const isOwner=profile?.role==='owner';
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#fff">Transactions</div><div style="font-size:13px;color:#4B5563">${rows.length} records</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Transactions</div><div style="font-size:13px;color:#4B5563">${rows.length} records</div></div>
     <div style="display:flex;gap:8px">
-      ${isOwner?`<button onclick="openFinModal('income')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Income</button><button onclick="openFinModal('expense')" class="fin-btn" style="background:#1E2535;color:#9CA3AF"><i class="ti ti-plus"></i> Expense</button>`:''}
+      ${isOwner?`<button onclick="openFinModal('income')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Income</button><button onclick="openFinModal('expense')" class="fin-btn" style="background:#F3F4F6;color:#374151"><i class="ti ti-plus"></i> Expense</button>`:''}
     </div>
   </div>
   <div class="fin-card" style="overflow-x:auto">
     <table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Scope</th><th>Category</th><th>Payee/Source</th><th>Amount</th><th>Status</th></tr></thead>
     <tbody>${rows.map(r=>`<tr>
       <td style="color:#6B7280;white-space:nowrap">${fmtDate(r.date)}</td>
-      <td style="color:#E5E7EB;font-weight:500">${r.description||'—'}</td>
+      <td style="color:#111827;font-weight:500">${r.description||'—'}</td>
       <td><span class="fin-badge" style="background:${r._type==='income'?'rgba(0,212,170,.1)':'rgba(239,68,68,.1)'};color:${r._type==='income'?'#00D4AA':'#EF4444'};font-size:10px">${r._type==='income'?'Income':'Expense'}</span></td>
       <td style="color:#6B7280">${r.scope==='whole_business'||!r.scope?'SA Media Empire':r.channel?.name||'—'}</td>
       <td style="color:#6B7280">${r.category||r.source||'—'}</td>
@@ -2350,7 +2350,7 @@ async function loadFinRequests(){
   const {data}=await sb.from('finance_expenses').select('*,channel:finance_channels(name)').order('created_at',{ascending:false});
   const isOwner=profile?.role==='owner';
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#fff">Payment Requests</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Payment Requests</div></div>
     <button onclick="openFinModal('expense')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> New Request</button>
   </div>
   <div class="fin-card" style="overflow-x:auto">
@@ -2358,7 +2358,7 @@ async function loadFinRequests(){
     <tbody>${(data||[]).map(r=>`<tr>
       <td style="color:#6B7280">${fmtDate(r.date)}</td>
       <td style="color:#374151;font-size:11px">${r.voucher_number||'—'}</td>
-      <td style="color:#E5E7EB;font-weight:500">${r.payee}</td>
+      <td style="color:#111827;font-weight:500">${r.payee}</td>
       <td style="color:#6B7280">${r.category}</td>
       <td style="color:#6B7280">${r.scope==='whole_business'?'SA Media Empire':r.channel?.name||'—'}</td>
       <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
@@ -2380,13 +2380,13 @@ async function loadFinPayroll(){
   const{data}=await sb.from('finance_payroll').select('*,channel:finance_channels(name)').order('created_at',{ascending:false});
   const isOwner=profile?.role==='owner';
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#fff">Payroll</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Payroll</div></div>
     ${isOwner?`<button onclick="openFinModal('payroll')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Payroll</button>`:''}
   </div>
   <div class="fin-card" style="overflow-x:auto">
     <table class="fin-table"><thead><tr><th>Member</th><th>Role</th><th>Month</th><th>Amount</th><th>Scope</th><th>Status</th><th>Payment Date</th></tr></thead>
     <tbody>${(data||[]).map(r=>`<tr>
-      <td style="color:#E5E7EB;font-weight:500">${r.member_name}</td>
+      <td style="color:#111827;font-weight:500">${r.member_name}</td>
       <td style="color:#6B7280">${r.role||'—'}</td>
       <td style="color:#6B7280">${r.salary_month}</td>
       <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
@@ -2402,7 +2402,7 @@ async function loadFinSubscriptions(){
   const{data}=await sb.from('finance_subscriptions').select('*,channel:finance_channels(name)').order('renewal_date');
   const isOwner=profile?.role==='owner';
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#fff">Subscriptions</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Subscriptions</div></div>
     ${isOwner?`<button onclick="openFinModal('subscription')" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add</button>`:''}
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
@@ -2415,7 +2415,7 @@ async function loadFinSubscriptions(){
       <div style="font-size:11px;color:#374151">Scope: ${s.scope==='whole_business'?'Whole Business':s.channel?.name||'—'}</div>
       <div style="font-size:11px;color:#374151;margin-top:3px">Next: ${fmtDate(s.next_payment||s.renewal_date)}</div>
     </div>`).join('')||''}
-    ${isOwner?`<div class="fin-card" style="border:1px dashed #1E2535;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px" onclick="openFinModal('subscription')">
+    ${isOwner?`<div class="fin-card" style="border:1px dashed #E5E7EB;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px" onclick="openFinModal('subscription')">
       <i class="ti ti-plus" style="font-size:22px;color:#374151"></i>
       <div style="font-size:13px;color:#4B5563">Add Subscription</div>
     </div>`:''}
@@ -2430,7 +2430,7 @@ async function loadFinChannels(){
     sb.from('finance_expenses').select('*').eq('approval_status','paid')
   ]);
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#fff">Channels</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Channels</div><div style="font-size:13px;color:#6B7280;margin-top:4px">Channel-wise performance overview</div></div>
     ${isOwner?`<button onclick="openAddChannel()" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Channel</button>`:''}
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
@@ -2439,32 +2439,72 @@ async function loadFinChannels(){
       const chExp=(expenses||[]).filter(e=>e.channel_id===ch.id).reduce((s,e)=>s+Number(e.amount),0);
       const net=chInc-chExp;
       return `<div class="fin-card">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-          <div style="width:46px;height:46px;border-radius:13px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${ch.initials||ch.name.slice(0,2).toUpperCase()}</div>
-          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:#fff">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}${ch.subscriber_count?' · '+ch.subscriber_count.toLocaleString()+' subs':''}</div></div>
-          <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'rgba(0,212,170,.12)':'rgba(59,130,246,.12)'};color:${ch.monetization_status==='monetized'?'#00D4AA':'#3B82F6'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New'}</span>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="position:relative;cursor:pointer" onclick="uploadChannelImg('${ch.id}')">
+            <div style="width:50px;height:50px;border-radius:14px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;overflow:hidden">
+              ${ch.photo_url?`<img src="${ch.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:ch.initials||ch.name.slice(0,2).toUpperCase()}
+            </div>
+            <div style="position:absolute;bottom:-3px;right:-3px;background:#7C3AED;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border:2px solid #fff">
+              <i class="ti ti-camera" style="font-size:9px;color:#fff"></i>
+            </div>
+            <input type="file" accept="image/*" style="display:none" id="ch-img-${ch.id}" onchange="saveChannelImg('${ch.id}',this)"/>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700;color:#111827">${ch.name}</div>
+            <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${ch.tagline||''}${ch.subscriber_count?' · '+ch.subscriber_count.toLocaleString()+' subs':''}</div>
+          </div>
+          <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'#D1FAE5':'#DBEAFE'};color:${ch.monetization_status==='monetized'?'#059669':'#1D4ED8'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New'}</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#10B981">${fmtBDT(chInc)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Income</div></div>
-          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#EF4444">${fmtBDT(chExp)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Expenses</div></div>
-          <div style="background:#0F1117;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:${net>=0?'#00D4AA':'#EF4444'}">${fmtBDT(net)}</div><div style="font-size:10px;color:#374151;margin-top:2px">Net</div></div>
+          <div style="background:#F0FDF4;border-radius:8px;padding:11px;text-align:center;border:1px solid #A7F3D0">
+            <div style="font-size:14px;font-weight:700;color:#059669">${fmtBDT(chInc)}</div>
+            <div style="font-size:10px;color:#6B7280;margin-top:3px;font-weight:500">Income</div>
+          </div>
+          <div style="background:#FEF2F2;border-radius:8px;padding:11px;text-align:center;border:1px solid #FECACA">
+            <div style="font-size:14px;font-weight:700;color:#DC2626">${fmtBDT(chExp)}</div>
+            <div style="font-size:10px;color:#6B7280;margin-top:3px;font-weight:500">Expenses</div>
+          </div>
+          <div style="background:${net>=0?'#F0FDF4':'#FEF2F2'};border-radius:8px;padding:11px;text-align:center;border:1px solid ${net>=0?'#A7F3D0':'#FECACA'}">
+            <div style="font-size:14px;font-weight:700;color:${net>=0?'#059669':'#DC2626'}">${fmtBDT(net)}</div>
+            <div style="font-size:10px;color:#6B7280;margin-top:3px;font-weight:500">Net</div>
+          </div>
         </div>
       </div>`;
     }).join('')}
   </div>`;
 }
 
+function uploadChannelImg(chId){
+  const inp=document.getElementById('ch-img-'+chId);
+  if(inp)inp.click();
+}
+async function saveChannelImg(chId,input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const base64=e.target.result;
+    const{error}=await sb.from('finance_channels').update({photo_url:base64}).eq('id',chId);
+    if(!error){
+      const ch=_finChannels.find(c=>c.id===chId);
+      if(ch)ch.photo_url=base64;
+      toast('✅ Channel image updated!');
+      loadFinChannels();
+    } else toast('Error: '+error.message);
+  };
+  reader.readAsDataURL(file);
+}
+
 async function loadFinReports(){
   const el=document.getElementById('fin-tab-reports');if(!el)return;
   el.innerHTML=`<div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">Reports & Exports</div>
-  <div style="font-size:13px;color:#4B5563;margin-bottom:24px">Download financial reports</div>
+  <div style="font-size:13px;color:#6B7280;margin-bottom:24px">Download financial reports</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
     ${[{icon:'ti-chart-bar',title:'Transaction Ledger',sub:'Complete transaction list',fn:'finExportTransactions'},{icon:'ti-brand-youtube',title:'Channel P&L',sub:'Profit/loss per channel',fn:'finExportTransactions'},{icon:'ti-category',title:'Expense by Category',sub:'Category-wise breakdown',fn:'finExportTransactions'},{icon:'ti-users',title:'Payroll Report',sub:'Team salary records',fn:'finExportTransactions'},{icon:'ti-credit-card',title:'Subscriptions',sub:'All recurring costs',fn:'finExportTransactions'},{icon:'ti-file-invoice',title:'Payment Requests',sub:'Voucher history',fn:'finExportTransactions'}].map(r=>`
     <div class="fin-card" style="cursor:pointer" onclick="${r.fn}()">
-      <div style="width:40px;height:40px;background:rgba(0,212,170,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ${r.icon}" style="font-size:20px;color:#00D4AA"></i></div>
-      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">${r.title}</div>
-      <div style="font-size:12px;color:#4B5563;margin-bottom:12px">${r.sub}</div>
-      <div style="display:flex;gap:6px"><span class="fin-badge" style="background:#1E2535;color:#6B7280;font-size:10px">PDF</span><span class="fin-badge" style="background:#1E2535;color:#6B7280;font-size:10px">CSV</span></div>
+      <div style="width:40px;height:40px;background:#F5F3FF;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ${r.icon}" style="font-size:20px;color:#7C3AED"></i></div>
+      <div style="font-size:14px;font-weight:600;color:#111827;font-weight:600;margin-bottom:4px">${r.title}</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px">${r.sub}</div>
+      <div style="display:flex;gap:6px"><span class="fin-badge" style="background:#EDE9FE;color:#7C3AED;font-size:10px">PDF</span><span class="fin-badge" style="background:#EDE9FE;color:#7C3AED;font-size:10px">CSV</span></div>
     </div>`).join('')}
   </div>`;
 }
