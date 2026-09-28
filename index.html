@@ -3211,13 +3211,12 @@ async function loadWorkspaceProjects(){
 
 function renderKanban(){
   const cols={assigned:[],in_progress:[],review:[],done:[]};
-  _currentProjects.forEach(p=>{if(p.status!=='done'&&cols[p.status])cols[p.status].push(p);});
+  _currentProjects.forEach(p=>{if(!p.is_completed&&cols[p.status])cols[p.status].push(p);});
   Object.keys(cols).forEach(st=>{
     const cnt=document.getElementById('cnt-'+st);
     const col=document.getElementById('col-'+st);
     if(!cnt||!col)return;
     cnt.textContent=cols[st].length;
-    if(st==='done'){cnt.textContent='';col.innerHTML='<div style="padding:16px;color:#6B7280;font-size:12px">Drop to complete. Completed projects appear in Payment.</div>';return;}
     if(!cols[st].length){col.innerHTML=`<div style="border:1.5px dashed #E5E7EB;border-radius:8px;padding:16px;text-align:center;color:#D1D5DB;font-size:12px">Drop here</div>`;return;}
     const pc=PROJ_COL[st];
     const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
@@ -3225,7 +3224,7 @@ function renderKanban(){
     col.innerHTML=cols[st].map(p=>{
       const overdue=p.deadline&&p.status!=='done'&&new Date(p.deadline)<new Date();
       const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
-      return `<div draggable="true" ondragstart="kanbanDragStart(event,${p.id})" onclick="openProjDetail(${p.id})"
+      return `<div draggable="${p.status!=='done'||isOwnerManager}" ondragstart="kanbanDragStart(event,${p.id})" onclick="openProjDetail(${p.id})"
         style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px;cursor:pointer;transition:all .15s"
         onmouseover="this.style.borderColor='${pc.text}';this.style.boxShadow='0 3px 10px rgba(0,0,0,.08)'"
         onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
@@ -3241,9 +3240,10 @@ function renderKanban(){
         </div>`:''}
         ${p.instructions?`<div style="font-size:11px;color:#6B7280;line-height:1.5;padding:8px;background:#F9FAFB;border-radius:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
-          <div style="font-size:10px;color:#D1D5DB;display:flex;align-items:center;gap:3px"><i class="ti ti-grip-horizontal" style="font-size:11px"></i> drag to move</div>
+          <div style="font-size:10px;color:#D1D5DB;display:flex;align-items:center;gap:3px">${p.status==='done'&&!isOwnerManager?'Awaiting completion':'<i class="ti ti-grip-horizontal" style="font-size:11px"></i> drag to move'}</div>
           <i class="ti ti-chevron-right" style="font-size:13px;color:#D1D5DB"></i>
         </div>
+        ${p.status==='done'&&isOwnerManager?`<button class="btn-p" style="margin-top:12px" onclick="event.stopPropagation();completeEditorProject(${p.id},this)">Complete project</button>`:''}
       </div>`;
     }).join('');
   });
@@ -3251,6 +3251,8 @@ function renderKanban(){
 
 // ─ Drag and drop (with permission check)
 function kanbanDragStart(event,id){
+  const p=_currentProjects.find(x=>x.id===id);
+  if(!p||p.is_completed||(p.status==='done'&&!['owner','manager'].includes(profile?.role))){event.preventDefault();_dragProjId=null;return;}
   _dragProjId=id;event.dataTransfer.effectAllowed='move';
 }
 function kanbanDragOver(event){
@@ -4455,7 +4457,7 @@ function editProjectFromDetail(){
 
 // ─ Payment tab
 function renderPaymentTab(){
-  const completed=_currentProjects.filter(p=>p.status==='done');
+  const completed=_currentProjects.filter(p=>p.status==='done'&&p.is_completed);
   if(profile?.role==='manager'){
     document.getElementById('payment-summary-box').innerHTML='';
     document.getElementById('payment-history-list').innerHTML=completed.map(p=>`<div class="panel"><button class="btn-sm" onclick="openProjDetail(${p.id})">${editorEscape(p.project_name)}</button><button class="btn-sm" onclick="reopenCompletedProject(${p.id})">Return to Review</button></div>`).join('')||'<p>No completed projects yet</p>';
@@ -4794,10 +4796,24 @@ function submissionEmbed(url,review=false){
  return src?`<iframe ${review?'id="review-iframe"':''} src="${editorEscape(src)}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;display:block" allowfullscreen></iframe>`:`<a href="${editorEscape(url)}" target="_blank" rel="noopener">Open submitted video</a>`;
 }
 function selectReviewVideo(index){const p=_currentProjects.find(x=>x.id===_currentProjId),url=p&&projectSubmissionLinks(p)[Number(index)];if(url)document.getElementById('review-video-embed').innerHTML=submissionEmbed(url,true);}
+async function completeEditorProject(id,button){
+ if(!['owner','manager'].includes(profile?.role)){toast('Only owner/manager can complete projects');return;}
+ const p=_currentProjects.find(x=>x.id===id);
+ if(!p||p.status!=='done'||p.is_completed){toast('Only a Done project can be completed');return;}
+ if(button)button.disabled=true;
+ try{
+  const {data,error}=await sb.from('editor_projects').update({is_completed:true}).eq('id',id).eq('status','done').eq('is_completed',false).select('id');
+  if(error)throw error;
+  await loadWorkspaceProjects();
+  if(!data?.length){toast('Project changed already. List refreshed.');return;}
+  toast('Project completed — moved to Payment ✓');
+ }catch(e){toast('Could not complete: '+e.message);}finally{if(button)button.disabled=false;}
+}
+
 async function reopenCompletedProject(id){
  if(!['owner','manager'].includes(profile?.role)){toast('Only owner/manager can reopen');return;}
  if(!confirm('Return this completed project to Review?'))return;
- const {data,error}=await sb.from('editor_projects').update({status:'review'}).eq('id',id).eq('status','done').select('id');
+ const {data,error}=await sb.from('editor_projects').update({status:'review',is_completed:false}).eq('id',id).eq('status','done').select('id');
  if(error||!data?.length){toast(error?.message||'Project was not reopened');return;}
  await loadWorkspaceProjects();toast('Returned to Review ✓');
 }
