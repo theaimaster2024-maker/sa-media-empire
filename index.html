@@ -704,7 +704,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div id="pdm-title" style="flex:1;font-size:16px;font-weight:700;color:#111827"></div>
           <span id="pdm-status" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600"></span>
           <div id="pdm-actions"></div>
-          <button onclick="document.getElementById('proj-detail-modal').style.display='none'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
+          <button onclick="stopAudioRecord(false);document.getElementById('proj-detail-modal').style.display='none'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:20px;line-height:1"><i class="ti ti-x"></i></button>
         </div>
         <!-- Tabs -->
         <div style="padding:0 20px;border-bottom:1px solid #E5E7EB;display:flex;gap:0;flex-shrink:0">
@@ -761,6 +761,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
                 <button onclick="document.getElementById('rc-img-inp').click()" style="display:flex;align-items:center;gap:4px;background:#EDE9FE;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#7C3AED;font-family:inherit"><i class="ti ti-photo" style="font-size:13px"></i> Image</button>
                 <button id="rc-rec-btn" onclick="toggleAudioRecord()" style="display:flex;align-items:center;gap:4px;background:#DBEAFE;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#1D4ED8;font-family:inherit"><i class="ti ti-microphone" style="font-size:13px"></i> Record voice</button>
                 <input id="rc-drive" type="text" class="f-inp" placeholder="Link (optional)" style="font-size:12px;padding:5px 10px;flex:1;min-width:120px"/>
+                <button class="btn-sm" onclick="document.getElementById('rc-audio-inp').click()">Upload audio</button><input id="rc-audio-inp" type="file" accept="audio/*" style="display:none" onchange="rcAttach(this,'audio')"/>
                 <input id="rc-img-inp" type="file" accept="image/*" style="display:none" onchange="rcAttach(this,'image')"/>
               </div>
               <div id="rc-rec-status" style="display:none;font-size:12px;color:#EF4444;font-weight:600;margin-bottom:8px;align-items:center;gap:6px">
@@ -3168,7 +3169,7 @@ async function openWorkspace(id){
   if(backBtn)backBtn.style.display=isOwnerManager?'flex':'none';
   if(editBtn)editBtn.style.display=isOwnerManager?'flex':'none';
   if(newProjBtn)newProjBtn.style.display=isOwnerManager?'flex':'none';
-  if(payTab)payTab.style.display=isOwner2?'flex':'none'; // Only owner sees payment tab
+  if(payTab)payTab.style.display='flex'; // Completed work is accessible to every workspace role
 
   // Show projects tab by default
   wsTab('projects',document.querySelector(".ws-tab[onclick*='projects']"));
@@ -3205,16 +3206,18 @@ async function loadWorkspaceProjects(){
   const {data,error}=await sb.from('editor_projects').select('*').eq('editor_id',currentEditorId).order('created_at',{ascending:false});
   if(error){toast('Error loading projects');return;}
   _currentProjects=data||[];renderKanban();
+  if(document.getElementById('ws-payment').style.display==='block')renderPaymentTab();
 }
 
 function renderKanban(){
   const cols={assigned:[],in_progress:[],review:[],done:[]};
-  _currentProjects.forEach(p=>{if(cols[p.status])cols[p.status].push(p);});
+  _currentProjects.forEach(p=>{if(p.status!=='done'&&cols[p.status])cols[p.status].push(p);});
   Object.keys(cols).forEach(st=>{
     const cnt=document.getElementById('cnt-'+st);
     const col=document.getElementById('col-'+st);
     if(!cnt||!col)return;
     cnt.textContent=cols[st].length;
+    if(st==='done'){cnt.textContent='';col.innerHTML='<div style="padding:16px;color:#6B7280;font-size:12px">Drop to complete. Completed projects appear in Payment.</div>';return;}
     if(!cols[st].length){col.innerHTML=`<div style="border:1.5px dashed #E5E7EB;border-radius:8px;padding:16px;text-align:center;color:#D1D5DB;font-size:12px">Drop here</div>`;return;}
     const pc=PROJ_COL[st];
     const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
@@ -3260,7 +3263,7 @@ async function kanbanDrop(event,newStatus){
   const p=_currentProjects.find(x=>x.id===_dragProjId);
   if(!p){_dragProjId=null;return;}
   // Editor: can drag to assigned/in_progress/review freely — only Done is blocked
-  if(role!=='owner'&&role!=='manager'&&newStatus==='done'){
+  if(role!=='owner'&&role!=='manager'&&(newStatus==='done'||p.status==='done')){
     toast('🔒 Done করার permission নেই — Manager/Owner করবে');
     _dragProjId=null;return;
   }
@@ -3273,6 +3276,7 @@ async function kanbanDrop(event,newStatus){
 
 // ─ Project detail modal
 function openProjDetail(id){
+  if(_reviewDraftProject!==id){resetReviewDraft();_reviewDraftProject=id;}
   const p=_currentProjects.find(x=>x.id===id);if(!p)return;
   _currentProjId=id;
   const isOwnerManager=(profile?.role==='owner'||profile?.role==='manager');
@@ -3287,13 +3291,9 @@ function openProjDetail(id){
     actionsDiv.innerHTML=isOwnerManager?`<button onclick="editProjectFromDetail()" style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit</button>`:'';
   }
 
-  // Drive embed
-  let driveEmbed='';
-  if(p.drive_link){
-    const fileMatch=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const embedUrl=fileMatch?`https://drive.google.com/file/d/${fileMatch[1]}/preview`:p.drive_link;
-    driveEmbed=`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Completed video (Google Drive)</div><iframe src="${embedUrl}" style="width:100%;aspect-ratio:16/9;border-radius:10px;border:none;display:block" allowfullscreen loading="lazy"></iframe><a href="${p.drive_link}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;color:#7C3AED;text-decoration:none"><i class="ti ti-external-link" style="font-size:13px"></i>Open in Drive</a></div>`;
-  }
+  // Existing primary link plus additional submitted versions.
+  const links=projectSubmissionLinks(p);
+  const driveEmbed=links.map((url,i)=>`<div><div class="f-lbl">Submitted video ${i+1}</div>${submissionEmbed(url)}<a href="${editorEscape(url)}" target="_blank" rel="noopener">Open video ${i+1}</a></div>`).join('');
 
   // Script link
   let scriptHtml='';
@@ -3318,7 +3318,7 @@ function openProjDetail(id){
     ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
     ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
-    ${!p.drive_link?`<div style="background:#F5F3FF;border:1px solid #EDE9FE;border-radius:10px;padding:14px"><div style="font-size:12px;font-weight:600;color:#7C3AED;margin-bottom:8px">Submit completed video</div><div style="display:flex;gap:8px"><input id="drive-submit-inp" class="f-inp" type="text" placeholder="Google Drive link paste করো..."/><button onclick="submitDriveLink(${p.id})" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:13px;font-family:inherit;white-space:nowrap">Submit</button></div></div>`:''}
+    <div style="padding:14px;background:#F5F3FF;border-radius:10px"><label class="f-lbl" for="drive-submit-inp">Submitted links — one URL per line. Edit a line to replace it, add a line for another video.</label><textarea id="drive-submit-inp" class="f-inp" rows="3">${editorEscape(links.join('\n'))}</textarea><button class="btn-p" style="margin-top:8px" onclick="submitDriveLink(${p.id})">Save links</button></div>
   `;
   // Payment tab — hidden from manager
   const payTab=document.getElementById('pdm-payment-tab');
@@ -4247,6 +4247,7 @@ tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
 
 // ─ Project detail tabs
 function pdmTab(tab, btn){
+  if(tab!=='review')stopAudioRecord(false);
   document.getElementById('proj-detail-modal').classList.toggle('editor-review-open',tab==='review');
   document.querySelectorAll('.pdm-tab').forEach(b=>{
     b.classList.remove('on');
@@ -4283,33 +4284,8 @@ async function loadReviewTab(){
   const addCommentBox=document.getElementById('pdm-add-comment');
   if(addCommentBox)addCommentBox.style.display=isOwnerManager?'block':'none';
   const videoArea=document.getElementById('pdm-video-area');
-  if(p.drive_link){
-    const fm=p.drive_link.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const ym=p.drive_link.match(/(?:v=|youtu\.be\/)([^&\s?]+)/);
-    if(fm){
-      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px;background:#000">
-        <iframe id="review-iframe" src="https://drive.google.com/file/d/${fm[1]}/preview" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
-      </div>
-      <div style="font-size:11px;color:#9CA3AF;margin-bottom:4px;display:flex;align-items:center;gap:4px">
-        <i class="ti ti-brand-google-drive" style="font-size:13px;color:#10B981"></i>
-        Google Drive video — timestamp এ click করলে video সেই second এ যাবে
-      </div>`;
-    } else if(ym){
-      videoArea.innerHTML=`<div style="border-radius:10px;overflow:hidden;margin-bottom:8px">
-        <iframe id="review-iframe" src="https://www.youtube.com/embed/${ym[1]}?rel=0&enablejsapi=1" style="width:100%;aspect-ratio:16/9;border:none;display:block" allowfullscreen></iframe>
-      </div>`;
-    } else {
-      videoArea.innerHTML=`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
-        <i class="ti ti-link" style="color:#7C3AED"></i>
-        <a href="${p.drive_link}" target="_blank" style="font-size:13px;color:#7C3AED">Open video link</a>
-      </div>`;
-    }
-  } else {
-    videoArea.innerHTML=`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin-bottom:8px;text-align:center">
-      <div style="font-size:13px;color:#D97706;font-weight:500"><i class="ti ti-video-off" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>No video submitted yet</div>
-      <div style="font-size:11px;color:#92400E;margin-top:4px">Editor Drive link submit করলে এখানে video দেখাবে</div>
-    </div>`;
-  }
+  const links=projectSubmissionLinks(p);
+  videoArea.innerHTML=links.length?`<label class="f-lbl">Review video</label><select class="f-inp" id="review-video-choice" onchange="selectReviewVideo(this.value)" style="margin-bottom:10px">${links.map((url,i)=>`<option value="${i}">Video ${i+1}</option>`).join('')}</select><div id="review-video-embed">${submissionEmbed(links[0],true)}</div>`:'<p>No video submitted yet</p>';
   updateTsDisplay(0);
   await loadReviewComments();
 }
@@ -4406,24 +4382,14 @@ function renderReviewComments(comments){
 }
 
 async function rcAttach(inp,type){
-  const file=inp.files[0];if(!file)return;
-  if(file.size>5*1024*1024){toast('Max 5MB');return;}
-  const path=`review-attachments/${_currentProjId}-${Date.now()}`;
-  const {error}=await sb.storage.from('invoices').upload(path,file,{upsert:true});
-  if(error){toast('Upload failed: '+error.message);return;}
-  const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
-  _rcAttachUrl=publicUrl;_rcAttachType=type;_rcAttachName=file.name;
-  const prev=document.getElementById('rc-attachment-preview');
-  if(prev){
-    if(type==='image') prev.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><img src="${publicUrl}" style="height:48px;border-radius:6px;border:1px solid #E5E7EB"/><button onclick="_rcAttachUrl=null;_rcAttachType=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px"><i class="ti ti-x"></i></button></div>`;
-    else prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#7C3AED"><i class="ti ti-paperclip"></i>${file.name}<button onclick="_rcAttachUrl=null;_rcAttachType=null;document.getElementById('rc-attachment-preview').innerHTML=''" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:14px"><i class="ti ti-x"></i></button></div>`;
-  }
-  inp.value='';toast('Attached ✓');
+ const file=inp.files[0];if(!file)return;
+ await uploadReviewAttachment(file,type);inp.value='';
 }
 
 async function submitReviewComment(){
   const text=document.getElementById('rc-text')?.value.trim();
-  if(!text){toast('Comment লিখুন');return;}
+  if(_reviewRecording||_reviewUploadBusy){toast('Finish recording/upload first');return;}
+  if(!text&&!_rcAttachUrl&&!document.getElementById('rc-drive')?.value.trim()){toast('Add text, voice, image or link');return;}
   // Get start time
   const ms=parseInt(document.getElementById('rc-min-start')?.value)||0;
   const ss=parseInt(document.getElementById('rc-sec-start')?.value)||0;
@@ -4440,7 +4406,7 @@ async function submitReviewComment(){
     project_id:_currentProjId,
     timestamp_sec:startSec,
     timestamp_end:endSec,
-    comment:text,
+    comment:text||'',
     attachment_url:aUrl||null,attachment_type:aType||null,attachment_name:aName||null,
     created_by:user?.id,
     created_by_name:profile?.name||user?.email?.split('@')[0],
@@ -4473,14 +4439,12 @@ async function deleteReviewComment(id){
 }
 
 async function submitDriveLink(projId){
-  const link=document.getElementById('drive-submit-inp')?.value.trim();
-  if(!link){toast('Drive link দিন');return;}
-  const {error}=await sb.from('editor_projects').update({drive_link:link}).eq('id',projId);
-  if(error){toast('Error: '+error.message);return;}
-  toast('Drive link submitted ✓');
-  document.getElementById('proj-detail-modal').style.display='none';
-  await loadWorkspaceProjects();
-  openProjDetail(projId);
+  const links=document.getElementById('drive-submit-inp').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!links.length||links.some(x=>!safeSubmissionUrl(x))){toast('Enter valid https:// or http:// links, one per line');return;}
+  const unique=[...new Set(links)];
+  const {data,error}=await sb.from('editor_projects').update({drive_link:unique[0],submission_links:unique.slice(1)}).eq('id',projId).select('id');
+  if(error||!data?.length){toast('Could not save links: '+(error?.message||'permission denied'));return;}
+  await loadWorkspaceProjects();openProjDetail(projId);toast('Links saved ✓');
 }
 
 function editProjectFromDetail(){
@@ -4491,8 +4455,14 @@ function editProjectFromDetail(){
 
 // ─ Payment tab
 function renderPaymentTab(){
-  const total=_currentProjects.reduce((s,p)=>s+Number(p.total_amount||p.amount||0),0);
-  const paid=_currentProjects.reduce((s,p)=>s+Number(p.paid_amount||0),0);
+  const completed=_currentProjects.filter(p=>p.status==='done');
+  if(profile?.role==='manager'){
+    document.getElementById('payment-summary-box').innerHTML='';
+    document.getElementById('payment-history-list').innerHTML=completed.map(p=>`<div class="panel"><button class="btn-sm" onclick="openProjDetail(${p.id})">${editorEscape(p.project_name)}</button><button class="btn-sm" onclick="reopenCompletedProject(${p.id})">Return to Review</button></div>`).join('')||'<p>No completed projects yet</p>';
+    return;
+  }
+  const total=completed.reduce((s,p)=>s+Number(p.total_amount||p.amount||0),0);
+  const paid=completed.reduce((s,p)=>s+Number(p.paid_amount||0),0);
   const unpaid=total-paid;
 
   // Summary box
@@ -4502,7 +4472,7 @@ function renderPaymentTab(){
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#F5F3FF;border-radius:8px;border:1px solid #EDE9FE">
           <span style="font-size:12px;font-weight:600;color:#7C3AED">Total projects</span>
-          <span style="font-size:18px;font-weight:700;color:#7C3AED">${_currentProjects.length}</span>
+          <span style="font-size:18px;font-weight:700;color:#7C3AED">${completed.length}</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
           <span style="font-size:12px;font-weight:600;color:#6B7280">Total amount</span>
@@ -4521,12 +4491,12 @@ function renderPaymentTab(){
 
   // Per-project payment list
   const list=document.getElementById('payment-history-list');
-  if(!_currentProjects.length){
-    list.innerHTML='<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px"><i class="ti ti-receipt-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>No projects yet</div>';
+  if(!completed.length){
+    list.innerHTML='<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px"><i class="ti ti-receipt-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>No completed projects yet</div>';
     return;
   }
 
-  list.innerHTML=_currentProjects.map(p=>{
+  list.innerHTML=completed.map(p=>{
     const pay=PAY_COL[p.payment_status]||PAY_COL.unpaid;
     const pc=PROJ_COL[p.status]||PROJ_COL.assigned;
     const totalAmt=Number(p.total_amount||p.amount||0);
@@ -4557,6 +4527,7 @@ function renderPaymentTab(){
           <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${pay.bg};color:${pay.text}">${p.payment_status}</span>
         </div>
       </div>
+      ${profile?.role==='owner'?`<div style="padding:0 14px 8px"><button class="btn-sm" onclick="reopenCompletedProject(${p.id})">Return to Review</button></div>`:''}
       <!-- Payment breakdown -->
       <div style="display:flex;border-top:1px solid #F3F4F6">
         <div style="flex:1;padding:9px 14px;border-right:1px solid #F3F4F6">
@@ -4568,7 +4539,7 @@ function renderPaymentTab(){
           <div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Remaining</div>
           <div style="font-size:14px;font-weight:700;color:${unpaidAmt>0?'#EF4444':'#059669'}">৳${unpaidAmt.toLocaleString()}</div>
         </div>
-        ${p.status==='done'&&p.payment_status!=='paid'?`<div style="flex:0 0 auto;padding:9px 14px;display:flex;align-items:center">
+        ${profile?.role==='owner'&&p.status==='done'&&p.payment_status!=='paid'?`<div style="flex:0 0 auto;padding:9px 14px;display:flex;align-items:center">
           <button onclick="markPaid(${p.id},${totalAmt})" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Mark paid</button>
         </div>`:''}
       </div>
@@ -4577,6 +4548,7 @@ function renderPaymentTab(){
 }
 
 async function markPaid(projId, amount){
+  if(profile?.role!=='owner'){toast('Only owner can mark payments');return;}
   if(!confirm(`৳${Number(amount).toLocaleString()} paid হিসেবে mark করবে?`))return;
   const {error}=await sb.from('editor_projects').update({
     payment_status:'paid',
@@ -4806,6 +4778,92 @@ async function deleteProject(){
 
 
 
+// Editor submission and completion helpers.
+function editorEscape(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeSubmissionUrl(value){try{return ['https:','http:'].includes(new URL(value).protocol);}catch{return false;}}
+function projectSubmissionLinks(p){return [...new Set([p.drive_link,...(Array.isArray(p.submission_links)?p.submission_links:[])].filter(x=>x&&safeSubmissionUrl(x)))];}
+function submissionEmbed(url,review=false){
+ const u=new URL(url);let src='';
+ if(u.hostname==='drive.google.com'){
+  const id=u.pathname.match(/\/d\/([\w-]+)/)?.[1]||u.searchParams.get('id');
+  if(id&&/^[\w-]+$/.test(id))src=`https://drive.google.com/file/d/${id}/preview`;
+ }else if(['youtube.com','www.youtube.com','youtu.be','m.youtube.com'].includes(u.hostname)){
+  const id=u.hostname==='youtu.be'?u.pathname.slice(1):u.searchParams.get('v')||u.pathname.match(/\/(?:shorts|embed)\/([\w-]+)/)?.[1];
+  if(id&&/^[\w-]+$/.test(id))src=`https://www.youtube.com/embed/${id}?rel=0&enablejsapi=1`;
+ }
+ return src?`<iframe ${review?'id="review-iframe"':''} src="${editorEscape(src)}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;display:block" allowfullscreen></iframe>`:`<a href="${editorEscape(url)}" target="_blank" rel="noopener">Open submitted video</a>`;
+}
+function selectReviewVideo(index){const p=_currentProjects.find(x=>x.id===_currentProjId),url=p&&projectSubmissionLinks(p)[Number(index)];if(url)document.getElementById('review-video-embed').innerHTML=submissionEmbed(url,true);}
+async function reopenCompletedProject(id){
+ if(!['owner','manager'].includes(profile?.role)){toast('Only owner/manager can reopen');return;}
+ if(!confirm('Return this completed project to Review?'))return;
+ const {data,error}=await sb.from('editor_projects').update({status:'review'}).eq('id',id).eq('status','done').select('id');
+ if(error||!data?.length){toast(error?.message||'Project was not reopened');return;}
+ await loadWorkspaceProjects();toast('Returned to Review ✓');
+}
+// Recording supports browser-selected codecs, playback and audio-only comments.
+let _reviewRecording=null,_reviewUploadBusy=false,_reviewDraftProject=null,_reviewDraftVersion=0,_reviewRequest=0;
+function resetReviewDraft(){
+ stopAudioRecord(false);_reviewRequest++;_reviewDraftVersion++;
+ _rcAttachUrl=null;_rcAttachType=null;_rcAttachName=null;
+ ['rc-text','rc-drive'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+ const e=document.getElementById('rc-attachment-preview');if(e)e.innerHTML='';
+}
+function clearReviewAttachment(){_reviewDraftVersion++;_rcAttachUrl=null;_rcAttachType=null;_rcAttachName=null;document.getElementById('rc-attachment-preview').innerHTML='';}
+async function uploadReviewAttachment(file,type){
+ if(_reviewUploadBusy){toast('An upload is already in progress');return;}
+ if(!file.size||file.size>5*1024*1024){toast('Choose a nonempty file under 5MB');return;}
+ const projectId=_currentProjId,version=_reviewDraftVersion;
+ _reviewUploadBusy=true;
+ try{
+  const ext=type==='audio'?(file.type.includes('mp4')?'m4a':file.type.includes('ogg')?'ogg':file.type.includes('mpeg')?'mp3':'webm'):'image';
+  const path=`review-attachments/${projectId}-${crypto.randomUUID()}.${ext}`;
+  const {error}=await sb.storage.from('invoices').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+  if(error)throw error;
+  if(projectId!==_currentProjId||version!==_reviewDraftVersion)return;
+  const {data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path);
+  _rcAttachUrl=publicUrl;_rcAttachType=type;_rcAttachName=file.name||'Voice review';
+  document.getElementById('rc-attachment-preview').innerHTML=(type==='audio'?`<audio controls src="${editorEscape(publicUrl)}" style="width:100%;margin-top:8px"></audio>`:`<img src="${editorEscape(publicUrl)}" style="max-height:100px;max-width:100%"/>`)+'<button class="btn-sm" onclick="clearReviewAttachment()">Remove attachment</button>';
+  toast('Attached ✓');
+ }catch(e){toast('Upload failed: '+e.message);}finally{_reviewUploadBusy=false;}
+}
+async function toggleAudioRecord(){
+ if(_reviewRecording){stopAudioRecord(true);return;}
+ if(!['owner','manager'].includes(profile?.role))return;
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){toast('Recording is unavailable here. Use Upload audio.');return;}
+ const btn=document.getElementById('rc-rec-btn');btn.disabled=true;
+ const request=++_reviewRequest,projectId=_currentProjId;let stream;
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  if(request!==_reviewRequest||projectId!==_currentProjId||document.getElementById('proj-detail-modal').style.display!=='flex'||document.getElementById('pdm-tab-review').style.display!=='flex'){stream.getTracks().forEach(t=>t.stop());return;}
+  const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(t=>MediaRecorder.isTypeSupported(t));
+  const recorder=new MediaRecorder(stream,mime?{mimeType:mime}:{});
+  const rec={recorder,stream,chunks:[],keep:false,projectId,version:_reviewDraftVersion,timer:null};_reviewRecording=rec;
+  recorder.ondataavailable=e=>{if(e.data.size)rec.chunks.push(e.data);};
+  recorder.onerror=()=>{rec.keep=false;stopAudioRecord(false);toast('Recording failed. Try Upload audio.');};
+  recorder.onstop=async()=>{
+   clearInterval(rec.timer);stream.getTracks().forEach(t=>t.stop());
+   if(_reviewRecording===rec)_reviewRecording=null;
+   document.getElementById('rc-rec-status').style.display='none';btn.innerHTML='<i class="ti ti-microphone"></i> Record voice';
+   if(rec.keep&&rec.projectId===_currentProjId&&rec.version===_reviewDraftVersion){
+    const blob=new Blob(rec.chunks,{type:recorder.mimeType||mime||'audio/webm'});
+    await uploadReviewAttachment(blob,'audio');
+   }
+  };
+  recorder.start();document.getElementById('rc-rec-status').style.display='flex';btn.innerHTML='Stop & Use';
+  let seconds=0;document.getElementById('rc-rec-timer').textContent='0s';
+  rec.timer=setInterval(()=>{document.getElementById('rc-rec-timer').textContent=++seconds+'s';if(seconds>=240)stopAudioRecord(true);},1000);
+ }catch(e){stream?.getTracks().forEach(t=>t.stop());_reviewRecording=null;toast(e.name==='NotAllowedError'?'Microphone permission denied. Allow microphone for this site or Upload audio.':'Microphone unavailable: '+e.message);}finally{btn.disabled=false;}
+}
+function stopAudioRecord(keep){
+ _reviewRequest++;
+ const rec=_reviewRecording;if(!rec)return;
+ rec.keep=keep;clearInterval(rec.timer);
+ if(rec.recorder.state!=='inactive')rec.recorder.stop();
+ rec.stream.getTracks().forEach(t=>t.stop());
+}
+window.addEventListener('pagehide',()=>stopAudioRecord(false));
+
 // Editor-only view restoration. No project content or finance data is stored here.
 function readEditorView(){
  try{return JSON.parse(sessionStorage.getItem('sa-editor-view:'+user?.id)||'null');}catch{return null;}
@@ -4831,7 +4889,7 @@ async function restoreEditorView(){
  const manager=['owner','manager'].includes(profile?.role);
  if(!manager&&ed.id!==currentEditorId)return;
  if(currentEditorId!==ed.id||document.getElementById('ed-view-workspace').style.display!=='block')await openWorkspace(ed.id);
- const tab=['projects','ednotes'].includes(saved.wsTab)||(saved.wsTab==='payment'&&profile?.role==='owner')?saved.wsTab:'projects';
+ const tab=['projects','ednotes'].includes(saved.wsTab)||saved.wsTab==='payment'?saved.wsTab:'projects';
  wsTab(tab,document.querySelector(`.ws-tab[onclick*="'${tab}'"]`));
  if(saved.projectId&&_currentProjects.some(p=>p.id===saved.projectId)){
   openProjDetail(saved.projectId);
