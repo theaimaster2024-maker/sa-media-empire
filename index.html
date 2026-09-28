@@ -1395,7 +1395,8 @@ async function addMember(){
 
     const result=await resp.json();
 
-    if(result.error){
+    if(!resp.ok||result.error||result.success!==true){
+      result.error=String(result.error||result.message||'Member creation failed. Please sign in again and retry.');
       if(result.error.includes('already been registered')||result.error.includes('already exists')){
         toast('⚠️ এই email এ আগেই account আছে');
       } else {
