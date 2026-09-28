@@ -659,7 +659,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <select class="f-inp" id="proj-status"><option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select>
             </div>
             <div><label class="f-lbl">Payment status</label>
-              <select class="f-inp" id="proj-pay-status"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option></select>
+              <select class="f-inp" id="proj-pay-status" disabled title="Use Mark as Paid in Payment"><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option></select>
             </div>
           </div>
           <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
@@ -673,7 +673,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
               <div><label class="f-lbl">Total amount (৳) <span style="color:#7C3AED;font-size:10px;font-weight:400">auto</span></label><input class="f-inp" id="proj-total-amount" type="number" placeholder="0" style="font-weight:700;color:#7C3AED"/></div>
             </div>
             <div class="r2" style="margin-top:10px">
-              <div><label class="f-lbl">Paid amount (৳)</label><input class="f-inp" id="proj-paid" type="number" placeholder="0" min="0"/></div>
+              <div><label class="f-lbl">Paid amount (৳)</label><input class="f-inp" id="proj-paid" readonly title="Recorded through Finance" type="number" placeholder="0" min="0"/></div>
               <div><label class="f-lbl">Payment note</label><input class="f-inp" id="proj-pay-note" type="text" placeholder="bKash, bank transfer..."/></div>
             </div>
           </div>
@@ -815,7 +815,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
             <div style="font-size:20px;font-weight:700;color:#111827">SA Media Empire Finance</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <select id="fin-month-sel" onchange="loadFinOverview()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none"></select>
+            <select id="fin-month-sel" onchange="refreshFinView()" style="background:#fff;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none"></select>
             <button onclick="openFinModal('income')" style="background:#7C3AED;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
               <i class="ti ti-plus" style="font-size:15px"></i> Add Entry
             </button>
@@ -1214,7 +1214,7 @@ async function loadDash(){
 }
 
 // ── FINANCE NOTES
-function loadNotes(){const v=localStorage.getItem('sa_fn_'+user?.id)||'';document.getElementById('fin-notes').value=v;}
+function loadNotes(){if(!localStorage.getItem('finance-fresh-start-v1:'+user?.id)){localStorage.removeItem('sa_fn_'+user?.id);localStorage.setItem('finance-fresh-start-v1:'+user?.id,'1')}const v=localStorage.getItem('sa_fn_'+user?.id)||'';document.getElementById('fin-notes').value=v;}
 function saveNotes(){localStorage.setItem('sa_fn_'+user?.id,document.getElementById('fin-notes').value);}
 
 // ── USERS
@@ -1324,7 +1324,7 @@ function expCSV(){
 
 // ── HELPERS
 const fmt=n=>'৳'+Number(n).toLocaleString('en-BD');
-const fmts=n=>n>=100000?'৳'+(n/100000).toFixed(1)+'L':n>=1000?'৳'+(n/1000).toFixed(1)+'k':fmt(n);
+const fmts=n=>Math.abs(Number(n))>=1000?'৳'+Number((Number(n)/1000).toFixed(1))+'k':fmt(n);
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
 
 
@@ -1993,14 +1993,42 @@ function togglePass(inputId, iconId){
   }
 }
 
-function loadNotes(){const v=localStorage.getItem('sa_fn_'+user?.id)||'';if(document.getElementById('fin-notes'))document.getElementById('fin-notes').value=v;}
+function loadNotes(){if(!localStorage.getItem('finance-fresh-start-v1:'+user?.id)){localStorage.removeItem('sa_fn_'+user?.id);localStorage.setItem('finance-fresh-start-v1:'+user?.id,'1')}const v=localStorage.getItem('sa_fn_'+user?.id)||'';if(document.getElementById('fin-notes'))document.getElementById('fin-notes').value=v;}
 function saveNotes(){if(document.getElementById('fin-notes'))localStorage.setItem('sa_fn_'+user?.id,document.getElementById('fin-notes').value);}
+
+function finEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function finScopeLabel(row){return row.channel_id?finEscape(row.channel?.name||_finChannels.find(c=>c.id===row.channel_id)?.name||'Channel'):'Whole Business'}
+let _finDetailScope=null;
+function refreshFinView(){if(_finCurrentTab==='channels'&&_finDetailScope)loadFinChannelDetail(_finDetailScope);else finTab(_finCurrentTab)}
+async function openEditorPayment(projectId){
+ if(profile?.role!=='owner'){toast('Only owner can mark payments');return}
+ const [pr,channels]=await Promise.all([sb.from('editor_projects').select('*').eq('id',projectId).single(),sb.from('finance_channels').select('id,name').order('name')]);
+ if(pr.error||channels.error){toast((pr.error||channels.error).message);return}const p=pr.data,total=Number(p.total_amount||p.amount||0);
+ if(!p.is_completed){toast('Complete the project first');return}if(p.payment_status==='paid'){toast('This project is already paid');return}if(total<=0){toast('Set the project amount first');return}
+ document.getElementById('editor-payment-dialog')?.remove();const modal=document.createElement('div');modal.id='editor-payment-dialog';modal.setAttribute('role','dialog');modal.setAttribute('aria-label','Record editor payment');modal.style.cssText='position:fixed;inset:0;z-index:10000;background:#17132d70;display:grid;place-items:center;padding:20px';
+ modal.innerHTML=`<form style="background:white;color:#222138;border-radius:18px;padding:28px;width:min(460px,100%);box-shadow:0 24px 80px #0003"><div style="font-size:20px;font-weight:800">Record editor payment</div><p style="margin:12px 0;color:#6b7280">${finEscape(p.project_name)}</p><div style="font-size:28px;font-weight:800;color:#7057dc;margin:16px 0">${fmtBDTFull(total)}</div><label for="editor-payment-scope" style="display:block;font-weight:600;margin-bottom:8px">Charge this expense to</label><select id="editor-payment-scope" class="fin-inp" required><option value="">Choose Whole Business or a channel…</option><option value="whole_business">Whole Business</option>${channels.data.map(c=>`<option value="${c.id}">${finEscape(c.name)}</option>`).join('')}</select><p style="font-size:12px;color:#6b7280;line-height:1.7;margin:14px 0">Confirms money already paid to the editor and records the same amount in Finance. This does not send money.</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:22px"><button type="button" class="fin-btn fin-btn-secondary" id="editor-payment-cancel">Cancel</button><button type="submit" class="fin-btn fin-btn-primary">Confirm paid</button></div><div id="editor-payment-error" role="alert" style="color:#b91c1c;font-size:12px;margin-top:12px"></div></form>`;
+ document.body.appendChild(modal);modal.querySelector('#editor-payment-cancel').onclick=()=>modal.remove();modal.querySelector('form').onsubmit=async e=>{
+  e.preventDefault();const choice=document.getElementById('editor-payment-scope').value;if(!choice)return;const buttons=[...modal.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+  const {error}=await sb.rpc('record_editor_payment',{p_project_id:projectId,p_scope:choice==='whole_business'?'whole_business':'channel',p_channel_id:choice==='whole_business'?null:choice,p_expected_total:total});
+  if(error){document.getElementById('editor-payment-error').textContent=error.message;buttons.forEach(b=>b.disabled=false);return}
+  modal.remove();toast('Paid ✓ Finance expense recorded');await loadWorkspaceProjects();renderPaymentTab();if(_currentProjId===projectId)loadPaymentTab();await loadFinance();refreshFinView();
+ };
+}
+async function loadFinChannelDetail(scope){
+ _finDetailScope=scope;const el=document.getElementById('fin-tab-channels');if(!el)return;el.innerHTML='<div class="fin-card">Loading transactions…</div>';
+ const whole=scope==='whole_business';let iq=sb.from('finance_income').select('*'),eq=sb.from('finance_expenses').select('*');iq=whole?iq.is('channel_id',null):iq.eq('channel_id',scope);eq=whole?eq.eq('scope','whole_business'):eq.eq('channel_id',scope);
+ const [ir,er]=await Promise.all([iq.order('date',{ascending:false}),eq.order('date',{ascending:false})]);if(_finDetailScope!==scope)return;if(ir.error||er.error){el.innerHTML='<div class="fin-card">'+finEscape((ir.error||er.error).message)+'</div>';return}
+ const income=ir.data||[],expenses=er.data||[],month=document.getElementById('fin-month-sel')?.value||new Date().toISOString().slice(0,7),sum=(rows)=>rows.reduce((n,r)=>n+Number(r.amount),0);
+ const received=income.filter(r=>r.status==='received'),paid=expenses.filter(r=>r.approval_status==='paid'),totalIncome=sum(received),totalExpense=sum(paid),monthlyIncome=sum(received.filter(r=>r.date?.startsWith(month))),monthlyExpense=sum(paid.filter(r=>(r.payment_date||r.date)?.startsWith(month))),name=whole?'Whole Business':_finChannels.find(c=>c.id===scope)?.name||'Channel';
+ const rows=[...income.map(r=>({...r,kind:'Income',state:r.status})),...expenses.map(r=>({...r,kind:'Expense',state:r.approval_status}))].sort((a,b)=>String(b.payment_date||b.date).localeCompare(String(a.payment_date||a.date)));
+ el.innerHTML=`<button class="fin-btn fin-btn-secondary" onclick="finTab('channels')">← All channels</button><div style="margin:20px 0"><h2 style="font-size:24px;color:#111827">${finEscape(name)}</h2><p style="color:#6b7280;margin-top:5px">${finEscape(month)} monthly performance · Full transaction history below</p></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">${finStatCard('Monthly income',fmtBDTFull(monthlyIncome),'#10B981','ti-trending-up','#D1FAE5')}${finStatCard('Monthly expense',fmtBDTFull(monthlyExpense),'#EF4444','ti-trending-down','#FEE2E2')}${finStatCard('Monthly net',fmtBDTFull(monthlyIncome-monthlyExpense),'#7057dc','ti-chart-bar','#F5F3FF')}</div><div class="fin-card" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px"><div>All-time income<br><b>${fmtBDTFull(totalIncome)}</b></div><div>All-time paid expense<br><b>${fmtBDTFull(totalExpense)}</b></div><div>All-time net<br><b>${fmtBDTFull(totalIncome-totalExpense)}</b></div><div>Pending / approved expense<br><b>${fmtBDTFull(sum(expenses.filter(r=>['pending','approved'].includes(r.approval_status))))}</b></div></div><div class="fin-card" style="overflow-x:auto"><table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payee / Source</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.payment_date||r.date)}</td><td>${finEscape(r.description||r.kind)}${r.editor_project_id?'<br><small>Editor project #'+r.editor_project_id+'</small>':''}</td><td>${finEscape(r.category||r.source||'—')}</td><td>${finEscape(r.payee||r.source||'—')}</td><td style="font-weight:700;white-space:nowrap;color:${r.kind==='Income'?'#059669':'#dc2626'}">${r.kind==='Income'?'+':'−'}${fmtBDTFull(r.amount)}</td><td>${finStatusBadge(r.state)}</td></tr>`).join('')||'<tr><td colspan="6" style="padding:28px;text-align:center">No transactions yet</td></tr>'}</tbody></table></div>`;
+}
 
 // ── FINANCE MODULE
 let _finChannels=[], _finSettings={opening_balance:500000};
 let _finCurrentTab='overview';
 
-function fmtBDT(n){n=Number(n||0);if(n>=100000)return '৳'+(n/100000).toFixed(1)+'L';if(n>=1000)return '৳'+(n/1000).toFixed(0)+'K';return '৳'+n.toLocaleString('en-IN');}
+function fmtBDT(n){n=Number(n||0);return '৳'+(Math.abs(n)>=1000?Number((n/1000).toFixed(1))+'k':n.toLocaleString('en-IN',{maximumFractionDigits:2}));}
 function fmtBDTFull(n){return '৳'+Number(n||0).toLocaleString('en-IN');}
 function fmtDate(d){return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';}
 function finGreeting(){const h=new Date().getHours();return h<12?'Good morning,':h<17?'Good afternoon,':'Good evening,';}
@@ -2031,7 +2059,8 @@ async function loadFinance(){
   _finChannels=chs||[];
 }
 
-function finTab(tab){
+function finTab(tab,channelId=null){
+  _finDetailScope=channelId;
   _finCurrentTab=tab;
   document.querySelectorAll('[id^="fin-tab-"]').forEach(el=>el.style.display='none');
   document.querySelectorAll('.fn-nav').forEach(el=>el.classList.remove('active'));
@@ -2040,7 +2069,7 @@ function finTab(tab){
   if(tabEl)tabEl.style.display='block';
   if(navEl)navEl.classList.add('active');
   if(tab==='overview')loadFinOverview();
-  else if(tab==='channels')loadFinChannels();
+  else if(tab==='channels'){if(channelId)loadFinChannelDetail(channelId);else loadFinChannels();}
   else if(tab==='transactions')loadFinTransactions();
   else if(tab==='requests')loadFinRequests();
   else if(tab==='payroll')loadFinPayroll();
@@ -2061,6 +2090,7 @@ async function loadFinOverview(){
     sb.from('finance_income').select('*,channel:finance_channels(name)').order('date',{ascending:false}),
     sb.from('finance_expenses').select('*,channel:finance_channels(name)').order('date',{ascending:false})
   ]);
+  const {data:currentChannels}=await sb.from('finance_channels').select('*').order('name');if(currentChannels)_finChannels=currentChannels;
   const allIncome=income||[];
   const allExp=expenses||[];
   const totalReceived=allIncome.filter(i=>i.status==='received').reduce((s,i)=>s+Number(i.amount),0);
@@ -2123,7 +2153,7 @@ async function loadFinOverview(){
         <tbody>${recentAll.map(t=>{const isInc=t._type==='income';return `<tr>
           <td style="color:#9CA3AF;white-space:nowrap">${fmtDate(t.date)}</td>
           <td style="color:#111827;font-weight:500">${t.description||t.source||t.payee||'—'}</td>
-          <td style="color:#6B7280">${t.scope==='whole_business'||!t.scope?'SA Media Empire':t.channel?.name||'—'}</td>
+          <td style="color:#6B7280">${finScopeLabel(t)}</td>
           <td style="color:#6B7280">${t.category||t.source||'—'}</td>
           <td style="font-weight:700;color:${isInc?'#10B981':'#EF4444'};white-space:nowrap">${isInc?'+':'-'}${fmtBDTFull(t.amount)}</td>
           <td>${finStatusBadge(isInc?t.status:t.approval_status)}</td>
@@ -2154,10 +2184,11 @@ async function loadFinOverview(){
 }
 
 function finStatCard(title,val,color,icon,bg){
+  const exact=val;const numeric=Number(String(val).replace(/[৳,]/g,''));if(Number.isFinite(numeric))val=fmtBDT(numeric);
   return `<div class="fin-card" style="display:flex;align-items:center;gap:14px">
     <div class="fin-stat-icon" style="background:${bg}"><i class="ti ${icon}" style="color:${color};font-size:20px"></i></div>
     <div><div style="font-size:11px;color:#9CA3AF;font-weight:500;margin-bottom:4px">${title}</div>
-    <div style="font-size:20px;font-weight:800;color:#111827;line-height:1">${val}</div></div>
+    <div style="font-size:20px;font-weight:800;color:#111827;line-height:1">${val}</div><div style="font-size:10px;color:#9CA3AF;margin-top:5px" title="Exact amount">${exact}</div></div>
   </div>`;
 }
 
@@ -2169,11 +2200,12 @@ function finStatusBadge(status){
 
 async function loadFinChannelCards(allIncome,allExp){
   const el=document.getElementById('fin-channel-cards');if(!el)return;
+  const month=document.getElementById('fin-month-sel')?.value||new Date().toISOString().slice(0,7);
   const cards=_finChannels.map(ch=>{
-    const chInc=(allIncome||[]).filter(i=>i.channel_id===ch.id&&i.status==='received').reduce((s,i)=>s+Number(i.amount),0);
-    const chExp=(allExp||[]).filter(e=>e.channel_id===ch.id&&e.approval_status==='paid').reduce((s,e)=>s+Number(e.amount),0);
+    const chInc=(allIncome||[]).filter(i=>i.channel_id===ch.id&&i.status==='received'&&i.date?.startsWith(month)).reduce((s,i)=>s+Number(i.amount),0);
+    const chExp=(allExp||[]).filter(e=>e.channel_id===ch.id&&e.approval_status==='paid'&&(e.payment_date||e.date)?.startsWith(month)).reduce((s,e)=>s+Number(e.amount),0);
     const net=chInc-chExp;
-    return `<div class="fin-card" style="cursor:pointer" onclick="finTab('channels')">
+    return `<div class="fin-card" style="cursor:pointer" onclick="finTab('channels','${ch.id}')">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
         <div style="width:42px;height:42px;border-radius:12px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff">${ch.initials||ch.name.slice(0,2).toUpperCase()}</div>
         <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111827">${ch.name}</div><div style="font-size:11px;color:#4B5563">${ch.tagline||''}</div></div>
@@ -2181,12 +2213,13 @@ async function loadFinChannelCards(allIncome,allExp){
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
         <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#9CA3AF">${ch.subscriber_count?.toLocaleString()||0}</div><div style="font-size:9px;color:#374151">Subs</div></div>
-        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#10B981">${fmtBDT(chInc)}</div><div style="font-size:9px;color:#374151">Income</div></div>
-        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#EF4444">${fmtBDT(chExp)}</div><div style="font-size:9px;color:#374151">Expenses</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#10B981">${fmtBDT(chInc)}</div><div style="font-size:9px;color:#374151">Monthly income</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#EF4444">${fmtBDT(chExp)}</div><div style="font-size:9px;color:#374151">Monthly expense</div></div>
         <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:${net>=0?'#00D4AA':'#EF4444'}">${fmtBDT(net)}</div><div style="font-size:9px;color:#374151">Net</div></div>
       </div>
     </div>`;
   });
+  cards.push(`<button class="fin-card" onclick="finTab('channels','whole_business')" style="text-align:left;cursor:pointer;color:#7057dc"><b>Whole Business</b><p style="font-size:12px;margin-top:10px">Shared business income & expenses →</p></button>`);
   cards.push(`<div class="fin-card" style="border:1px dashed #E5E7EB;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:130px" onclick="openAddChannel()">
     <div style="width:36px;height:36px;border:2px solid #E5E7EB;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti ti-plus" style="font-size:16px;color:#374151"></i></div>
     <div style="font-size:13px;color:#4B5563">Add Channel</div>
@@ -2247,7 +2280,7 @@ async function loadFinTransactions(){
       <td style="color:#6B7280;white-space:nowrap">${fmtDate(r.date)}</td>
       <td style="color:#111827;font-weight:500">${r.description||'—'}</td>
       <td><span class="fin-badge" style="background:${r._type==='income'?'rgba(0,212,170,.1)':'rgba(239,68,68,.1)'};color:${r._type==='income'?'#00D4AA':'#EF4444'};font-size:10px">${r._type==='income'?'Income':'Expense'}</span></td>
-      <td style="color:#6B7280">${r.scope==='whole_business'||!r.scope?'SA Media Empire':r.channel?.name||'—'}</td>
+      <td style="color:#6B7280">${finScopeLabel(r)}</td>
       <td style="color:#6B7280">${r.category||r.source||'—'}</td>
       <td style="color:#6B7280">${r.payee||r.source||'—'}</td>
       <td style="font-weight:700;color:${r._type==='income'?'#00D4AA':'#EF4444'};white-space:nowrap">${r._type==='income'?'+':'-'}${fmtBDTFull(r.amount)}</td>
@@ -2336,6 +2369,7 @@ async function loadFinSubscriptions(){
 async function loadFinChannels(){
   const el=document.getElementById('fin-tab-channels');if(!el)return;
   const isOwner=profile?.role==='owner';
+  const {data:latestChannels}=await sb.from('finance_channels').select('*').order('name');if(latestChannels)_finChannels=latestChannels;
   const[{data:income},{data:expenses}]=await Promise.all([
     sb.from('finance_income').select('*').eq('status','received'),
     sb.from('finance_expenses').select('*').eq('approval_status','paid')
@@ -2344,7 +2378,7 @@ async function loadFinChannels(){
     <div><div style="font-size:22px;font-weight:800;color:#111827">Channels</div><div style="font-size:13px;color:#6B7280;margin-top:4px">Channel-wise performance overview</div></div>
     ${isOwner?`<button onclick="openAddChannel()" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Channel</button>`:''}
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+  <button class="fin-btn fin-btn-secondary" style="margin-bottom:16px" onclick="finTab('channels','whole_business')">Whole Business · View transactions →</button><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
     ${_finChannels.map(ch=>{
       const chInc=(income||[]).filter(i=>i.channel_id===ch.id).reduce((s,i)=>s+Number(i.amount),0);
       const chExp=(expenses||[]).filter(e=>e.channel_id===ch.id).reduce((s,e)=>s+Number(e.amount),0);
@@ -2380,6 +2414,7 @@ async function loadFinChannels(){
             <div style="font-size:10px;color:#6B7280;margin-top:3px;font-weight:500">Net</div>
           </div>
         </div>
+        <button class="fin-btn fin-btn-primary" style="margin-top:16px;width:100%" onclick="finTab('channels','${ch.id}')">View income & expenses →</button>
       </div>`;
     }).join('')}
   </div>`;
@@ -2545,7 +2580,7 @@ function closeFinModal(){const m=document.getElementById('fin-modal');if(m)m.sty
 function fv(id){return document.getElementById(id)?.value?.trim()||'';}
 
 async function saveFinIncome(){
-  const amt=Number(fv('fi-amt'));if(!amt){toast('Amount দিন');return;}
+  const amt=Number(fv('fi-amt'));if(!Number.isFinite(amt)||amt<=0){toast('Enter a positive amount');return;}
   const{error}=await sb.from('finance_income').insert({date:fv('fi-date')||new Date().toISOString().slice(0,10),amount:amt,source:fv('fi-src'),channel_id:fv('fi-ch')||null,description:fv('fi-desc'),payment_method:fv('fi-pm'),reference_no:fv('fi-ref'),status:fv('fi-status')||'pending',notes:fv('fi-notes'),created_by:user?.id});
   if(error){toast('Error: '+error.message);return;}
   closeFinModal();toast('✅ Income saved!');
@@ -2554,11 +2589,12 @@ async function saveFinIncome(){
 
 async function saveFinExpense(){
   const amt=Number(fv('fe-amt'));const payee=fv('fe-payee');
-  if(!amt||!payee){toast('Payee ও Amount দিন');return;}
+  if(fv('fe-scope')==='channel'&&!fv('fe-ch')){toast('Select a channel');return;}
+  if(!Number.isFinite(amt)||amt<=0||!payee){toast('Payee ও Amount দিন');return;}
   const now=new Date();const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
   const{count}=await sb.from('finance_expenses').select('id',{count:'exact',head:true});
   const voucher=`PAY-${ym}-${String((count||0)+1).padStart(4,'0')}`;
-  const{error}=await sb.from('finance_expenses').insert({date:fv('fe-date')||now.toISOString().slice(0,10),due_date:fv('fe-due')||null,payee,amount:amt,description:fv('fe-desc'),category:fv('fe-cat')||'Other',scope:fv('fe-scope')||'whole_business',channel_id:fv('fe-ch')||null,payment_method:fv('fe-pm'),notes:fv('fe-notes'),approval_status:'pending',voucher_number:voucher,requested_by:user?.id});
+  const{error}=await sb.from('finance_expenses').insert({date:fv('fe-date')||now.toISOString().slice(0,10),due_date:fv('fe-due')||null,payee,amount:amt,description:fv('fe-desc'),category:fv('fe-cat')||'Other',scope:fv('fe-scope')||'whole_business',channel_id:fv('fe-scope')==='channel'?fv('fe-ch')||null:null,payment_method:fv('fe-pm'),notes:fv('fe-notes'),approval_status:'pending',voucher_number:voucher,requested_by:user?.id});
   if(error){toast('Error: '+error.message);return;}
   
   // Get the created record and show voucher option
@@ -2590,15 +2626,17 @@ async function saveFinExpense(){
 }
 
 async function saveFinPayroll(){
+  if(fv('fp-scope')==='channel'&&!fv('fp-ch')){toast('Select a channel');return;}
   const amt=Number(fv('fp-amt'));const name=fv('fp-name');if(!amt||!name){toast('Name ও Amount দিন');return;}
-  const{error}=await sb.from('finance_payroll').insert({member_name:name,role:fv('fp-role'),amount:amt,salary_month:fv('fp-month'),scope:fv('fp-scope')||'whole_business',channel_id:fv('fp-ch')||null,notes:fv('fp-notes'),payment_status:'pending',created_by:user?.id});
+  const{error}=await sb.from('finance_payroll').insert({member_name:name,role:fv('fp-role'),amount:amt,salary_month:fv('fp-month'),scope:fv('fp-scope')||'whole_business',channel_id:fv('fp-scope')==='channel'?fv('fp-ch')||null:null,notes:fv('fp-notes'),payment_status:'pending',created_by:user?.id});
   if(error){toast('Error: '+error.message);return;}
   closeFinModal();toast('✅ Payroll saved!');loadFinPayroll();
 }
 
 async function saveFinSubscription(){
+  if(fv('fs-scope')==='channel'&&!fv('fs-ch')){toast('Select a channel');return;}
   const amt=Number(fv('fs-amt'));const name=fv('fs-name');if(!amt||!name){toast('Service name ও Amount দিন');return;}
-  const{error}=await sb.from('finance_subscriptions').insert({service_name:name,amount:amt,billing_cycle:fv('fs-cycle')||'monthly',scope:fv('fs-scope')||'whole_business',channel_id:fv('fs-ch')||null,payment_method:fv('fs-pm'),next_payment:fv('fs-next')||null,status:'active'});
+  const{error}=await sb.from('finance_subscriptions').insert({service_name:name,amount:amt,billing_cycle:fv('fs-cycle')||'monthly',scope:fv('fs-scope')||'whole_business',channel_id:fv('fs-scope')==='channel'?fv('fs-ch')||null:null,payment_method:fv('fs-pm'),next_payment:fv('fs-next')||null,status:'active'});
   if(error){toast('Error: '+error.message);return;}
   closeFinModal();toast('✅ Subscription saved!');loadFinSubscriptions();
 }
@@ -3985,16 +4023,7 @@ async function saveDuration(projId){
   loadPaymentTab();
 }
 
-async function markPaidFromPayTab(projId,amount){
-  if(!confirm(`৳${Number(amount).toLocaleString()} paid mark করবে?`))return;
-  const {error}=await sb.from('editor_projects').update({
-    payment_status:'paid',paid_amount:amount,
-    payment_date:new Date().toISOString().slice(0,10)
-  }).eq('id',projId);
-  if(error){toast('Error: '+error.message);return;}
-  toast('Marked as paid ✓');
-  await loadWorkspaceProjects();loadPaymentTab();
-}
+async function markPaidFromPayTab(projId,amount){return openEditorPayment(projId);}
 
 function selectPayMethod(method, btn){
   document.querySelectorAll('.pay-method-btn').forEach(b=>{
@@ -4371,15 +4400,15 @@ function renderPaymentTab(){
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
           <span style="font-size:12px;font-weight:600;color:#6B7280">Total amount</span>
-          <span style="font-size:16px;font-weight:700;color:#111827">৳${total.toLocaleString()}</span>
+          <span style="font-size:16px;font-weight:700;color:#111827">${fmtBDT(total)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;background:#D1FAE5;border-radius:8px;border:1px solid #A7F3D0">
           <span style="font-size:12px;font-weight:600;color:#065F46">Paid</span>
-          <span style="font-size:16px;font-weight:700;color:#059669">৳${paid.toLocaleString()}</span>
+          <span style="font-size:16px;font-weight:700;color:#059669">${fmtBDT(paid)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#FEE2E2;border-radius:8px;border:1px solid #FECACA">
           <span style="font-size:12px;font-weight:700;color:#991B1B">Unpaid</span>
-          <span style="font-size:20px;font-weight:700;color:#EF4444">৳${unpaid.toLocaleString()}</span>
+          <span style="font-size:20px;font-weight:700;color:#EF4444">${fmtBDT(unpaid)}</span>
         </div>
       </div>
     </div>`;
@@ -4442,19 +4471,7 @@ function renderPaymentTab(){
   }).join('');
 }
 
-async function markPaid(projId, amount){
-  if(profile?.role!=='owner'){toast('Only owner can mark payments');return;}
-  if(!confirm(`৳${Number(amount).toLocaleString()} paid হিসেবে mark করবে?`))return;
-  const {error}=await sb.from('editor_projects').update({
-    payment_status:'paid',
-    paid_amount:amount,
-    payment_date:new Date().toISOString().slice(0,10)
-  }).eq('id',projId);
-  if(error){toast('Error: '+error.message);return;}
-  toast('Marked as paid ✓');
-  await loadWorkspaceProjects();
-  renderPaymentTab();
-}
+async function markPaid(projId, amount){return openEditorPayment(projId);}
 
 // ─ Editor Notes
 let _edNoteChanged=false;
@@ -4642,12 +4659,10 @@ async function saveProject(){
     assigned_date:document.getElementById('proj-assigned').value||null,
     deadline:document.getElementById('proj-deadline').value||null,
     status:document.getElementById('proj-status').value,
-    payment_status:document.getElementById('proj-pay-status').value,
     amount:parseFloat(document.getElementById('proj-amount').value)||0,
     amount_per_minute:parseFloat(document.getElementById('proj-amt-per-min').value)||0,
     total_minutes:parseFloat(document.getElementById('proj-minutes').value)||0,
     total_amount:parseFloat(document.getElementById('proj-total-amount').value)||0,
-    paid_amount:parseFloat(document.getElementById('proj-paid').value)||0,
     payment_note:document.getElementById('proj-pay-note').value.trim()||null,
     script_link:document.getElementById('proj-script-link').value.trim()||null,
     instructions:document.getElementById('proj-instructions').value.trim()||null,

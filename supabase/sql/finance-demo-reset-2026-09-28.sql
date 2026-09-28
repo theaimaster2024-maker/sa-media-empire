@@ -1,0 +1,13 @@
+create schema if not exists maintenance_private;
+revoke all on schema maintenance_private from public,anon,authenticated;
+create table if not exists maintenance_private.finance_reset_backups(id uuid primary key default gen_random_uuid(),created_at timestamptz not null default now(),snapshot jsonb not null);
+revoke all on maintenance_private.finance_reset_backups from public,anon,authenticated;
+insert into maintenance_private.finance_reset_backups(snapshot) select jsonb_build_object('income',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_income t),'expenses',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_expenses t),'payroll',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_payroll t),'subscriptions',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_subscriptions t),'notes',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_notes t),'audit',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_audit t),'settings',(select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.finance_settings t),'project_payments',(select coalesce(jsonb_agg(jsonb_build_object('id',id,'paid_amount',paid_amount,'payment_status',payment_status,'payment_date',payment_date,'payment_note',payment_note,'payment_method',payment_method,'payment_account',payment_account,'invoice_generated_at',invoice_generated_at,'invoice_note',invoice_note)),'[]') from public.editor_projects));
+delete from public.finance_income;
+delete from public.finance_expenses;
+delete from public.finance_payroll;
+delete from public.finance_subscriptions;
+delete from public.finance_notes;
+delete from public.finance_audit;
+update public.finance_settings set opening_balance=500000,updated_at=now();
+update public.editor_projects set paid_amount=0,payment_status='unpaid',payment_date=null,payment_note=null,payment_method=null,payment_account=null,invoice_generated_at=null,invoice_note=null;
