@@ -213,6 +213,20 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   .mob-btn{display:flex!important}
 }
 .mob-btn{display:none;position:fixed;top:12px;left:12px;z-index:200;background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:7px 9px;cursor:pointer;font-size:18px;color:#111827;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* Editor review only: video left, independently scrollable comments right. */
+#proj-detail-modal.editor-review-open > div{max-width:1240px!important;height:90vh;min-height:0}
+#pdm-tab-review{min-height:0;flex-direction:row!important}
+#pdm-tab-review > div:first-child{flex:1!important;min-width:0;overflow-y:auto;padding:16px!important}
+#editor-review-sidebar{flex:0 0 380px;min-width:0;overflow-y:auto;border-left:1px solid #E5E7EB;padding-bottom:12px}
+#pdm-add-comment{padding:0 12px!important}
+#pdm-add-comment > div{margin-top:12px!important}
+#pdm-add-comment > div > div:last-child{position:sticky;bottom:0;background:#F9FAFB;padding:8px 0;z-index:1}
+@media(max-width:760px){
+ #pdm-tab-review{flex-direction:column!important;overflow-y:auto!important}
+ #pdm-tab-review > div:first-child{flex:none!important;overflow:visible}
+ #editor-review-sidebar{flex:none;overflow:visible;border-left:0;border-top:1px solid #E5E7EB}
+}
 </style>
 </head>
 <body>
@@ -706,6 +720,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div style="padding:14px 20px 0;flex-shrink:0">
             <div id="pdm-video-area"></div>
           </div>
+          <div id="editor-review-sidebar">
           <!-- Add comment — owner/manager only -->
           <div id="pdm-add-comment" style="padding:0 20px;flex-shrink:0">
             <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-top:10px">
@@ -766,6 +781,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
         </div>
 
+        </div><!-- editor-review-sidebar layout wrapper -->
         <!-- PAYMENT TAB (Owner + Editor only) -->
         <div id="pdm-tab-payment" style="display:none;flex:1;overflow-y:auto;flex-direction:column;padding:20px;gap:16px">
           <!-- Rate info (owner sets) -->
@@ -1025,11 +1041,12 @@ function showApp(){
     document.getElementById('auth').style.display='none';
     document.getElementById('app').style.display='block';
     setupNav();
+    startEditorPresence();
     const role=profile?.role||'employee';
     if(role==='editor'||role==='employee'){
       showPg('editors');
     } else {
-      showPg('home');
+      showPg(readEditorView()?'editors':'home');
       // Init global chat bubble for owner/manager right away
       setTimeout(async()=>{
         const {data}=await sb.from('editors').select('*').order('name');
@@ -1079,7 +1096,7 @@ async function login(){
   showApp();
 }
 function setErr(m){const e=document.getElementById('a-err');e.textContent=m;e.classList.add('on');}
-async function doLogout(){await sb.auth.signOut();location.reload();}
+async function doLogout(){sessionStorage.removeItem('sa-editor-view:'+user?.id);if(_editorPresence)await sb.removeChannel(_editorPresence);await sb.auth.signOut();user=null;location.reload();}
 
 // ── NAV
 function setupNav(){
@@ -3080,6 +3097,7 @@ async function loadEditors(){
     const myEditor=editors.find(e=>e.email===user?.email||e.phone===profile?.phone);
     if(myEditor){
       await openWorkspace(myEditor.id);
+      await restoreEditorView();
       return;
     } else {
       document.getElementById('editor-list').innerHTML=`
@@ -3093,20 +3111,21 @@ async function loadEditors(){
   }
 
   renderEditorCards();
+  await restoreEditorView();
 }
 
 function renderEditorCards(){
   const el=document.getElementById('editor-list');
   if(!editors.length){el.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#9CA3AF"><i class="ti ti-users" style="font-size:40px;display:block;margin-bottom:12px;opacity:.25"></i><div style="font-size:15px;font-weight:600;margin-bottom:6px">No editors yet</div><div style="font-size:13px">Click "New editor" to add your first editor</div></div>`;return;}
   el.innerHTML=editors.map(ed=>{
-    const sc=ED_STATUS[ed.status]||ED_STATUS.active;
+    const sc=editorPresenceStyle(ed);
     const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     const avatarContent=ed.photo_url?`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:`<span>${ini}</span>`;
     return `<div onclick="openWorkspace(${ed.id})" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:18px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#C4B5FD';this.style.boxShadow='0 4px 12px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;flex-shrink:0;overflow:hidden">${avatarContent}</div>
         <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#111827">${ed.name}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">${ed.email||ed.phone||'—'}</div></div>
-        <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;background:${sc.bg};color:${sc.text}">${ed.status}</span>
+        <span style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;background:${sc.bg};color:${sc.text}">${sc.label}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #F3F4F6">
         <div style="text-align:center"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rate/video</div><div style="font-size:15px;font-weight:700;color:#7C3AED">৳${Number(ed.rate_per_video||0).toLocaleString()}</div></div>
@@ -3130,9 +3149,9 @@ async function openWorkspace(id){
   else{av.innerHTML=ini;av.style.background='linear-gradient(135deg,#7C3AED,#0EA5E9)';}
   document.getElementById('ws-name').textContent=ed.name;
   document.getElementById('ws-meta').textContent=(ed.skills||[]).join(' · ')||'No skills listed';
-  const sc=ED_STATUS[ed.status]||ED_STATUS.active;
+  const sc=editorPresenceStyle(ed);
   const badge=document.getElementById('ws-status-badge');
-  badge.textContent=ed.status;badge.style.background=sc.bg;badge.style.color=sc.text;
+  badge.textContent=sc.label;badge.style.background=sc.bg;badge.style.color=sc.text;
   const contact=document.getElementById('ws-contact');
   contact.innerHTML=[
     ed.phone?`<span style="font-size:12px;color:#6B7280;display:flex;align-items:center;gap:4px"><i class="ti ti-phone" style="font-size:13px"></i>${ed.phone}</span>`:'',
@@ -3152,7 +3171,7 @@ async function openWorkspace(id){
   if(payTab)payTab.style.display=isOwner2?'flex':'none'; // Only owner sees payment tab
 
   // Show projects tab by default
-  wsTab('projects',document.querySelector('.ws-tab.on'));
+  wsTab('projects',document.querySelector(".ws-tab[onclick*='projects']"));
   await loadWorkspaceProjects();
   // Init floating chat bubble
   initChatBubble();
@@ -3306,7 +3325,7 @@ function openProjDetail(id){
   if(payTab)payTab.style.display=(profile?.role==='owner'||profile?.role==='editor'||profile?.role==='employee')?'flex':'none';
 
   // Switch to details tab by default
-  pdmTab('details', document.querySelector('.pdm-tab.on'));
+  pdmTab('details', document.querySelector(".pdm-tab[onclick*='details']"));
   document.getElementById('proj-detail-modal').style.display='flex';
 }
 
@@ -4228,6 +4247,7 @@ tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
 
 // ─ Project detail tabs
 function pdmTab(tab, btn){
+  document.getElementById('proj-detail-modal').classList.toggle('editor-review-open',tab==='review');
   document.querySelectorAll('.pdm-tab').forEach(b=>{
     b.classList.remove('on');
     b.style.color='#6B7280';
@@ -4785,6 +4805,68 @@ async function deleteProject(){
 }
 
 
+
+// Editor-only view restoration. No project content or finance data is stored here.
+function readEditorView(){
+ try{return JSON.parse(sessionStorage.getItem('sa-editor-view:'+user?.id)||'null');}catch{return null;}
+}
+function rememberEditorView(){
+ if(!user)return;
+ const key='sa-editor-view:'+user.id;
+ if(!document.getElementById('pg-editors')?.classList.contains('on')){sessionStorage.removeItem(key);return;}
+ const modal=document.getElementById('proj-detail-modal');
+ const wsTabName=['projects','payment','ednotes'].find(t=>document.getElementById('ws-'+t)?.style.display==='block');
+ const detailTab=['details','review','payment'].find(t=>document.getElementById('pdm-tab-'+t)?.style.display==='flex');
+ const scrolls={};
+ document.querySelectorAll('#pg-editors [id],#proj-detail-modal [id]').forEach(el=>{if(el.scrollTop||el.scrollLeft)scrolls[el.id]=[el.scrollLeft,el.scrollTop];});
+ try{sessionStorage.setItem(key,JSON.stringify({editorId:document.getElementById('ed-view-workspace').style.display==='block'?currentEditorId:null,wsTab:wsTabName,projectId:modal.style.display==='flex'?_currentProjId:null,detailTab,scrolls,y:window.scrollY}));}catch{}
+}
+window.addEventListener('pagehide',rememberEditorView);
+window.addEventListener('beforeunload',rememberEditorView);
+async function restoreEditorView(){
+ const saved=readEditorView();if(!saved)return;
+ sessionStorage.removeItem('sa-editor-view:'+user?.id);
+ if(!saved.editorId)return;
+ const ed=editors.find(e=>e.id===saved.editorId);if(!ed)return;
+ const manager=['owner','manager'].includes(profile?.role);
+ if(!manager&&ed.id!==currentEditorId)return;
+ if(currentEditorId!==ed.id||document.getElementById('ed-view-workspace').style.display!=='block')await openWorkspace(ed.id);
+ const tab=['projects','ednotes'].includes(saved.wsTab)||(saved.wsTab==='payment'&&profile?.role==='owner')?saved.wsTab:'projects';
+ wsTab(tab,document.querySelector(`.ws-tab[onclick*="'${tab}'"]`));
+ if(saved.projectId&&_currentProjects.some(p=>p.id===saved.projectId)){
+  openProjDetail(saved.projectId);
+  const detail=['details','review'].includes(saved.detailTab)||(saved.detailTab==='payment'&&profile?.role!=='manager')?saved.detailTab:'details';
+  pdmTab(detail,document.querySelector(`.pdm-tab[onclick*="'${detail}'"]`));
+ }
+ requestAnimationFrame(()=>{window.scrollTo(0,saved.y||0);Object.entries(saved.scrolls||{}).forEach(([id,pos])=>{const el=document.getElementById(id);if(el)el.scrollTo(...pos);});});
+}
+// Presence reflects a signed-in, connected app, not employment status.
+let _editorPresence=null,_editorPresenceReady=false;
+let _onlineEditorEmails=new Set();
+function editorPresenceStyle(ed){
+ const online=_editorPresenceReady&&_onlineEditorEmails.has((ed.email||'').trim().toLowerCase());
+ return {label:!_editorPresenceReady?'Connecting…':online?'Online':'Offline',bg:online?'#D1FAE5':'#F3F4F6',text:online?'#059669':'#6B7280'};
+}
+function refreshEditorPresence(){
+ if(editors.length)renderEditorCards();
+ const ed=editors.find(e=>e.id===currentEditorId),badge=document.getElementById('ws-status-badge');
+ if(ed&&badge){const sc=editorPresenceStyle(ed);badge.textContent=sc.label;badge.style.background=sc.bg;badge.style.color=sc.text;}
+}
+function startEditorPresence(){
+ if(_editorPresence||!user)return;
+ _editorPresence=sb.channel('sa-editor-online-v1');
+ _editorPresence.on('presence',{event:'sync'},()=>{
+  _onlineEditorEmails=new Set(Object.values(_editorPresence.presenceState()).flat().map(p=>p.email).filter(Boolean));
+  _editorPresenceReady=true;refreshEditorPresence();
+ }).subscribe(async status=>{
+  if(status==='SUBSCRIBED'){
+   if(['editor','employee'].includes(profile?.role))await _editorPresence.track({email:(user.email||'').trim().toLowerCase()});
+  }else if(['CLOSED','CHANNEL_ERROR','TIMED_OUT'].includes(status)){
+   _editorPresenceReady=false;_onlineEditorEmails.clear();refreshEditorPresence();
+  }
+ });
+}
+
 // Wait for supabase to be ready before init
 if(typeof supabase !== 'undefined'){
   init();
@@ -4794,3 +4876,4 @@ if(typeof supabase !== 'undefined'){
 </script>
 </body>
 </html>
+
