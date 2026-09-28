@@ -878,116 +878,9 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       </div>
     </div>
 
-    <!-- CANVAS BOARD PAGE -->
-    <div class="pg" id="pg-board" style="padding:0;margin:-28px;position:relative;height:100vh;overflow:hidden">
-      <div id="board-container" style="width:100%;height:100vh;display:none;flex-direction:column">
-
-        <!-- TOOLBAR — Claude style -->
-        <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:100;
-          background:white;border:1px solid #E5E7EB;border-radius:10px;
-          padding:6px 12px;display:flex;align-items:center;gap:4px;
-          box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06)">
-
-          <!-- ADD section -->
-          <span style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;padding-right:4px">Add</span>
-          <button class="tb" id="bt-note" title="Note card" onclick="bTool('note')"><i class="ti ti-notes"></i></button>
-          <button class="tb" id="bt-script" title="Script card" onclick="bTool('script')"><i class="ti ti-writing"></i></button>
-          <button class="tb" id="bt-sticky" title="Sticky note" onclick="bTool('sticky')"><i class="ti ti-sticky-note"></i></button>
-          <button class="tb" title="Add image" onclick="document.getElementById('b-img-inp').click()"><i class="ti ti-photo"></i></button>
-          <button class="tb" title="YouTube embed" onclick="bModal('yt')"><i class="ti ti-brand-youtube"></i></button>
-          <button class="tb" title="Google Drive link" onclick="bModal('drive')"><i class="ti ti-brand-google-drive"></i></button>
-
-          <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
-
-          <!-- DRAW section -->
-          <span style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;padding-right:4px">Draw</span>
-          <button class="tb" id="bt-pen" title="Pen / Marker" onclick="bTool('pen')"><i class="ti ti-pencil"></i></button>
-          <button class="tb" id="bt-arrow" title="Arrow line" onclick="bTool('arrow')"><i class="ti ti-arrow-narrow-right"></i></button>
-          <button class="tb" id="bt-erase" title="Erase drawing" onclick="bTool('erase')"><i class="ti ti-eraser"></i></button>
-          <button class="tb" title="Clear all drawings" onclick="bClearDrawings()" style="color:#FF4E6A" title="সব drawing মুছে ফেলো"><i class="ti ti-eraser-off"></i></button>
-          <button class="tb" id="bt-conn" title="Connect two cards" onclick="bTool('conn')"><i class="ti ti-share-2"></i></button>
-
-          <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
-
-          <!-- COLOR section -->
-          <span style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;padding-right:4px">Color</span>
-          <div class="bclr on" style="background:linear-gradient(135deg,#6C63FF,#A5A0FF)" data-c="#6C63FF" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#00C2CB,#5DCAA5)" data-c="#00C2CB" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#00C48C,#97C459)" data-c="#00C48C" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#F5A623,#EF9F27)" data-c="#F5A623" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#FF4E6A,#F09595)" data-c="#FF4E6A" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#FF6B9D,#ED93B1)" data-c="#FF6B9D" onclick="bColor(this)"></div>
-          <div class="bclr" style="background:linear-gradient(135deg,#1A1F3C,#5A6080)" data-c="#1A1F3C" onclick="bColor(this)"></div>
-          <input type="range" min="2" max="20" value="4" id="b-pen-sz"
-            style="width:64px;accent-color:#6C63FF;cursor:pointer;margin-left:2px" oninput="bPenSz=+this.value"/>
-
-          <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
-
-          <!-- VIEW section -->
-          <button class="tb" title="Zoom in" onclick="bZoom(.15)"><i class="ti ti-zoom-in"></i></button>
-          <button class="tb" title="Zoom out" onclick="bZoom(-.15)"><i class="ti ti-zoom-out"></i></button>
-          <button class="tb" title="Fit all to screen" onclick="bFit()"><i class="ti ti-maximize"></i></button>
-          <button class="tb" title="Undo (Ctrl+Z)" onclick="bUndo()"><i class="ti ti-arrow-back-up"></i></button>
-
-          <div style="width:1px;height:24px;background:#E5E7EB;margin:0 6px"></div>
-
-          <button class="tb" title="Save board (Ctrl+S)" onclick="bSave()" style="color:#00C48C"><i class="ti ti-device-floppy"></i></button>
-          <button class="tb" title="Clear board" onclick="bClear()" style="color:#FF4E6A"><i class="ti ti-trash"></i></button>
-        </div>
-
-        <!-- ZOOM BADGE -->
-        <div id="b-zoom" style="position:absolute;top:12px;left:12px;z-index:100;
-          background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;
-          padding:6px 12px;font-size:12px;font-weight:600;color:#5A6080;
-          box-shadow:0 2px 10px rgba(108,99,255,.1)">100%</div>
-
-        <!-- BOARDS BUTTON -->
-        <button id="b-boards-btn" onclick="bShowBoardPicker()" style="position:absolute;top:14px;right:14px;z-index:100;
-          background:#7C3AED;color:white;border:none;border-radius:8px;
-          padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
-          display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(108,99,255,.3)">
-          <i class="ti ti-layout-board"></i>
-          <span id="b-board-name">Default Board</span>
-          <i class="ti ti-chevron-down" style="font-size:11px"></i>
-        </button>
-
-        <!-- CANVAS WRAP — light dot grid like Claude -->
-        <div id="b-wrap" style="width:100%;height:100%;overflow:hidden;cursor:grab;position:relative;
-          background-color:#FAFAFA;
-          background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);
-          background-size:24px 24px">
-          <div id="b-canvas" style="position:absolute;transform-origin:0 0">
-            <svg id="b-svg" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1" width="10000" height="10000"></svg>
-            <canvas id="b-dc" width="10000" height="10000" style="position:absolute;top:0;left:0;pointer-events:none;z-index:50"></canvas>
-          </div>
-        </div>
-
-        <!-- HELP BAR -->
-        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;
-          background:rgba(255,255,255,.95);border:1px solid #E5E7EB;border-radius:12px;
-          padding:7px 16px;font-size:11px;color:#8B92B8;
-          box-shadow:0 2px 12px rgba(108,99,255,.08);white-space:nowrap">
-          <b style="color:#6C63FF">Double-click</b> → card &nbsp;·&nbsp;
-          <b style="color:#6C63FF">Dot drag</b> → connect &nbsp;·&nbsp;
-          <b style="color:#6C63FF">Scroll</b> → zoom &nbsp;·&nbsp;
-          <b style="color:#6C63FF">Ctrl+S</b> → save
-        </div>
-      </div>
-
-      <!-- MODAL -->
-      <div id="b-modal" style="display:none;position:absolute;inset:0;background:rgba(26,31,60,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
-        <div style="background:white;border-radius:18px;padding:26px;width:380px;
-          box-shadow:0 20px 60px rgba(108,99,255,.25);border:1px solid #E5E7EB">
-          <h3 id="b-modal-title" style="font-size:15px;font-weight:700;color:#1A1F3C;margin-bottom:14px"></h3>
-          <input id="b-modal-inp" class="f-inp" type="text" style="margin-bottom:8px"/>
-          <div id="b-modal-hint" style="font-size:11px;color:#9BA3C2;margin-bottom:14px"></div>
-          <div style="display:flex;gap:10px">
-            <button class="btn-p" style="flex:1;padding:10px" onclick="bModalOk()"><i class="ti ti-plus"></i> Add</button>
-            <button style="flex:1;padding:10px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px" onclick="document.getElementById('b-modal').style.display='none'">Cancel</button>
-          </div>
-        </div>
-      </div>
-      <input type="file" id="b-img-inp" accept="image/*" style="display:none" onchange="bHandleImg(this)"/>
+    <!-- Script Studio: isolated canvas application -->
+    <div class="pg" id="pg-board" style="position:relative;height:calc(100vh - 64px);overflow:hidden;border-radius:16px">
+      <iframe id="script-studio-frame" title="Script Studio" style="width:100%;height:100%;border:0;display:block" allow="clipboard-write"></iframe>
     </div>
 
   </div>
@@ -1129,16 +1022,16 @@ function setupNav(){
     if(fc)fc.style.display='none';
     if(fb)fb.style.display='block';
   } else {
-    // Editor/employee: ONLY show Editors section
+    // Editor/employee: editors and explicitly shared script boards
     document.getElementById('nav-finance').style.display='none';
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
     document.getElementById('nav-private-notes').style.display='none';
     document.getElementById('nav-expenses').style.display='none';
-    // Hide everything except editors
+    // Shared boards enforce their own database permissions
     document.querySelectorAll('.nav-it').forEach(n=>{
       const pg=n.getAttribute('data-pg');
-      if(pg&&pg!=='editors') n.style.display='none';
+      if(pg&&pg!=='editors'&&pg!=='board') n.style.display='none';
     });
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
@@ -1171,9 +1064,8 @@ function showPg(pg){
   }
   if(pg==='dashboard')loadDash();
   if(pg==='board'){
-    const c=document.getElementById('board-container');
-    c.style.display='flex';
-    if(!window._boardInit)initBoard();
+    const frame=document.getElementById('script-studio-frame');
+    if(!frame.getAttribute('src'))frame.src='board.html';
   }
   document.getElementById('sb').classList.remove('open');
 }
@@ -1933,7 +1825,7 @@ function bModalOk(){
   document.getElementById('b-modal').style.display='none';bPushH();
 }
 document.addEventListener('keydown',e=>{
-  if(document.getElementById('pg-board')?.classList.contains('on')){
+  if(window._boardInit&&document.getElementById('pg-board')?.classList.contains('on')){
     if(e.key==='Delete'&&_bSel&&!document.activeElement.isContentEditable)bDelCard(_bSel);
     if(e.key==='z'&&(e.ctrlKey||e.metaKey)){e.preventDefault();bUndo();}
     if(e.key==='s'&&(e.ctrlKey||e.metaKey)&&document.getElementById('pg-board')?.classList.contains('on')){e.preventDefault();bSave();}
