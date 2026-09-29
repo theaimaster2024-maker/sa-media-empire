@@ -227,6 +227,8 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
  #pdm-tab-review > div:first-child{flex:none!important;overflow:visible}
  #editor-review-sidebar{flex:none;overflow:visible;border-left:0;border-top:1px solid #E5E7EB}
 }
+
+.fin-entry-menu{display:inline-block;position:relative;vertical-align:middle;margin-left:6px;color:#6b7280}.fin-entry-menu summary{cursor:pointer;list-style:none;font-size:22px;padding:0 8px;border-radius:6px}.fin-entry-menu summary:hover{background:#ede9fe}.fin-entry-menu>div{display:flex;gap:4px;padding:5px;background:#f5f3ff;border-radius:8px}.fin-entry-menu button{border:0;background:transparent;color:#51418a;cursor:pointer;padding:5px;white-space:nowrap}.fin-entry-menu .danger{color:#b91c1c}.fin-entry-dialog{border:0;border-radius:18px;padding:25px;width:min(600px,94vw);max-height:90vh;color:#242137;background:white;margin:auto}.fin-entry-dialog::backdrop{background:#17132d88}.fin-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}.fin-entry-grid label{text-transform:capitalize}.fin-entry-dialog footer{display:flex;justify-content:flex-end;gap:10px}.fin-entry-hint{font-size:13px;line-height:1.6;margin-top:12px;color:#6b7280}.fin-entry-error{color:#b91c1c;margin-bottom:12px}.fin-entry-grid input:disabled,.fin-entry-grid select:disabled{opacity:.6}@media(max-width:480px){.fin-entry-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2021,7 +2023,7 @@ async function loadFinChannelDetail(scope){
  const income=ir.data||[],expenses=er.data||[],month=document.getElementById('fin-month-sel')?.value||new Date().toISOString().slice(0,7),sum=(rows)=>rows.reduce((n,r)=>n+Number(r.amount),0);
  const received=income.filter(r=>r.status==='received'),paid=expenses.filter(r=>r.approval_status==='paid'),totalIncome=sum(received),totalExpense=sum(paid),monthlyIncome=sum(received.filter(r=>r.date?.startsWith(month))),monthlyExpense=sum(paid.filter(r=>(r.payment_date||r.date)?.startsWith(month))),name=whole?'Whole Business':_finChannels.find(c=>c.id===scope)?.name||'Channel';
  const rows=[...income.map(r=>({...r,kind:'Income',state:r.status})),...expenses.map(r=>({...r,kind:'Expense',state:r.approval_status}))].sort((a,b)=>String(b.payment_date||b.date).localeCompare(String(a.payment_date||a.date)));
- el.innerHTML=`<button class="fin-btn fin-btn-secondary" onclick="finTab('channels')">← All channels</button><div style="margin:20px 0"><h2 style="font-size:24px;color:#111827">${finEscape(name)}</h2><p style="color:#6b7280;margin-top:5px">${finEscape(month)} monthly performance · Full transaction history below</p></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">${finStatCard('Monthly income',fmtBDTFull(monthlyIncome),'#10B981','ti-trending-up','#D1FAE5')}${finStatCard('Monthly expense',fmtBDTFull(monthlyExpense),'#EF4444','ti-trending-down','#FEE2E2')}${finStatCard('Monthly net',fmtBDTFull(monthlyIncome-monthlyExpense),'#7057dc','ti-chart-bar','#F5F3FF')}</div><div class="fin-card" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px"><div>All-time income<br><b>${fmtBDTFull(totalIncome)}</b></div><div>All-time paid expense<br><b>${fmtBDTFull(totalExpense)}</b></div><div>All-time net<br><b>${fmtBDTFull(totalIncome-totalExpense)}</b></div><div>Pending / approved expense<br><b>${fmtBDTFull(sum(expenses.filter(r=>['pending','approved'].includes(r.approval_status))))}</b></div></div><div class="fin-card" style="overflow-x:auto"><table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payee / Source</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.payment_date||r.date)}</td><td>${finEscape(r.description||r.kind)}${r.editor_project_id?'<br><small>Editor project #'+r.editor_project_id+'</small>':''}</td><td>${finEscape(r.category||r.source||'—')}</td><td>${finEscape(r.payee||r.source||'—')}</td><td style="font-weight:700;white-space:nowrap;color:${r.kind==='Income'?'#059669':'#dc2626'}">${r.kind==='Income'?'+':'−'}${fmtBDTFull(r.amount)}</td><td>${finStatusBadge(r.state)}</td></tr>`).join('')||'<tr><td colspan="6" style="padding:28px;text-align:center">No transactions yet</td></tr>'}</tbody></table></div>`;
+ el.innerHTML=`<button class="fin-btn fin-btn-secondary" onclick="finTab('channels')">← All channels</button><div style="margin:20px 0"><h2 style="font-size:24px;color:#111827">${finEscape(name)}</h2><p style="color:#6b7280;margin-top:5px">${finEscape(month)} monthly performance · Full transaction history below</p></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">${finStatCard('Monthly income',fmtBDTFull(monthlyIncome),'#10B981','ti-trending-up','#D1FAE5')}${finStatCard('Monthly expense',fmtBDTFull(monthlyExpense),'#EF4444','ti-trending-down','#FEE2E2')}${finStatCard('Monthly net',fmtBDTFull(monthlyIncome-monthlyExpense),'#7057dc','ti-chart-bar','#F5F3FF')}</div><div class="fin-card" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px"><div>All-time income<br><b>${fmtBDTFull(totalIncome)}</b></div><div>All-time paid expense<br><b>${fmtBDTFull(totalExpense)}</b></div><div>All-time net<br><b>${fmtBDTFull(totalIncome-totalExpense)}</b></div><div>Pending / approved expense<br><b>${fmtBDTFull(sum(expenses.filter(r=>['pending','approved'].includes(r.approval_status))))}</b></div></div><div class="fin-card" style="overflow-x:auto"><table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payee / Source</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.payment_date||r.date)}</td><td>${finEscape(r.description||r.kind)}${r.editor_project_id?'<br><small>Editor project #'+r.editor_project_id+'</small>':''}</td><td>${finEscape(r.category||r.source||'—')}</td><td>${finEscape(r.payee||r.source||'—')}</td><td style="font-weight:700;white-space:nowrap;color:${r.kind==='Income'?'#059669':'#dc2626'}">${r.kind==='Income'?'+':'−'}${fmtBDTFull(r.amount)}</td><td>${finStatusBadge(r.state)} ${finEntryMenu(r.kind.toLowerCase(),r.id)}</td></tr>`).join('')||'<tr><td colspan="6" style="padding:28px;text-align:center">No transactions yet</td></tr>'}</tbody></table></div>`;
 }
 
 // ── FINANCE MODULE
@@ -2156,7 +2158,7 @@ async function loadFinOverview(){
           <td style="color:#6B7280">${finScopeLabel(t)}</td>
           <td style="color:#6B7280">${t.category||t.source||'—'}</td>
           <td style="font-weight:700;color:${isInc?'#10B981':'#EF4444'};white-space:nowrap">${isInc?'+':'-'}${fmtBDTFull(t.amount)}</td>
-          <td>${finStatusBadge(isInc?t.status:t.approval_status)}</td>
+          <td>${finStatusBadge(isInc?t.status:t.approval_status)} ${finEntryMenu(isInc?'income':'expense',t.id)}</td>
         </tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px">No transactions yet</td></tr>'}</tbody></table>
       </div>
       <div class="fin-card">
@@ -2170,7 +2172,7 @@ async function loadFinOverview(){
               <i class="ti ti-file-invoice" style="font-size:15px;color:#9CA3AF"></i>
               <div><div style="font-size:13px;color:#111827;font-weight:500">${r.payee}</div><div style="font-size:10px;color:#9CA3AF">${r.category||'—'}</div></div>
             </div>
-            <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#111827">${fmtBDTFull(r.amount)}</div>${finStatusBadge(r.approval_status)}</div>
+            <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#111827">${fmtBDTFull(r.amount)}</div>${finStatusBadge(r.approval_status)} ${finEntryMenu('expense',r.id)}</div>
           </div>`).join(''):`<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px">No pending requests</div>`}
         </div>
         <button onclick="openFinModal('expense')" style="width:100%;margin-top:12px;background:#F5F3FF;color:#7C3AED;border:1px solid #EDE9FE;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
@@ -2259,6 +2261,46 @@ function drawFinCharts(allIncome,allExp,catMap){
   }
 }
 
+
+const finEntryTables={income:'finance_income',expense:'finance_expenses',payroll:'finance_payroll',subscription:'finance_subscriptions'};
+const finEntryFields={
+ income:{date:'date',amount:'number',source:'text',channel_id:'channel',description:'text',payment_method:'text',reference_no:'text',status:['pending','received'],notes:'text'},
+ expense:{date:'date',due_date:'date',payee:'text',amount:'number',description:'text',category:'text',scope:['whole_business','channel'],channel_id:'channel',payment_method:'text',approval_status:['pending','approved','paid','rejected'],payment_date:'date',reference_no:'text',notes:'text'},
+ payroll:{member_name:'text',role:'text',amount:'number',salary_month:'month',scope:['whole_business','channel'],channel_id:'channel',payment_status:['unpaid','paid'],payment_date:'date',reference_no:'text',notes:'text'},
+ subscription:{service_name:'text',amount:'number',billing_cycle:['monthly','annual'],scope:['whole_business','channel'],channel_id:'channel',payment_method:'text',status:['active','inactive','cancelled'],next_payment:'date',renewal_date:'date',notes:'text'}
+};
+function finEntryMenu(type,id){if(profile?.role!=='owner'||!finEntryTables[type])return '';return `<details class="fin-entry-menu"><summary aria-label="Entry options" title="Edit or delete">⋯</summary><div><button onclick="editFinEntry('${type}','${id}')">Edit entry</button><button class="danger" onclick="deleteFinEntry('${type}','${id}')">Delete entry</button></div></details>`}
+async function editFinEntry(type,id){
+ if(profile?.role!=='owner'||!finEntryTables[type])return;
+ const [r,ch]=await Promise.all([sb.from(finEntryTables[type]).select('*').eq('id',id).single(),sb.from('finance_channels').select('id,name').order('name')]);
+ if(r.error||ch.error){toast((r.error||ch.error).message);return}const row=r.data;
+ document.getElementById('fin-entry-dialog')?.remove();const dialog=document.createElement('dialog');dialog.id='fin-entry-dialog';dialog.className='fin-entry-dialog';
+ dialog.innerHTML=`<form><h2>Edit ${type}</h2>${row.editor_project_id?'<p class="fin-entry-hint">Linked editor payment: amount and paid status follow the project. To correct the amount, delete this payment record, adjust the project total, then record payment again.</p>':''}<div class="fin-entry-grid">${Object.entries(finEntryFields[type]).map(([key,kind])=>{
+ const value=row[key]??'',locked=!!row.editor_project_id&&['amount','approval_status','payment_date'].includes(key),label=key.replaceAll('_',' '),attr=`name="${key}" class="fin-inp" ${locked?'disabled':''}`;
+ let input;if(kind==='channel')input=`<select ${attr}><option value="">Whole Business / none</option>${ch.data.map(c=>`<option value="${c.id}" ${value===c.id?'selected':''}>${finEscape(c.name)}</option>`).join('')}</select>`;
+ else if(Array.isArray(kind)){const opts=kind.includes(value)||!value?kind:[value,...kind];input=`<select ${attr}>${opts.map(v=>`<option value="${finEscape(v)}" ${v===value?'selected':''}>${finEscape(v.replaceAll('_',' '))}</option>`).join('')}</select>`}
+ else input=`<input ${attr} type="${kind}" value="${finEscape(value)}" ${kind==='number'?'min="0.01" step="0.01" required':''}>`;
+ return `<label class="fin-lbl">${label}${input}</label>`}).join('')}</div><p class="fin-entry-error" role="alert"></p><footer><button type="button" class="fin-btn fin-btn-secondary">Cancel</button><button type="submit" class="fin-btn fin-btn-primary">Save changes</button></footer></form>`;
+ document.body.append(dialog);dialog.querySelector('button[type=button]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();dialog.showModal();
+ dialog.querySelector('form').onsubmit=async e=>{e.preventDefault();const patch={},err=dialog.querySelector('.fin-entry-error');err.textContent='';
+ for(const [key,kind] of Object.entries(finEntryFields[type])){const input=dialog.querySelector(`[name="${key}"]`);if(input.disabled)continue;const v=input.value.trim();patch[key]=kind==='number'?Number(v):v||null}
+ if('amount' in patch&&(!Number.isFinite(patch.amount)||patch.amount<=0)){err.textContent='Enter a positive amount.';return}
+ if(patch.scope==='whole_business')patch.channel_id=null;
+ if(patch.scope==='channel'&&!patch.channel_id){err.textContent='Select a channel.';return}
+ if((type==='income'||type==='expense')&&!patch.date){err.textContent='Date is required.';return}
+ if(type==='expense'&&!patch.payee||type==='payroll'&&!patch.member_name||type==='subscription'&&!patch.service_name){err.textContent='Name / payee is required.';return}
+ const buttons=[...dialog.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+ try{let q=sb.from(finEntryTables[type]).update(patch).eq('id',id);for(const key of Object.keys(patch))q=row[key]==null?q.is(key,null):q.eq(key,row[key]);const res=await q.select('id');if(res.error)throw res.error;if(!res.data?.length)throw new Error('Entry changed or was deleted. Close and reopen to load the latest version.');dialog.close();toast('Entry updated ✓');refreshFinView()}catch(ex){err.textContent=ex.message;buttons.forEach(b=>b.disabled=false)}
+ };
+}
+async function deleteFinEntry(type,id){
+ if(profile?.role!=='owner'||!finEntryTables[type])return;const r=await sb.from(finEntryTables[type]).select('*').eq('id',id).single();if(r.error){toast(r.error.message);return}
+ const row=r.data,detail=row.description||row.service_name||row.member_name||row.payee||type;
+ if(!confirm(`Delete ${detail} — ${fmtBDTFull(row.amount)}?\n${row.editor_project_id?'The linked editor project will become Unpaid. This does not refund money.':'This removes the entry from Finance and updates totals.'}\nThis cannot be undone.`))return;
+ let q=sb.from(finEntryTables[type]).delete().eq('id',id);for(const [key,v] of Object.entries(row))if(v===null||['string','number','boolean'].includes(typeof v))q=v===null?q.is(key,null):q.eq(key,v);
+ const {data,error}=await q.select('id');if(error||!data?.length){toast(error?.message||'Entry changed or was deleted. Refresh and try again.');return}toast('Entry deleted ✓');refreshFinView();if(row.editor_project_id&&currentEditorId){await loadWorkspaceProjects();renderPaymentTab()}
+}
+
 async function loadFinTransactions(){
   const el=document.getElementById('fin-tab-transactions');if(!el)return;
   el.innerHTML=`<div style="color:#4B5563;text-align:center;padding:40px">Loading...</div>`;
@@ -2284,7 +2326,7 @@ async function loadFinTransactions(){
       <td style="color:#6B7280">${r.category||r.source||'—'}</td>
       <td style="color:#6B7280">${r.payee||r.source||'—'}</td>
       <td style="font-weight:700;color:${r._type==='income'?'#00D4AA':'#EF4444'};white-space:nowrap">${r._type==='income'?'+':'-'}${fmtBDTFull(r.amount)}</td>
-      <td>${finStatusBadge(r._status)}</td>
+      <td>${finStatusBadge(r._status)} ${finEntryMenu(r._type,r.id)}</td>
     </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:#374151;padding:32px">No transactions yet</td></tr>'}</tbody></table>
   </div>`;
 }
@@ -2306,7 +2348,7 @@ async function loadFinRequests(){
       <td style="color:#6B7280">${r.category}</td>
       <td style="color:#6B7280">${r.scope==='whole_business'?'SA Media Empire':r.channel?.name||'—'}</td>
       <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
-      <td>${finStatusBadge(r.approval_status)}</td>
+      <td>${finStatusBadge(r.approval_status)} ${finEntryMenu('expense',r.id)}</td>
       <td style="display:flex;gap:5px;flex-wrap:wrap">
         ${isOwner&&r.approval_status==='pending'?`<button onclick="finApprove('${r.id}')" class="fin-btn fin-btn-primary" style="padding:3px 8px;font-size:11px">Approve</button>`:''}
         ${isOwner&&r.approval_status==='approved'?`<button onclick="finMarkPaid('${r.id}')" class="fin-btn" style="background:rgba(16,185,129,.15);color:#10B981;padding:3px 8px;font-size:11px">Mark Paid</button>`:''}
@@ -2335,7 +2377,7 @@ async function loadFinPayroll(){
       <td style="color:#6B7280">${r.salary_month}</td>
       <td style="font-weight:700;color:#EF4444">${fmtBDTFull(r.amount)}</td>
       <td style="color:#6B7280">${r.scope==='whole_business'?'SA Media Empire':r.channel?.name||'—'}</td>
-      <td>${finStatusBadge(r.payment_status)}</td>
+      <td>${finStatusBadge(r.payment_status)} ${finEntryMenu('payroll',r.id)}</td>
       <td style="color:#6B7280">${fmtDate(r.payment_date)}</td>
     </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#374151;padding:32px">No payroll records</td></tr>'}</tbody></table>
   </div>`;
@@ -2352,7 +2394,7 @@ async function loadFinSubscriptions(){
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
     ${(data||[]).map(s=>`<div class="fin-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:15px;font-weight:700;color:#fff">${s.service_name}</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${s.service_name} ${finEntryMenu('subscription',s.id)}</div>
         <span class="fin-badge" style="background:${s.status==='active'?'rgba(0,212,170,.12)':'rgba(107,114,128,.12)'};color:${s.status==='active'?'#00D4AA':'#6B7280'};font-size:10px">${s.status}</span>
       </div>
       <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">${fmtBDTFull(s.amount)}<span style="font-size:11px;color:#374151;font-weight:400">/${s.billing_cycle}</span></div>
