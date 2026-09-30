@@ -230,7 +230,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 .fin-entry-menu{display:inline-block;position:relative;vertical-align:middle;margin-left:6px;color:#6b7280}.fin-entry-menu summary{cursor:pointer;list-style:none;font-size:22px;padding:0 8px;border-radius:6px}.fin-entry-menu summary:hover{background:#ede9fe}.fin-entry-menu>div{display:flex;gap:4px;padding:5px;background:#f5f3ff;border-radius:8px}.fin-entry-menu button{border:0;background:transparent;color:#51418a;cursor:pointer;padding:5px;white-space:nowrap}.fin-entry-menu .danger{color:#b91c1c}.fin-entry-dialog{border:0;border-radius:18px;padding:25px;width:min(600px,94vw);max-height:90vh;color:#242137;background:white;margin:auto}.fin-entry-dialog::backdrop{background:#17132d88}.fin-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}.fin-entry-grid label{text-transform:capitalize}.fin-entry-dialog footer{display:flex;justify-content:flex-end;gap:10px}.fin-entry-hint{font-size:13px;line-height:1.6;margin-top:12px;color:#6b7280}.fin-entry-error{color:#b91c1c;margin-bottom:12px}.fin-entry-grid input:disabled,.fin-entry-grid select:disabled{opacity:.6}@media(max-width:480px){.fin-entry-grid{grid-template-columns:1fr}}
 </style>
-<link rel="stylesheet" href="dashboard.css?v=1">
+<link rel="stylesheet" href="dashboard.css?v=2">
 </head>
 <body>
 
@@ -285,9 +285,9 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div class="nav-sec">Main</div>
       <div class="nav-it on" id="nav-home" onclick="showPg('home')" data-pg="home"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
       <div class="nav-it" onclick="showPg('editors')" data-pg="editors"><i class="ti ti-users"></i> Editors</div>
+      <div class="nav-it" id="nav-uploads" onclick="showPg('uploads')" data-pg="uploads" style="display:none"><i class="ti ti-cloud-upload"></i> Video Upload</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Scriptbook</div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-notebook"></i> Notes</div>
-      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" id="nav-finance" onclick="toggleFinanceMenu()" data-pg="finance" style="display:none;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:9px"><i class="ti ti-coin"></i> Finance</div>
         <i class="ti ti-chevron-down" id="nav-finance-arrow" style="font-size:13px;transition:.2s;opacity:.5"></i>
@@ -405,6 +405,8 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         </div>
       </div>
     </div>
+
+    <div class="pg" id="pg-uploads"><div id="upload-content"></div></div>
 
     <!-- HOME PAGE -->
     <div class="pg" id="pg-home">
@@ -985,6 +987,7 @@ async function doLogout(){sessionStorage.removeItem('sa-editor-view:'+user?.id);
 
 // ── NAV
 function setupNav(){
+  document.getElementById('nav-uploads').style.display=['owner','manager'].includes(profile?.role)?'flex':'none';
   const role=profile?.role||'employee';
   const name=profile?.name||user?.email?.split('@')[0]||'?';
   document.getElementById('u-nm').textContent=name;
@@ -997,7 +1000,6 @@ function setupNav(){
     document.getElementById('nav-admin-sec').style.display='block';
     document.getElementById('nav-users').style.display='flex';
     document.getElementById('nav-private-notes').style.display='flex';
-    document.getElementById('nav-expenses').style.display='flex';
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='block';
@@ -1007,7 +1009,6 @@ function setupNav(){
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
     document.getElementById('nav-private-notes').style.display='flex';
-    document.getElementById('nav-expenses').style.display='none';
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
     if(fc)fc.style.display='none';
@@ -1018,7 +1019,6 @@ function setupNav(){
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
     document.getElementById('nav-private-notes').style.display='none';
-    document.getElementById('nav-expenses').style.display='none';
     // Shared boards enforce their own database permissions
     document.querySelectorAll('.nav-it').forEach(n=>{
       const pg=n.getAttribute('data-pg');
@@ -1031,6 +1031,9 @@ function setupNav(){
   }
 }
 function showPg(pg){
+  let navigationTask;
+  if(pg==='expenses'){if(profile?.role==='owner')showFinTab('transactions');return;}
+  if(pg==='uploads'&&!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
   if(pg==='dashboard')pg='home';
   if(pg==='notes')pg='private-notes';
   if(['home','private-notes'].includes(pg)&&!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
@@ -1050,7 +1053,8 @@ function showPg(pg){
 
   if(pg==='users'&&profile?.role==='owner')loadUsers();
   if(pg==='notes')loadSharedNote();
-  if(pg==='editors')loadEditors();
+  if(pg==='editors')navigationTask=loadEditors();
+  if(pg==='uploads')navigationTask=loadVideoUploads();
   if(pg==='home')loadHomePage();
   if(pg==='private-notes'){
     if(!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
@@ -1061,6 +1065,7 @@ function showPg(pg){
     if(!frame.getAttribute('src'))frame.src='board.html';
   }
   document.getElementById('sb').classList.remove('open');
+  return navigationTask;
 }
 
 // ── MONTH
@@ -2294,7 +2299,8 @@ async function loadFinTransactions(){
       <td style="font-weight:700;color:${r._type==='income'?'#00D4AA':'#EF4444'};white-space:nowrap">${r._type==='income'?'+':'-'}${fmtBDTFull(r.amount)}</td>
       <td>${finStatusBadge(r._status)} ${finEntryMenu(r._type,r.id)}</td>
     </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:#374151;padding:32px">No transactions yet</td></tr>'}</tbody></table>
-  </div>`;
+  </div><div id="fin-legacy-archive" style="margin-top:18px"></div>`;
+  await loadLegacyFinanceArchive();
 }
 
 async function loadFinRequests(){
@@ -2742,7 +2748,7 @@ async function loadHomePage(){
  const el=document.getElementById('home-content');if(!el||!['owner','manager'].includes(profile?.role))return;
  const run=++_homeLoad,owner=profile.role==='owner',esc=finEscape;
  el.innerHTML='<div class="hd-loading"><div class="spinner"></div><p>Getting your workspace ready…</p></div>';
- const queries=[sb.from('editors').select('id,name,skills'),sb.from('editor_projects').select('id,editor_id,project_name,status,is_completed,deadline,updated_at')];
+ const queries=[sb.from('editors').select('id,name,skills'),sb.from('editor_projects').select('id,editor_id,project_name,status,is_completed,deadline,updated_at,upload_status')];
  if(owner)queries.push(sb.from('finance_income').select('amount,date,status'),sb.from('finance_expenses').select('amount,date,payment_date,approval_status'));
  try{
  const results=await Promise.all(queries);if(run!==_homeLoad)return;
@@ -2759,15 +2765,56 @@ async function loadHomePage(){
  const money=amount=>`<strong title="${esc(fmtBDTFull(amount))}">${fmtBDT(amount)}</strong><small>${fmtBDTFull(amount)}</small>`;
  const financeError=owner&&(results[2].error||results[3].error),income=owner&&!financeError?(results[2].data||[]).filter(r=>r.status==='received'&&r.date?.startsWith(month)).reduce((n,r)=>n+Number(r.amount),0):0,spent=owner&&!financeError?(results[3].data||[]).filter(r=>r.approval_status==='paid'&&(r.payment_date||r.date)?.startsWith(month)).reduce((n,r)=>n+Number(r.amount),0):0;
  el.innerHTML=`<div class="hd-top"><div><div class="hd-eyebrow">SA MEDIA EMPIRE / WORKSPACE</div><h1>Dashboard<span>.</span></h1></div><button class="hd-refresh" onclick="loadHomePage()" title="Refresh dashboard"><i class="ti ti-refresh"></i> Refresh</button></div>
- <section class="hd-hero"><div class="hd-hero-copy"><span class="hd-date">${esc(day)}</span><h2>${greeting}, ${name}.</h2><p>A clear view of your team, your content,<br>and what needs your attention.</p><button onclick="showPg('editors')">Open editor workspaces <i class="ti ti-arrow-up-right"></i></button></div><div class="hd-hero-side"><div class="hd-orbit" style="--progress:${percent}%"><div><strong>${percent}<small>%</small></strong><span>Projects completed</span></div></div><span class="hd-hero-caption">${completed.length} of ${total} projects · all time</span></div></section>
- <div class="hd-stats">${[['ti-folders','Active projects',active.length,'In your production pipeline'],['ti-eye','Ready for review',review.length,'Waiting for your feedback'],['ti-clock-exclamation','Overdue',late.length,'Open projects past deadline'],['ti-users','Editors',eds.length,'Your creative team']].map(([icon,label,count,hint])=>`<button class="hd-stat" onclick="showPg('editors')"><span><i class="ti ${icon}"></i>${label}</span><strong>${count}</strong><small>${hint}</small></button>`).join('')}</div>
- <div class="hd-columns"><div class="hd-primary"><section class="hd-panel"><header><div><h3>Production pipeline</h3><p>From assignment to final approval</p></div><span class="hd-tag">${active.length} active</span></header><div class="hd-track">${stages.filter(s=>s.count).map(s=>`<div style="width:${s.count/Math.max(active.length,1)*100}%;background:${s.color}" title="${s.label}: ${s.count}"></div>`).join('')}</div><div class="hd-stages">${stages.map(s=>`<div><span><b style="background:${s.color}"></b>${s.label}</span><strong>${s.count}</strong></div>`).join('')}</div><div class="hd-footnote">Done projects stay here until you mark them Complete.</div></section>
- <section class="hd-panel"><header><div><h3>Needs your review</h3><p>Keep your next videos moving</p></div><button class="hd-text-btn" onclick="showPg('editors')">View projects ↗</button></header>${review.length?review.slice(0,5).map(p=>`<div class="hd-project"><span class="hd-project-icon"><i class="ti ti-player-play"></i></span><div><strong>${esc(p.project_name||'Untitled project')}</strong><small>${editorName(p.editor_id)}</small></div><span class="hd-tag amber">In review</span></div>`).join(''):'<div class="hd-empty"><i class="ti ti-checks"></i><strong>You’re all caught up.</strong><p>Projects will appear here when an editor submits for review.</p></div>'}${review.length>5?`<div class="hd-footnote">+${review.length-5} more projects in review</div>`:''}</section>
- <section class="hd-panel"><header><div><h3>Team workload</h3><p>Current projects across your editors</p></div><button class="hd-text-btn" onclick="showPg('editors')">All editors ↗</button></header><div class="hd-team">${eds.length?eds.slice(0,8).map(e=>{const count=active.filter(p=>p.editor_id===e.id).length;return `<div class="hd-person"><span class="hd-avatar">${esc((e.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2))}</span><div><strong>${esc(e.name)}</strong><small>${esc((e.skills||[]).slice(0,2).join(' · ')||'Video editor')}</small></div><span class="hd-workload">${count}<small>projects</small></span></div>`}).join(''):'<div class="hd-empty"><p>Add your first editor to start building your team.</p></div>'}</div></section></div>
- <aside class="hd-secondary"><section class="hd-panel hd-quick"><header><h3>Your workspace</h3><i class="ti ti-sparkles"></i></header>${[['board','ti-layout-board','Scriptbook','Research, plan & connect ideas'],['private-notes','ti-notebook','Notes','Your owner & manager workspace'],...(owner?[['expenses','ti-wallet','Expense Tracker','Log day-to-day expenses']]:[])].map(([pg,icon,label,desc])=>`<button onclick="showPg('${pg}')"><i class="ti ${icon}"></i><span><strong>${label}</strong><small>${desc}</small></span><i class="ti ti-arrow-up-right"></i></button>`).join('')}</section>
- <section class="hd-panel"><header><div><h3>Upcoming deadlines</h3><p>Earliest deadlines first</p></div><i class="ti ti-calendar-event"></i></header>${due.length?due.slice(0,4).map(p=>`<div class="hd-deadline"><span class="hd-date-tile ${p.deadline.slice(0,10)<today?'late':''}">${esc(p.deadline.slice(8,10))}<small>${esc(new Date(p.deadline.slice(0,10)+'T12:00:00').toLocaleDateString('en-US',{month:'short'}))}</small></span><div><strong>${esc(p.project_name)}</strong><small>${editorName(p.editor_id)}${p.deadline.slice(0,10)<today?' · Overdue':p.deadline.slice(0,10)===today?' · Due today':''}</small></div></div>`).join(''):'<div class="hd-empty compact"><p>No upcoming deadlines. Add a deadline to a project to see it here.</p></div>'}</section>
- ${owner?`<section class="hd-panel hd-finance"><header><div><h3>Finance snapshot</h3><p>${esc(new Date(today+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}))} · BDT</p></div><i class="ti ti-chart-line"></i></header>${financeError?'<p class="hd-footnote">Finance could not load. Open Finance or try refreshing.</p>':`<div class="hd-money"><span>Received income</span><div>${money(income)}</div></div><div class="hd-money"><span>Paid expenses</span><div>${money(spent)}</div></div><div class="hd-money net"><span>Monthly net</span><div>${money(income-spent)}</div></div>`}<button onclick="showFinTab('overview')">Open Finance <i class="ti ti-arrow-up-right"></i></button><p class="hd-footnote">From Finance entries. Expense Tracker records are separate.</p></section>`:''}</aside></div><div class="hd-bottom">Built for a focused creative team. <span>SA Media Empire</span></div>`;
+ <section class="hd-hero"><div class="hd-hero-copy"><span class="hd-date">${esc(day)}</span><h2>${greeting}, ${name}.</h2><p>A clear view of your team, your content,<br>and what needs your attention.</p><button onclick="showPg('editors')">Open editor workspaces <i class="ti ti-arrow-up-right"></i></button></div><div class="hd-hero-side"><button class="hd-orbit" onclick="openDashboardProjects('completed')" aria-label="View completed projects" style="--progress:${percent}%"><div><strong>${percent}<small>%</small></strong><span>Projects completed</span></div></button><span class="hd-hero-caption">${completed.length} of ${total} projects · all time</span></div></section>
+ <div class="hd-stats">${[['ti-folders','Active projects',active.length,'In your production pipeline',"openDashboardProjects('active')"],['ti-eye','Ready for review',review.length,'Waiting for your feedback',"openDashboardProjects('review')"],['ti-clock-exclamation','Overdue',late.length,'Open projects past deadline',"openDashboardProjects('overdue')"],['ti-cloud-upload','Upload queue',completed.filter(p=>p.upload_status!=='published').length,'Completed, not yet published',"_uploadFilter='queue';showPg('uploads')"]].map(([icon,label,count,hint,action])=>`<button class="hd-stat" onclick="${action}"><span><i class="ti ${icon}"></i>${label}</span><strong>${count}</strong><small>${hint}</small></button>`).join('')}</div>
+ <div class="hd-columns"><div class="hd-primary"><section class="hd-panel"><header><div><h3>Production pipeline</h3><p>From assignment to final approval</p></div><span class="hd-tag">${active.length} active</span></header><div class="hd-track">${stages.filter(s=>s.count).map(s=>`<div style="width:${s.count/Math.max(active.length,1)*100}%;background:${s.color}" title="${s.label}: ${s.count}"></div>`).join('')}</div><div class="hd-stages">${stages.map(s=>`<button onclick="openDashboardProjects('${s.key}')"><span><b style="background:${s.color}"></b>${s.label}</span><strong>${s.count}</strong></button>`).join('')}</div><div class="hd-footnote">Done projects stay here until you mark them Complete.</div></section>
+ <section class="hd-panel"><header><div><h3>Needs your review</h3><p>Keep your next videos moving</p></div><button class="hd-text-btn" onclick="openDashboardProjects('review')">View projects ↗</button></header>${review.length?review.slice(0,5).map(p=>`<button class="hd-project" onclick="openDashboardProject(${p.id})"><span class="hd-project-icon"><i class="ti ti-player-play"></i></span><div><strong>${esc(p.project_name||'Untitled project')}</strong><small>${editorName(p.editor_id)}</small></div><span class="hd-tag amber">In review</span></button>`).join(''):'<div class="hd-empty"><i class="ti ti-checks"></i><strong>You’re all caught up.</strong><p>Projects will appear here when an editor submits for review.</p></div>'}${review.length>5?`<div class="hd-footnote">+${review.length-5} more projects in review</div>`:''}</section>
+ <section class="hd-panel"><header><div><h3>Team workload</h3><p>Current projects across your editors</p></div><button class="hd-text-btn" onclick="showPg('editors')">All editors ↗</button></header><div class="hd-team">${eds.length?eds.slice(0,8).map(e=>{const count=active.filter(p=>p.editor_id===e.id).length;return `<button class="hd-person" onclick="openDashboardEditor(${e.id})"><span class="hd-avatar">${esc((e.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2))}</span><div><strong>${esc(e.name)}</strong><small>${esc((e.skills||[]).slice(0,2).join(' · ')||'Video editor')}</small></div><span class="hd-workload">${count}<small>projects</small></span></button>`}).join(''):'<div class="hd-empty"><p>Add your first editor to start building your team.</p></div>'}</div></section></div>
+ <aside class="hd-secondary"><section class="hd-panel hd-quick"><header><h3>Your workspace</h3><i class="ti ti-sparkles"></i></header>${[['uploads','ti-cloud-upload','Video Upload','Move completed videos to YouTube'],['board','ti-layout-board','Scriptbook','Research, plan & connect ideas'],['private-notes','ti-notebook','Notes','Your owner & manager workspace'],...(owner?[['finance','ti-wallet','Finance','Income, expenses & payments']]:[])].map(([pg,icon,label,desc])=>`<button onclick="${pg==='finance'?"showFinTab('overview')":"showPg('"+pg+"')"}"><i class="ti ${icon}"></i><span><strong>${label}</strong><small>${desc}</small></span><i class="ti ti-arrow-up-right"></i></button>`).join('')}</section>
+ <section class="hd-panel"><header><div><h3>Upcoming deadlines</h3><p>Earliest deadlines first</p></div><i class="ti ti-calendar-event"></i></header>${due.length?due.slice(0,4).map(p=>`<button class="hd-deadline" onclick="openDashboardProject(${p.id})"><span class="hd-date-tile ${p.deadline.slice(0,10)<today?'late':''}">${esc(p.deadline.slice(8,10))}<small>${esc(new Date(p.deadline.slice(0,10)+'T12:00:00').toLocaleDateString('en-US',{month:'short'}))}</small></span><div><strong>${esc(p.project_name)}</strong><small>${editorName(p.editor_id)}${p.deadline.slice(0,10)<today?' · Overdue':p.deadline.slice(0,10)===today?' · Due today':''}</small></div></button>`).join(''):'<div class="hd-empty compact"><p>No upcoming deadlines. Add a deadline to a project to see it here.</p></div>'}</section>
+ ${owner?`<section class="hd-panel hd-finance"><header><div><h3>Finance snapshot</h3><p>${esc(new Date(today+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}))} · BDT</p></div><i class="ti ti-chart-line"></i></header>${financeError?'<p class="hd-footnote">Finance could not load. Open Finance or try refreshing.</p>':`<div class="hd-money"><span>Received income</span><div>${money(income)}</div></div><div class="hd-money"><span>Paid expenses</span><div>${money(spent)}</div></div><div class="hd-money net"><span>Monthly net</span><div>${money(income-spent)}</div></div>`}<button onclick="showFinTab('overview')">Open Finance <i class="ti ti-arrow-up-right"></i></button><p class="hd-footnote">Received income less paid expenses, across all channels.</p></section>`:''}</aside></div><div class="hd-bottom">Built for a focused creative team. <span>SA Media Empire</span></div>`;
  }catch(error){if(run!==_homeLoad)return;el.innerHTML=`<div class="hd-panel hd-empty"><h3>Couldn’t load your dashboard</h3><p>${esc(error.message||'Please try again.')}</p><button class="hd-refresh" onclick="loadHomePage()">Try again</button></div>`}
+}
+
+let _uploadRows=[],_uploadChannels=[],_uploadFilter='ready',_uploadSearch='',_uploadLoad=0;
+function uploadVideoUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&['youtube.com','www.youtube.com','m.youtube.com','youtu.be'].includes(u.hostname)&&u.pathname!=='/'?u.href:null}catch{return null}}
+async function loadVideoUploads(){
+ if(!['owner','manager'].includes(profile?.role))return;
+ const el=document.getElementById('upload-content'),gen=++_uploadLoad;el.innerHTML='<div class="hd-loading"><div class="spinner"></div><p>Loading completed videos…</p></div>';
+ const [projects,eds,channels]=await Promise.all([sb.from('editor_projects').select('*').eq('is_completed',true).order('updated_at',{ascending:false}),sb.from('editors').select('id,name'),sb.from('finance_channels').select('id,name').order('name')]);
+ if(gen!==_uploadLoad)return;if(projects.error||eds.error||channels.error){el.innerHTML=`<div class="hd-panel"><p>${finEscape((projects.error||eds.error||channels.error).message)}</p><button class="hd-refresh" onclick="loadVideoUploads()">Retry</button></div>`;return}
+ _uploadChannels=channels.data||[];_uploadRows=(projects.data||[]).map(p=>({...p,editor_name:eds.data.find(e=>e.id===p.editor_id)?.name||'Unassigned'}));
+ el.innerHTML=`<div class="hd-top"><div><div class="hd-eyebrow">CONTENT OPERATIONS</div><h1>Video Upload<span>.</span></h1><p class="upload-intro">Completed videos, ready for the next step.</p></div><button class="hd-refresh" onclick="loadVideoUploads()">↻ Refresh</button></div><div class="upload-summary">${[['ready','Ready to upload'],['uploaded','Uploaded'],['published','Published']].map(([key,label])=>`<button onclick="setUploadFilter('${key}')"><small>${label}</small><strong>${_uploadRows.filter(p=>p.upload_status===key).length}</strong></button>`).join('')}</div><div class="upload-toolbar"><div class="upload-filters">${[['queue','Upload queue'],['ready','Ready'],['uploaded','Uploaded'],['published','Published'],['all','All videos']].map(([key,label])=>`<button data-upload-filter="${key}" onclick="setUploadFilter('${key}')">${label}</button>`).join('')}</div><input class="f-inp" id="upload-search" placeholder="Search video or editor…" value="${finEscape(_uploadSearch)}" oninput="_uploadSearch=this.value;renderUploadList()"></div><div id="upload-list"></div><p class="hd-footnote">This workspace tracks upload progress. Upload the file to YouTube first, then confirm its status here. Payment history is separate.</p>`;renderUploadList();
+}
+function setUploadFilter(filter){_uploadFilter=filter;renderUploadList()}
+function renderUploadList(){
+ document.querySelectorAll('[data-upload-filter]').forEach(b=>b.classList.toggle('on',b.dataset.uploadFilter===_uploadFilter));
+ const el=document.getElementById('upload-list');if(!el)return;const term=_uploadSearch.toLowerCase(),rows=_uploadRows.filter(p=>(_uploadFilter==='all'||(_uploadFilter==='queue'?p.upload_status!=='published':p.upload_status===_uploadFilter))&&(`${p.project_name} ${p.editor_name}`).toLowerCase().includes(term));
+ el.innerHTML=rows.length?rows.map(p=>{const url=uploadVideoUrl(p.upload_url),links=projectSubmissionLinks(p);return `<article class="upload-card"><div class="upload-card-top"><div><span class="hd-tag">${{ready:'Ready to upload',uploaded:'Uploaded',published:'Published'}[p.upload_status]||'Ready'}</span><h3>${finEscape(p.project_name)}</h3><p>${finEscape(p.editor_name)} · ${finEscape(_uploadChannels.find(c=>c.id===p.upload_channel_id)?.name||'Channel not selected')}</p></div><button class="hd-text-btn" onclick="openDashboardProject(${p.id})">Open project ↗</button></div><div class="upload-links">${links.map((link,i)=>`<a href="${finEscape(link)}" target="_blank" rel="noopener noreferrer">Source video ${i+1} ↗</a>`).join('')||'<span>No source link yet — open the project to add one.</span>'}${url?`<a href="${finEscape(url)}" target="_blank" rel="noopener noreferrer">YouTube video ↗</a>`:''}</div>${p.upload_notes?`<p class="upload-note">${finEscape(p.upload_notes)}</p>`:''}<footer><small>${p.published_at?'Published confirmed: '+finEscape(new Date(p.published_at).toLocaleString('en-GB')):p.uploaded_at?'Uploaded confirmed: '+finEscape(new Date(p.uploaded_at).toLocaleString('en-GB')):'Waiting for upload confirmation'}</small><button class="btn-p" onclick="editVideoUpload(${p.id})">${p.upload_status==='ready'?'Update upload status':'Manage upload'}</button></footer></article>`}).join(''):'<div class="hd-panel hd-empty"><i class="ti ti-cloud-upload"></i><h3>No videos here yet</h3><p>Mark a Done project Complete to add it automatically, or choose another filter.</p></div>';
+}
+async function editVideoUpload(id){
+ if(!['owner','manager'].includes(profile?.role))return;
+ const {data:p,error}=await sb.from('editor_projects').select('*').eq('id',id).single();if(error||!p?.is_completed){toast(error?.message||'This project is no longer complete');await loadVideoUploads();return}
+ document.getElementById('upload-dialog')?.remove();const d=document.createElement('dialog');d.id='upload-dialog';d.className='fin-entry-dialog';
+ d.innerHTML=`<form><h2>Video upload</h2><p class="upload-intro">${finEscape(p.project_name)}</p><label class="f-lbl">Status<select class="f-inp" name="status"><option value="ready">Ready to upload</option><option value="uploaded">Uploaded to YouTube</option><option value="published">Published / live</option></select></label><label class="f-lbl">Channel<select class="f-inp" name="channel"><option value="">Not selected</option>${_uploadChannels.map(c=>`<option value="${c.id}">${finEscape(c.name)}</option>`).join('')}</select></label><label class="f-lbl">YouTube video link (required for Published)<input class="f-inp" name="url" type="url" placeholder="https://www.youtube.com/watch?v=…" value="${finEscape(p.upload_url||'')}"></label><label class="f-lbl">Upload notes<textarea class="f-inp" name="notes" rows="3">${finEscape(p.upload_notes||'')}</textarea></label><p class="hd-footnote">Confirm only after uploading or publishing on YouTube. This does not upload a file or change payment status.</p><p class="fin-entry-error" role="alert"></p><footer><button type="button" class="fin-btn fin-btn-secondary">Cancel</button><button type="submit" class="fin-btn fin-btn-primary">Confirm & save</button></footer></form>`;
+ document.body.append(d);d.querySelector('[name=status]').value=p.upload_status;d.querySelector('[name=channel]').value=p.upload_channel_id||'';d.querySelector('[type=button]').onclick=()=>d.close();d.onclose=()=>d.remove();d.showModal();
+ d.querySelector('form').onsubmit=async e=>{e.preventDefault();const state=d.querySelector('[name=status]').value,raw=d.querySelector('[name=url]').value.trim(),url=raw?uploadVideoUrl(raw):null,err=d.querySelector('[role=alert]');if(raw&&!url||state==='published'&&!url){err.textContent='Add a valid HTTPS YouTube video link.';return}const buttons=d.querySelectorAll('button');buttons.forEach(b=>b.disabled=true);try{let q=sb.from('editor_projects').update({upload_status:state,upload_url:url,upload_channel_id:d.querySelector('[name=channel]').value||null,upload_notes:d.querySelector('[name=notes]').value.trim()||null}).eq('id',id).eq('is_completed',true);q=p.updated_at?q.eq('updated_at',p.updated_at):q.is('updated_at',null);const r=await q.select('id');if(r.error)throw r.error;if(!r.data?.length)throw new Error('Project changed. Close and reopen this form.');d.close();_uploadFilter=state;toast('Upload status saved ✓');await loadVideoUploads()}catch(ex){err.textContent=ex.message;buttons.forEach(b=>b.disabled=false)}};
+}
+async function openDashboardEditor(id){
+ sessionStorage.removeItem('sa-editor-view:'+user?.id);await showPg('editors');if(editors.some(e=>e.id===id))await openWorkspace(id);else toast('Editor not found');
+}
+async function openDashboardProject(id){
+ document.getElementById('dashboard-projects-dialog')?.close();const {data:p,error}=await sb.from('editor_projects').select('id,editor_id,is_completed').eq('id',id).single();if(error||!p){toast('Project unavailable');return}await openDashboardEditor(p.editor_id);if(!_currentProjects.some(x=>x.id===id)){toast('Project unavailable');return}if(p.is_completed)wsTab('payment',document.querySelector('#ws-payment-tab'));openProjDetail(id);
+}
+async function openDashboardProjects(filter){
+ const {data,error}=await sb.from('editor_projects').select('id,project_name,status,is_completed,deadline').order('updated_at',{ascending:false});if(error){toast(error.message);return}
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const rows=(data||[]).filter(p=>filter==='completed'?p.is_completed:!p.is_completed&&(filter==='active'||filter==='overdue'?(filter==='active'||p.status!=='done'&&p.deadline&&p.deadline.slice(0,10)<today):p.status===filter));
+ document.getElementById('dashboard-projects-dialog')?.remove();const d=document.createElement('dialog');d.id='dashboard-projects-dialog';d.className='fin-entry-dialog';d.innerHTML=`<h2>${finEscape({active:'Active projects',completed:'Completed projects',overdue:'Overdue projects',assigned:'Assigned projects',in_progress:'In progress',review:'Ready for review',done:'Done projects'}[filter]||'Projects')}</h2><div class="dashboard-project-links">${rows.map(p=>`<button onclick="openDashboardProject(${p.id})"><span>${finEscape(p.project_name)}</span><small>Open project ↗</small></button>`).join('')||'<p>No projects in this group.</p>'}</div><footer><button class="fin-btn fin-btn-secondary" onclick="this.closest('dialog').close()">Close</button></footer>`;document.body.append(d);d.onclose=()=>d.remove();d.showModal();
+}
+async function loadLegacyFinanceArchive(){
+ const el=document.getElementById('fin-legacy-archive');if(!el||profile?.role!=='owner')return;const {data,error}=await sb.from('expenses').select('*').order('expense_date',{ascending:false});if(error){el.textContent='Previous tracker records could not load.';return}if(!data?.length){el.remove();return}
+ el.innerHTML=`<details class="fin-card"><summary style="cursor:pointer;font-weight:600">Previous Expense Tracker records (${data.length})</summary><p style="margin:12px 0;color:#6b7280;font-size:12px">Preserved historical records. These are not added again to the current Finance balance.</p><div style="overflow:auto"><table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Receipt</th></tr></thead><tbody>${data.map(r=>`<tr><td>${fmtDate(r.expense_date)}</td><td>${finEscape(r.description)}${r.note?'<br><small>'+finEscape(r.note)+'</small>':''}</td><td>${finEscape(r.category)}</td><td>${fmtBDTFull(r.amount)}</td><td>${r.invoice_url&&safeSubmissionUrl(r.invoice_url)?`<a href="${finEscape(r.invoice_url)}" target="_blank" rel="noopener noreferrer">View ↗</a>`:'—'}</td></tr>`).join('')}</tbody></table></div></details>`;
 }
 
 // ── SHARED NOTES
@@ -4605,7 +4652,7 @@ async function completeEditorProject(id,button){
   if(error)throw error;
   await loadWorkspaceProjects();
   if(!data?.length){toast('Project changed already. List refreshed.');return;}
-  toast('Project completed — moved to Payment ✓');
+  toast('Project completed — Payment & Video Upload updated ✓');
  }catch(e){toast('Could not complete: '+e.message);}finally{if(button)button.disabled=false;}
 }
 

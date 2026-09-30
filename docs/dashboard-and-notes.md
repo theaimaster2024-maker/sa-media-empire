@@ -2,14 +2,14 @@
 
 Home is now the single Dashboard. The previous expense-only Dashboard page and
 loader have been removed; old dashboard routes resolve to Home. Sidebar order:
-Dashboard, Editors, Scriptbook, Notes, Expense Tracker, Finance, Team Members.
+Dashboard, Editors, Video Upload, Scriptbook, Notes, Finance, Team Members.
 Existing role visibility remains, except Notes now supports owners and managers.
 Editors still see Editors and shared Scriptbook boards only.
 
 Dashboard CSS is isolated in dashboard.css. Live project data drives active counts,
 review queue, overdue deadlines, pipeline and team workload. Completed means
 is_completed, not merely Done. Finance snapshot is owner-only and uses received
-income/paid expenses from Finance, separately from the legacy Expense Tracker.
+income/paid expenses from Finance, with legacy Expense Tracker records preserved as a Finance archive.
 Dates use Asia/Dhaka. No sample records are inserted into the database.
 
 Notes uses the existing first private_notes record as the shared staff workspace.
