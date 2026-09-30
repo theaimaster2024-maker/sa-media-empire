@@ -231,6 +231,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .fin-entry-menu{display:inline-block;position:relative;vertical-align:middle;margin-left:6px;color:#6b7280}.fin-entry-menu summary{cursor:pointer;list-style:none;font-size:22px;padding:0 8px;border-radius:6px}.fin-entry-menu summary:hover{background:#ede9fe}.fin-entry-menu>div{display:flex;gap:4px;padding:5px;background:#f5f3ff;border-radius:8px}.fin-entry-menu button{border:0;background:transparent;color:#51418a;cursor:pointer;padding:5px;white-space:nowrap}.fin-entry-menu .danger{color:#b91c1c}.fin-entry-dialog{border:0;border-radius:18px;padding:25px;width:min(600px,94vw);max-height:90vh;color:#242137;background:white;margin:auto}.fin-entry-dialog::backdrop{background:#17132d88}.fin-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}.fin-entry-grid label{text-transform:capitalize}.fin-entry-dialog footer{display:flex;justify-content:flex-end;gap:10px}.fin-entry-hint{font-size:13px;line-height:1.6;margin-top:12px;color:#6b7280}.fin-entry-error{color:#b91c1c;margin-bottom:12px}.fin-entry-grid input:disabled,.fin-entry-grid select:disabled{opacity:.6}@media(max-width:480px){.fin-entry-grid{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="dashboard.css?v=3">
+<link rel="stylesheet" href="private-notes.css?v=1">
 </head>
 <body>
 
@@ -288,6 +289,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div class="nav-it" id="nav-uploads" onclick="showPg('uploads')" data-pg="uploads" style="display:none"><i class="ti ti-cloud-upload"></i> Video Upload</div>
       <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Scriptbook</div>
       <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-notebook"></i> Notes</div>
+      <div class="nav-it" id="nav-owner-notes" onclick="showPg('owner-notes')" data-pg="owner-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes</div>
       <div class="nav-it" id="nav-finance" onclick="toggleFinanceMenu()" data-pg="finance" style="display:none;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:9px"><i class="ti ti-coin"></i> Finance</div>
         <i class="ti ti-chevron-down" id="nav-finance-arrow" style="font-size:13px;transition:.2s;opacity:.5"></i>
@@ -407,6 +409,14 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
 
     <div class="pg" id="pg-uploads"><div id="upload-content"></div></div>
+
+<div class="pg" id="pg-owner-notes"><div class="owner-doc-heading"><div><h1>Private Notes</h1><p><i class="ti ti-lock"></i> Only you · Owner workspace<br>Your personal ideas, plans and reminders.</p></div><div class="owner-doc-actions"><button class="hd-refresh" onclick="loadOwnerDocument()">Retry load</button><button class="btn-p" onclick="saveOwnerDocument()">Save</button></div></div><div class="owner-doc-shell"><div id="owner-doc-toolbar" role="toolbar" aria-label="Private note formatting">
+<select aria-label="Text style" onchange="ownerFormat('formatBlock',this.value)"><option value="p">Normal text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option></select>
+<button title="Bold" aria-label="Bold" onclick="ownerFormat('bold')"><b>B</b></button><button title="Italic" aria-label="Italic" onclick="ownerFormat('italic')"><i>I</i></button><button title="Underline" aria-label="Underline" onclick="ownerFormat('underline')"><u>U</u></button><button title="Strikethrough" aria-label="Strikethrough" onclick="ownerFormat('strikeThrough')"><s>S</s></button>
+<button title="Bullet list" onclick="ownerFormat('insertUnorderedList')">• List</button><button title="Numbered list" onclick="ownerFormat('insertOrderedList')">1. List</button>
+<label>Text <input type="color" value="#302a37" aria-label="Text color" onchange="ownerFormat('foreColor',this.value)"></label><label>Highlight <input type="color" value="#fff1a8" aria-label="Highlight color" onchange="ownerFormat('hiliteColor',this.value)"></label>
+<button title="Align left" onclick="ownerFormat('justifyLeft')">Left</button><button title="Align center" onclick="ownerFormat('justifyCenter')">Center</button><button title="Align right" onclick="ownerFormat('justifyRight')">Right</button><button title="Undo" onclick="ownerFormat('undo')">↶</button><button title="Redo" onclick="ownerFormat('redo')">↷</button><button title="Clear formatting" onclick="ownerFormat('removeFormat')">Clear format</button>
+</div><div class="owner-doc-paper"><div id="owner-doc-editor" contenteditable="false" role="textbox" aria-multiline="true" aria-label="Private notes document" spellcheck="true"></div></div><div class="owner-doc-footer"><span id="owner-doc-status" role="status">Loading…</span><span id="owner-doc-count">0 words</span></div></div></div>
 
     <!-- HOME PAGE -->
     <div class="pg" id="pg-home">
@@ -987,6 +997,7 @@ async function doLogout(){sessionStorage.removeItem('sa-editor-view:'+user?.id);
 
 // ── NAV
 function setupNav(){
+  document.getElementById('nav-owner-notes').style.display=profile?.role==='owner'?'flex':'none';
   document.getElementById('nav-uploads').style.display=['owner','manager'].includes(profile?.role)?'flex':'none';
   const role=profile?.role||'employee';
   const name=profile?.name||user?.email?.split('@')[0]||'?';
@@ -1031,6 +1042,8 @@ function setupNav(){
   }
 }
 function showPg(pg){
+  if(pg==='owner-notes'&&profile?.role!=='owner'){toast('Owner only');return;}
+  if(pg==='owner-notes')loadOwnerDocument();
   let navigationTask;
   if(pg==='expenses'){if(profile?.role==='owner')showFinTab('transactions');return;}
   if(pg==='uploads'&&!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
@@ -4794,6 +4807,7 @@ if(typeof supabase !== 'undefined'){
   window.addEventListener('load', init);
 }
 </script>
+<script src="private-notes.js?v=1"></script>
 </body>
 </html>
 
