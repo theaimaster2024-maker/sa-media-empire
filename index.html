@@ -230,6 +230,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 .fin-entry-menu{display:inline-block;position:relative;vertical-align:middle;margin-left:6px;color:#6b7280}.fin-entry-menu summary{cursor:pointer;list-style:none;font-size:22px;padding:0 8px;border-radius:6px}.fin-entry-menu summary:hover{background:#ede9fe}.fin-entry-menu>div{display:flex;gap:4px;padding:5px;background:#f5f3ff;border-radius:8px}.fin-entry-menu button{border:0;background:transparent;color:#51418a;cursor:pointer;padding:5px;white-space:nowrap}.fin-entry-menu .danger{color:#b91c1c}.fin-entry-dialog{border:0;border-radius:18px;padding:25px;width:min(600px,94vw);max-height:90vh;color:#242137;background:white;margin:auto}.fin-entry-dialog::backdrop{background:#17132d88}.fin-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}.fin-entry-grid label{text-transform:capitalize}.fin-entry-dialog footer{display:flex;justify-content:flex-end;gap:10px}.fin-entry-hint{font-size:13px;line-height:1.6;margin-top:12px;color:#6b7280}.fin-entry-error{color:#b91c1c;margin-bottom:12px}.fin-entry-grid input:disabled,.fin-entry-grid select:disabled{opacity:.6}@media(max-width:480px){.fin-entry-grid{grid-template-columns:1fr}}
 </style>
+<link rel="stylesheet" href="dashboard.css?v=1">
 </head>
 <body>
 
@@ -282,12 +283,11 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     </div>
     <nav class="sb-nav">
       <div class="nav-sec">Main</div>
-      <div class="nav-it on" id="nav-home" onclick="showPg('home')" data-pg="home"><i class="ti ti-home"></i> Home</div>
-      <div class="nav-it on" onclick="showPg('notes')" data-pg="notes"><i class="ti ti-notebook"></i> Notes <span style="font-size:9px;background:rgba(14,165,233,.15);color:#0EA5E9;padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px">SHARED</span></div>
-      <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-lock"></i> Private Notes <i class="ti ti-lock nav-lock"></i></div>
+      <div class="nav-it on" id="nav-home" onclick="showPg('home')" data-pg="home"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
       <div class="nav-it" onclick="showPg('editors')" data-pg="editors"><i class="ti ti-users"></i> Editors</div>
-      <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Script Board</div>
-      <div class="nav-it" onclick="showPg('dashboard')" data-pg="dashboard"><i class="ti ti-chart-bar"></i> Dashboard</div>
+      <div class="nav-it" onclick="showPg('board')" data-pg="board"><i class="ti ti-layout-board"></i> Scriptbook</div>
+      <div class="nav-it" id="nav-private-notes" onclick="showPg('private-notes')" data-pg="private-notes" style="display:none"><i class="ti ti-notebook"></i> Notes</div>
+      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" id="nav-finance" onclick="toggleFinanceMenu()" data-pg="finance" style="display:none;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:9px"><i class="ti ti-coin"></i> Finance</div>
         <i class="ti ti-chevron-down" id="nav-finance-arrow" style="font-size:13px;transition:.2s;opacity:.5"></i>
@@ -320,7 +320,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         </div>
       </div>
       <div class="nav-sec" id="nav-admin-sec" style="display:none">Admin</div>
-      <div class="nav-it" id="nav-expenses" onclick="showPg('expenses')" data-pg="expenses" style="display:none"><i class="ti ti-wallet"></i> Expense Tracker <i class="ti ti-lock nav-lock"></i></div>
       <div class="nav-it" id="nav-users" onclick="showPg('users')" data-pg="users" style="display:none"><i class="ti ti-users"></i> Team Members</div>
     </nav>
     <div class="sb-user">
@@ -412,16 +411,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
       <div id="home-content"></div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div class="pg" id="pg-dashboard">
-      <div class="pg-h"><div class="pg-t">Dashboard</div><div class="pg-s">Monthly overview</div></div>
-      <div class="stats" id="dash-stats"></div>
-      <div class="panel">
-        <div class="p-ti"><i class="ti ti-chart-line"></i> Monthly trend</div>
-        <div id="dash-trend" style="margin-top:14px"></div>
-      </div>
-    </div>
-
     <!-- SHARED NOTES PAGE -->
     <div class="pg" id="pg-notes">
       <div class="pg-top">
@@ -460,13 +449,13 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <!-- PRIVATE NOTES PAGE (owner only) -->
     <div class="pg" id="pg-private-notes">
       <div class="pg-top">
-        <div><div class="pg-t">Private Notes <span style="font-size:14px;color:#9CA3AF;font-weight:400">· Owner only</span></div><div class="pg-s">শুধু তুমি দেখতে পাবে — Manager ও দেখতে পারবে না</div></div>
+        <div><div class="pg-t">Notes <span style="font-size:14px;color:#9CA3AF;font-weight:400">· Owner & Manager</span></div><div class="pg-s">Owner ও Manager-এর ব্যক্তিগত workspace — Editors দেখতে পাবে না</div></div>
         <button class="btn-p" style="width:auto;padding:9px 16px" onclick="savePrivateNote()"><i class="ti ti-device-floppy"></i> Save</button>
       </div>
       <div class="two-col" style="align-items:start">
         <div class="panel" style="border-color:rgba(108,99,255,.25)">
           <div class="p-hd">
-            <div class="p-ti"><i class="ti ti-lock"></i> Private notes</div>
+            <div class="p-ti"><i class="ti ti-lock"></i> Workspace notes</div>
             <span id="pvt-note-status" style="font-size:11px;color:#9CA3AF"></span>
           </div>
           <textarea id="private-note-content" class="f-inp" rows="20"
@@ -478,8 +467,8 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div class="panel" style="background:rgba(108,99,255,.05);border-color:rgba(108,99,255,.2)">
             <div class="p-ti"><i class="ti ti-lock"></i> Access</div>
             <div style="font-size:13px;color:#6B7280;line-height:1.9;margin-top:10px">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — শুধু তুমি দেখতে পারবে</div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-x" style="color:#EF4444"></i> Manager — দেখতে পারবে না</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Owner — দেখতে ও লিখতে পারবে</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check" style="color:#00C48C"></i> Manager — দেখতে ও লিখতে পারবে</div>
               <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-x" style="color:#EF4444"></i> Employee — দেখতে পারবে না</div>
             </div>
           </div>
@@ -1017,7 +1006,7 @@ function setupNav(){
     document.getElementById('nav-finance').style.display='none';
     document.getElementById('nav-admin-sec').style.display='none';
     document.getElementById('nav-users').style.display='none';
-    document.getElementById('nav-private-notes').style.display='none';
+    document.getElementById('nav-private-notes').style.display='flex';
     document.getElementById('nav-expenses').style.display='none';
     const fc=document.getElementById('finance-content');
     const fb=document.getElementById('finance-blocked');
@@ -1042,6 +1031,9 @@ function setupNav(){
   }
 }
 function showPg(pg){
+  if(pg==='dashboard')pg='home';
+  if(pg==='notes')pg='private-notes';
+  if(['home','private-notes'].includes(pg)&&!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
   if(pg==='expenses'&&profile?.role!=='owner'){toast('🔒 শুধু Owner এর জন্য');return;}
 
   // Close finance sub-menu when switching to other pages
@@ -1061,10 +1053,9 @@ function showPg(pg){
   if(pg==='editors')loadEditors();
   if(pg==='home')loadHomePage();
   if(pg==='private-notes'){
-    if(profile?.role!=='owner'){toast('🔒 শুধু Owner দেখতে পারবে');return;}
+    if(!['owner','manager'].includes(profile?.role)){toast('Access restricted');return;}
     loadPrivateNote();
   }
-  if(pg==='dashboard')loadDash();
   if(pg==='board'){
     const frame=document.getElementById('script-studio-frame');
     if(!frame.getAttribute('src'))frame.src='board.html';
@@ -1188,31 +1179,6 @@ async function clearMon(){
   if(!confirm('এই মাসের সব expense delete করবে?'))return;
   await sb.from('expenses').delete().eq('month',view.m+1).eq('year',view.y);
   toast('Cleared');loadExp();
-}
-
-// ── DASHBOARD
-async function loadDash(){
-  const {data}=await sb.from('expenses').select('*').eq('year',view.y).order('month');
-  if(!data)return;
-  const byMonth={};
-  data.forEach(e=>{const k=e.month;byMonth[k]=(byMonth[k]||0)+Number(e.amount);});
-  const maxV=Math.max(...Object.values(byMonth),1);
-  const html=Array.from({length:12},(_,i)=>{
-    const m=i+1,v=byMonth[m]||0,pct=Math.round(v/maxV*100);
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1">
-      <div style="font-size:11px;color:#9CA3AF">${fmts(v)}</div>
-      <div style="width:100%;background:#F3F4F6;border-radius:4px;height:80px;display:flex;align-items:flex-end;overflow:hidden">
-        <div style="width:100%;height:${pct}%;background:${m===view.m+1?'linear-gradient(135deg,#7C3AED,#0EA5E9)':'#D1D5DB'};border-radius:4px 4px 0 0;transition:.4s"></div>
-      </div>
-      <div style="font-size:10px;color:#9CA3AF">${MONTHS[i].slice(0,3)}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('dash-trend').innerHTML=`<div style="display:flex;gap:6px;align-items:flex-end">${html}</div>`;
-  const tot=data.reduce((s,e)=>s+Number(e.amount),0);
-  const thisMon=data.filter(e=>e.month===view.m+1).reduce((s,e)=>s+Number(e.amount),0);
-  document.getElementById('dash-stats').innerHTML=`
-    <div class="stat"><div class="stat-lbl"><i class="ti ti-calendar"></i> This year</div><div class="stat-val">${fmts(tot)}</div><div class="stat-sub">${data.length} total expenses</div></div>
-    <div class="stat"><div class="stat-lbl"><i class="ti ti-calendar-month"></i> This month</div><div class="stat-val">${fmts(thisMon)}</div><div class="stat-sub">${data.filter(e=>e.month===view.m+1).length} expenses</div></div>`;
 }
 
 // ── FINANCE NOTES
@@ -2771,128 +2737,37 @@ function showFinTab(tab){
 }
 
 // ── HOME PAGE
+let _homeLoad=0;
 async function loadHomePage(){
-  const el=document.getElementById('home-content');
-  if(!el)return;
-  const role=profile?.role||'owner';
-  const name=profile?.name||user?.email?.split('@')[0]||'there';
-  const hr=new Date().getHours();
-  const greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
-  const day=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-  // Show skeleton first
-  el.innerHTML=`<div style="text-align:center;padding:60px;color:#9CA3AF"><div class="spinner" style="margin:0 auto 12px"></div>Loading...</div>`;
-
-  const [{data:editorData},{data:projData},{data:expData}]=await Promise.all([
-    sb.from('editors').select('id,name,status,photo_url,skills,email'),
-    sb.from('editor_projects').select('id,editor_id,status,payment_status,total_amount,amount,paid_amount'),
-    sb.from('expenses').select('amount,date')
-  ]);
-
-  const eds=editorData||[];
-  const projs=projData||[];
-  const exps=expData||[];
-
-  const activeEditors=eds.filter(e=>e.status==='active').length;
-  const totalProjs=projs.length;
-  const inProgress=projs.filter(p=>p.status==='in_progress').length;
-  const inReview=projs.filter(p=>p.status==='review').length;
-  const done=projs.filter(p=>p.status==='done').length;
-  const unpaid=projs.filter(p=>p.payment_status!=='paid')
-    .reduce((s,p)=>s+Math.max(0,Number(p.total_amount||p.amount||0)-Number(p.paid_amount||0)),0);
-  const thisMonth=new Date().toISOString().slice(0,7);
-  const monthExpense=exps.filter(e=>e.date?.startsWith(thisMonth)).reduce((s,e)=>s+Number(e.amount||0),0);
-
-  el.innerHTML=`
-    <div style="background:linear-gradient(135deg,#7C3AED 0%,#0EA5E9 100%);border-radius:16px;padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden">
-      <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%"></div>
-      <div style="position:absolute;bottom:-50px;right:80px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%"></div>
-      <div style="position:relative">
-        <div style="font-size:12px;color:rgba(255,255,255,.7);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-calendar" style="font-size:13px"></i>${day}</div>
-        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:4px">${greeting}, ${name.split(' ')[0]}! 👋</div>
-        <div style="font-size:14px;color:rgba(255,255,255,.75);margin-bottom:16px">Welcome back to SA Media Empire Management System</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-shield-check" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${role.charAt(0).toUpperCase()+role.slice(1)}</span>
-          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-users" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${activeEditors} Active Editor${activeEditors!==1?'s':''}</span>
-          <span style="background:rgba(255,255,255,.18);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="ti ti-video" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${totalProjs} Project${totalProjs!==1?'s':''}</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#C4B5FD';this.style.boxShadow='0 3px 10px rgba(124,58,237,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
-        <div style="width:38px;height:38px;background:#EDE9FE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-loader" style="font-size:19px;color:#7C3AED"></i></div>
-        <div><div style="font-size:22px;font-weight:800;color:#7C3AED;line-height:1">${inProgress}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">In Progress</div></div>
-      </div>
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#BFDBFE';this.style.boxShadow='0 3px 10px rgba(59,130,246,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
-        <div style="width:38px;height:38px;background:#DBEAFE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-eye" style="font-size:19px;color:#3B82F6"></i></div>
-        <div><div style="font-size:22px;font-weight:800;color:#3B82F6;line-height:1">${inReview}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">In Review</div></div>
-      </div>
-      <div onclick="showPg('editors')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px" onmouseover="this.style.borderColor='#A7F3D0';this.style.boxShadow='0 3px 10px rgba(16,185,129,.1)'" onmouseout="this.style.borderColor='#E5E7EB';this.style.boxShadow='none'">
-        <div style="width:38px;height:38px;background:#D1FAE5;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-circle-check" style="font-size:19px;color:#10B981"></i></div>
-        <div><div style="font-size:22px;font-weight:800;color:#10B981;line-height:1">${done}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px">Completed</div></div>
-      </div>
-      ${role!=='manager'?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-        <div style="width:38px;height:38px;background:#FEE2E2;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-coin-off" style="font-size:19px;color:#EF4444"></i></div>
-        <div><div style="font-size:22px;font-weight:800;color:#EF4444;line-height:1">৳${unpaid>9999?Math.round(unpaid/1000)+'k':unpaid.toLocaleString()}</div><div style="font-size:11px;color:#EF4444;margin-top:2px;opacity:.7">Unpaid</div></div>
-      </div>`:''}
-    </div>
-
-    <div class="two-col" style="align-items:start">
-      <div class="panel">
-        <div class="p-hd" style="margin-bottom:16px">
-          <div class="p-ti"><i class="ti ti-users"></i> Team</div>
-          <button onclick="showPg('editors')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 10px;font-size:12px;color:#6B7280;cursor:pointer;font-family:inherit;transition:.12s" onmouseover="this.style.borderColor='#7C3AED';this.style.color='#7C3AED'" onmouseout="this.style.borderColor='#E5E7EB';this.style.color='#6B7280'">View all →</button>
-        </div>
-        ${eds.length?eds.map(ed=>{
-          const ini=ed.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-          const edActive=projs.filter(p=>p.editor_id===ed.id&&(p.status==='in_progress'||p.status==='review')).length;
-          return `<div onclick="showPg('editors')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;transition:.12s;margin-bottom:2px" onmouseover="this.style.background='#F5F3FF'" onmouseout="this.style.background='transparent'">
-            <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#7C3AED,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0;overflow:hidden">
-              ${ed.photo_url?`<img src="${ed.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`:ini}
-            </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:#111827">${ed.name}</div>
-              <div style="font-size:11px;color:#9CA3AF;margin-top:1px">${(ed.skills||[]).slice(0,2).join(' · ')||'Editor'}</div>
-            </div>
-            <div style="text-align:right">
-              ${edActive>0?`<span style="font-size:10px;background:#EDE9FE;color:#7C3AED;padding:2px 8px;border-radius:20px;font-weight:600">${edActive} active</span>`:'<span style="font-size:10px;color:#D1D5DB;font-weight:500">idle</span>'}
-            </div>
-          </div>`;
-        }).join(''):`<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:13px">No editors yet. <span onclick="showPg('editors')" style="color:#7C3AED;cursor:pointer">Add one →</span></div>`}
-      </div>
-
-      <div>
-        ${role==='owner'?`<div class="panel" style="margin-bottom:14px">
-          <div class="p-ti" style="margin-bottom:14px"><i class="ti ti-chart-bar"></i> This Month</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:#FEF2F2;border-radius:8px;margin-bottom:8px;border:1px solid #FECACA">
-            <span style="font-size:13px;color:#991B1B;font-weight:500">Expenses</span>
-            <span style="font-size:16px;font-weight:700;color:#EF4444">৳${monthExpense.toLocaleString()}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:#F0FDF4;border-radius:8px;border:1px solid #A7F3D0">
-            <span style="font-size:13px;color:#065F46;font-weight:500">Projects done</span>
-            <span style="font-size:16px;font-weight:700;color:#059669">${done}</span>
-          </div>
-        </div>`:''}
-        <div class="panel">
-          <div class="p-ti" style="margin-bottom:14px"><i class="ti ti-bolt"></i> Quick Actions</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button onclick="showPg('editors')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F5F3FF;border:1px solid #EDE9FE;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7C3AED;text-align:left;width:100%" onmouseover="this.style.background='#EDE9FE'" onmouseout="this.style.background='#F5F3FF'">
-              <i class="ti ti-users" style="font-size:15px"></i> Editor Workspaces
-            </button>
-            <button onclick="showPg('notes')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#0284C7;text-align:left;width:100%" onmouseover="this.style.background='#E0F2FE'" onmouseout="this.style.background='#F0F9FF'">
-              <i class="ti ti-notebook" style="font-size:15px"></i> Shared Notes
-            </button>
-            <button onclick="showPg('board')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#059669;text-align:left;width:100%" onmouseover="this.style.background='#D1FAE5'" onmouseout="this.style.background='#F0FDF4'">
-              <i class="ti ti-layout-board" style="font-size:15px"></i> Script Board
-            </button>
-            ${role==='owner'?`<button onclick="showPg('expenses')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#EA580C;text-align:left;width:100%" onmouseover="this.style.background='#FFEDD5'" onmouseout="this.style.background='#FFF7ED'">
-              <i class="ti ti-wallet" style="font-size:15px"></i> Expense Tracker
-            </button>`:''}
-          </div>
-        </div>
-      </div>
-    </div>`;
+ const el=document.getElementById('home-content');if(!el||!['owner','manager'].includes(profile?.role))return;
+ const run=++_homeLoad,owner=profile.role==='owner',esc=finEscape;
+ el.innerHTML='<div class="hd-loading"><div class="spinner"></div><p>Getting your workspace ready…</p></div>';
+ const queries=[sb.from('editors').select('id,name,skills'),sb.from('editor_projects').select('id,editor_id,project_name,status,is_completed,deadline,updated_at')];
+ if(owner)queries.push(sb.from('finance_income').select('amount,date,status'),sb.from('finance_expenses').select('amount,date,payment_date,approval_status'));
+ try{
+ const results=await Promise.all(queries);if(run!==_homeLoad)return;
+ if(results[0].error||results[1].error)throw results[0].error||results[1].error;
+ const eds=results[0].data||[],projects=results[1].data||[],active=projects.filter(p=>!p.is_completed),completed=projects.filter(p=>p.is_completed),review=active.filter(p=>p.status==='review');
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),month=today.slice(0,7);
+ const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',hour:'numeric',hourCycle:'h23'}).format(new Date()));
+ const day=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Dhaka',weekday:'long',day:'numeric',month:'long'}).format(new Date());
+ const name=esc((profile.name||'there').split(' ')[0]),greeting=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+ const due=active.filter(p=>p.deadline&&p.status!=='done').sort((a,b)=>String(a.deadline).localeCompare(String(b.deadline))),late=due.filter(p=>p.deadline.slice(0,10)<today);
+ const stages=[['assigned','Assigned','#b8a4e8'],['in_progress','In progress','#8264cd'],['review','In review','#e5b36b'],['done','Done','#70ac9c']].map(([key,label,color])=>({key,label,color,count:active.filter(p=>p.status===key).length}));
+ const total=projects.length,percent=total?Math.round(completed.length/total*100):0;
+ const editorName=id=>esc(eds.find(e=>e.id===id)?.name||'Unassigned');
+ const money=amount=>`<strong title="${esc(fmtBDTFull(amount))}">${fmtBDT(amount)}</strong><small>${fmtBDTFull(amount)}</small>`;
+ const financeError=owner&&(results[2].error||results[3].error),income=owner&&!financeError?(results[2].data||[]).filter(r=>r.status==='received'&&r.date?.startsWith(month)).reduce((n,r)=>n+Number(r.amount),0):0,spent=owner&&!financeError?(results[3].data||[]).filter(r=>r.approval_status==='paid'&&(r.payment_date||r.date)?.startsWith(month)).reduce((n,r)=>n+Number(r.amount),0):0;
+ el.innerHTML=`<div class="hd-top"><div><div class="hd-eyebrow">SA MEDIA EMPIRE / WORKSPACE</div><h1>Dashboard<span>.</span></h1></div><button class="hd-refresh" onclick="loadHomePage()" title="Refresh dashboard"><i class="ti ti-refresh"></i> Refresh</button></div>
+ <section class="hd-hero"><div class="hd-hero-copy"><span class="hd-date">${esc(day)}</span><h2>${greeting}, ${name}.</h2><p>A clear view of your team, your content,<br>and what needs your attention.</p><button onclick="showPg('editors')">Open editor workspaces <i class="ti ti-arrow-up-right"></i></button></div><div class="hd-hero-side"><div class="hd-orbit" style="--progress:${percent}%"><div><strong>${percent}<small>%</small></strong><span>Projects completed</span></div></div><span class="hd-hero-caption">${completed.length} of ${total} projects · all time</span></div></section>
+ <div class="hd-stats">${[['ti-folders','Active projects',active.length,'In your production pipeline'],['ti-eye','Ready for review',review.length,'Waiting for your feedback'],['ti-clock-exclamation','Overdue',late.length,'Open projects past deadline'],['ti-users','Editors',eds.length,'Your creative team']].map(([icon,label,count,hint])=>`<button class="hd-stat" onclick="showPg('editors')"><span><i class="ti ${icon}"></i>${label}</span><strong>${count}</strong><small>${hint}</small></button>`).join('')}</div>
+ <div class="hd-columns"><div class="hd-primary"><section class="hd-panel"><header><div><h3>Production pipeline</h3><p>From assignment to final approval</p></div><span class="hd-tag">${active.length} active</span></header><div class="hd-track">${stages.filter(s=>s.count).map(s=>`<div style="width:${s.count/Math.max(active.length,1)*100}%;background:${s.color}" title="${s.label}: ${s.count}"></div>`).join('')}</div><div class="hd-stages">${stages.map(s=>`<div><span><b style="background:${s.color}"></b>${s.label}</span><strong>${s.count}</strong></div>`).join('')}</div><div class="hd-footnote">Done projects stay here until you mark them Complete.</div></section>
+ <section class="hd-panel"><header><div><h3>Needs your review</h3><p>Keep your next videos moving</p></div><button class="hd-text-btn" onclick="showPg('editors')">View projects ↗</button></header>${review.length?review.slice(0,5).map(p=>`<div class="hd-project"><span class="hd-project-icon"><i class="ti ti-player-play"></i></span><div><strong>${esc(p.project_name||'Untitled project')}</strong><small>${editorName(p.editor_id)}</small></div><span class="hd-tag amber">In review</span></div>`).join(''):'<div class="hd-empty"><i class="ti ti-checks"></i><strong>You’re all caught up.</strong><p>Projects will appear here when an editor submits for review.</p></div>'}${review.length>5?`<div class="hd-footnote">+${review.length-5} more projects in review</div>`:''}</section>
+ <section class="hd-panel"><header><div><h3>Team workload</h3><p>Current projects across your editors</p></div><button class="hd-text-btn" onclick="showPg('editors')">All editors ↗</button></header><div class="hd-team">${eds.length?eds.slice(0,8).map(e=>{const count=active.filter(p=>p.editor_id===e.id).length;return `<div class="hd-person"><span class="hd-avatar">${esc((e.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2))}</span><div><strong>${esc(e.name)}</strong><small>${esc((e.skills||[]).slice(0,2).join(' · ')||'Video editor')}</small></div><span class="hd-workload">${count}<small>projects</small></span></div>`}).join(''):'<div class="hd-empty"><p>Add your first editor to start building your team.</p></div>'}</div></section></div>
+ <aside class="hd-secondary"><section class="hd-panel hd-quick"><header><h3>Your workspace</h3><i class="ti ti-sparkles"></i></header>${[['board','ti-layout-board','Scriptbook','Research, plan & connect ideas'],['private-notes','ti-notebook','Notes','Your owner & manager workspace'],...(owner?[['expenses','ti-wallet','Expense Tracker','Log day-to-day expenses']]:[])].map(([pg,icon,label,desc])=>`<button onclick="showPg('${pg}')"><i class="ti ${icon}"></i><span><strong>${label}</strong><small>${desc}</small></span><i class="ti ti-arrow-up-right"></i></button>`).join('')}</section>
+ <section class="hd-panel"><header><div><h3>Upcoming deadlines</h3><p>Earliest deadlines first</p></div><i class="ti ti-calendar-event"></i></header>${due.length?due.slice(0,4).map(p=>`<div class="hd-deadline"><span class="hd-date-tile ${p.deadline.slice(0,10)<today?'late':''}">${esc(p.deadline.slice(8,10))}<small>${esc(new Date(p.deadline.slice(0,10)+'T12:00:00').toLocaleDateString('en-US',{month:'short'}))}</small></span><div><strong>${esc(p.project_name)}</strong><small>${editorName(p.editor_id)}${p.deadline.slice(0,10)<today?' · Overdue':p.deadline.slice(0,10)===today?' · Due today':''}</small></div></div>`).join(''):'<div class="hd-empty compact"><p>No upcoming deadlines. Add a deadline to a project to see it here.</p></div>'}</section>
+ ${owner?`<section class="hd-panel hd-finance"><header><div><h3>Finance snapshot</h3><p>${esc(new Date(today+'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}))} · BDT</p></div><i class="ti ti-chart-line"></i></header>${financeError?'<p class="hd-footnote">Finance could not load. Open Finance or try refreshing.</p>':`<div class="hd-money"><span>Received income</span><div>${money(income)}</div></div><div class="hd-money"><span>Paid expenses</span><div>${money(spent)}</div></div><div class="hd-money net"><span>Monthly net</span><div>${money(income-spent)}</div></div>`}<button onclick="showFinTab('overview')">Open Finance <i class="ti ti-arrow-up-right"></i></button><p class="hd-footnote">From Finance entries. Expense Tracker records are separate.</p></section>`:''}</aside></div><div class="hd-bottom">Built for a focused creative team. <span>SA Media Empire</span></div>`;
+ }catch(error){if(run!==_homeLoad)return;el.innerHTML=`<div class="hd-panel hd-empty"><h3>Couldn’t load your dashboard</h3><p>${esc(error.message||'Please try again.')}</p><button class="hd-refresh" onclick="loadHomePage()">Try again</button></div>`}
 }
 
 // ── SHARED NOTES
@@ -2956,62 +2831,36 @@ async function saveSharedNote(){
   toast('Notes saved ✓');
 }
 
-// ── PRIVATE NOTES (owner only)
+let _workspaceNote=null,_workspaceNoteLoaded=false,_workspaceNoteSaving=false;
 async function loadPrivateNote(){
-  const statusEl=document.getElementById('pvt-note-status');
-  if(statusEl)statusEl.textContent='';
-  const {data,error}=await sb.from('private_notes').select('*').eq('owner_id',user?.id).limit(1);
-  if(error){
-    if(statusEl)statusEl.textContent='Error loading';
-    return;
-  }
-  if(data&&data.length>0){
-    const note=data[0];
-    const ta=document.getElementById('private-note-content');
-    if(ta)ta.value=note.content||'';
-    const t=new Date(note.updated_at);
-    const ls=document.getElementById('pvt-note-last-saved');
-    if(ls)ls.textContent=t.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  } else {
-    const ta=document.getElementById('private-note-content');
-    if(ta)ta.value='';
-    const ls=document.getElementById('pvt-note-last-saved');
-    if(ls)ls.textContent='Not saved yet';
-  }
-  _pvtNoteChanged=false;
+ if(!['owner','manager'].includes(profile?.role))return;
+ if(_pvtNoteChanged||_workspaceNoteSaving)return;
+ const status=document.getElementById('pvt-note-status'),ta=document.getElementById('private-note-content');
+ ta.disabled=true;status.textContent='Loading…';_workspaceNoteLoaded=false;
+ const {data,error}=await sb.from('private_notes').select('*').order('id').limit(1);
+ if(error){status.textContent='Could not load notes. Reopen Notes to retry.';return}
+ _workspaceNote=data?.[0]||null;_workspaceNoteLoaded=true;ta.value=_workspaceNote?.content||'';ta.disabled=false;status.textContent='';
+ document.getElementById('pvt-note-last-saved').textContent=_workspaceNote?.updated_at?new Date(_workspaceNote.updated_at).toLocaleString('en-GB'):'Not saved yet';
+ _pvtNoteChanged=false;
 }
-
-function pvtNoteChanged(){
-  _pvtNoteChanged=true;
-  document.getElementById('pvt-note-status').textContent='Unsaved changes...';
-}
-
+function pvtNoteChanged(){_pvtNoteChanged=true;document.getElementById('pvt-note-status').textContent='Unsaved changes…'}
 async function savePrivateNote(){
-  if(profile?.role!=='owner'){toast('🔒 শুধু Owner save করতে পারবে');return;}
-  const content=document.getElementById('private-note-content').value;
-  const statusEl=document.getElementById('pvt-note-status');
-  if(statusEl)statusEl.textContent='Saving...';
-  const {data:existing}=await sb.from('private_notes').select('id').eq('owner_id',user?.id).limit(1);
-  let error;
-  if(existing&&existing.length>0){
-    ({error}=await sb.from('private_notes').update({content,updated_at:new Date().toISOString()}).eq('id',existing[0].id));
-  } else {
-    ({error}=await sb.from('private_notes').insert({owner_id:user?.id,content}));
-  }
-  if(error){toast('Error: '+error.message);if(statusEl)statusEl.textContent='Failed';return;}
-  const now=new Date();
-  const ls=document.getElementById('pvt-note-last-saved');
-  if(ls)ls.textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  if(statusEl)statusEl.textContent='Saved ✓';
-  _pvtNoteChanged=false;
-  setTimeout(()=>{if(statusEl)statusEl.textContent='';},2000);
-  toast('Private notes saved ✓');
+ if(!['owner','manager'].includes(profile?.role)||!_workspaceNoteLoaded||_workspaceNoteSaving)return;
+ const ta=document.getElementById('private-note-content'),content=ta.value,status=document.getElementById('pvt-note-status');_workspaceNoteSaving=true;status.textContent='Saving…';
+ try{
+ const payload={content,updated_at:new Date().toISOString()};let q;
+ if(_workspaceNote){q=sb.from('private_notes').update(payload).eq('id',_workspaceNote.id);q=_workspaceNote.updated_at?q.eq('updated_at',_workspaceNote.updated_at):q.is('updated_at',null)}
+ else q=sb.from('private_notes').insert({...payload,owner_id:user.id});
+ const {data,error}=await q.select('*');if(error)throw error;
+ if(!data?.length){_workspaceNoteLoaded=false;throw new Error('Someone else saved a newer version. Copy your changes, then reload the page before saving.')}
+ _workspaceNote=data[0];_pvtNoteChanged=ta.value!==content;status.textContent=_pvtNoteChanged?'Unsaved changes…':'Saved ✓';document.getElementById('pvt-note-last-saved').textContent=new Date(data[0].updated_at).toLocaleString('en-GB');
+ }catch(e){status.textContent=e.message;toast('Notes not saved: '+e.message)}finally{_workspaceNoteSaving=false}
 }
 
 // Auto-save notes every 60 seconds if changed
 setInterval(async()=>{
   if(_noteChanged)await saveSharedNote();
-  if(_pvtNoteChanged&&profile?.role==='owner')await savePrivateNote();
+  if(_pvtNoteChanged&&['owner','manager'].includes(profile?.role))await savePrivateNote();
 },60000);
 
 // Ctrl+S saves notes when on notes pages
