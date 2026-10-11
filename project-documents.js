@@ -11,7 +11,9 @@ function cleanProjectDocument(html){
  t.content.querySelectorAll('font[face]').forEach(n=>{const span=document.createElement('span');span.style.fontFamily=n.getAttribute('face');n.replaceWith(span);span.append(n)});
  let out=cleanOwnerDocument(t.innerHTML);
  for(const l of links)out=out.replace(l.marker,l.url?`<a href="${docEscape(l.url)}" target="_blank" rel="noopener noreferrer">${docEscape(l.text)}</a>`:docEscape(l.text));
- return out;
+ const normalized=document.createElement('template');normalized.innerHTML=out;
+ normalized.content.querySelectorAll('[style]').forEach(n=>{const size=n.style.fontSize;if(size){const value=parseFloat(size);n.style.fontSize=/px$/.test(size)&&value>=10&&value<=32?size:'';}});
+ return normalized.innerHTML;
 }
 function projectDocState(id){return projectDocs.get(Number(id))}
 function docStatus(s,msg){s.status=msg;if(Number(_currentProjId)===s.id){const e=document.getElementById('project-doc-status');if(e)e.textContent=msg}}
@@ -77,6 +79,22 @@ window.addEventListener('online',()=>projectDocs.forEach(s=>saveProjectDocument(
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&document.getElementById('pdm-tab-script')?.style.display==='flex'){e.preventDefault();saveProjectDocument(_currentProjId)}});
 
 function openProjectInstructions(id){
- openProjDetail(Number(id));
- pdmTab('script',document.querySelector('.pdm-tab[onclick*="script"]'));
+ const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('projectDocument',Number(id));
+ window.open(url.href,'_blank','noopener,noreferrer');
+}
+async function openProjectDocumentPage(){
+ const id=Number(new URLSearchParams(location.search).get('projectDocument'));
+ document.body.classList.add('project-document-page');
+ const host=document.getElementById('pdm-tab-script');
+ document.body.append(host);host.style.display='flex';host.innerHTML='<p>Loading project document…</p>';
+ if(!Number.isSafeInteger(id)||id<=0){host.textContent='Invalid project link.';return;}
+ _currentProjId=id;
+ const {data,error}=await sb.from('editor_projects').select('*').eq('id',id).maybeSingle();
+ if(error||!data){host.textContent='This project is unavailable or you do not have access.';return;}
+ _currentProjects=[data];
+ document.title=data.project_name+' — Script / Instructions';
+ await loadProjectDocument(id);
+ const top=host.querySelector('.project-doc-top');
+ if(top){const title=top.querySelector('b');title.textContent=data.project_name+' — Script / Instructions';
+ const back=document.createElement('a');back.href=location.pathname;back.className='project-doc-back';back.textContent='← Dashboard';top.prepend(back);}
 }

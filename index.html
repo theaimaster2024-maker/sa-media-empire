@@ -232,7 +232,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 </style>
 <link rel="stylesheet" href="dashboard.css?v=3">
 <link rel="stylesheet" href="private-notes.css?v=1">
-<link rel="stylesheet" href="project-documents.css?v=1">
+<link rel="stylesheet" href="project-documents.css?v=3">
 </head>
 <body>
 
@@ -941,6 +941,7 @@ function showApp(){
   try{
     document.getElementById('auth').style.display='none';
     document.getElementById('app').style.display='block';
+    if(new URLSearchParams(location.search).has("projectDocument")){openProjectDocumentPage();return;}
     setupNav();
     startEditorPresence();
     const role=profile?.role||'employee';
@@ -4128,6 +4129,7 @@ tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
 
 // ─ Project detail tabs
 function pdmTab(tab, btn){
+  if(tab==='script'){openProjectInstructions(_currentProjId);return;}
   if(tab!=='review')stopAudioRecord(false);
   document.getElementById('proj-detail-modal').classList.toggle('editor-review-open',tab==='review');
   document.querySelectorAll('.pdm-tab').forEach(b=>{
@@ -4819,7 +4821,7 @@ if(typeof supabase !== 'undefined'){
 </script>
 <script src="private-notes.js?v=1"></script>
 <script src="channel-management.js?v=1"></script>
-<script src="project-documents.js?v=2"></script>
+<script src="project-documents.js?v=3"></script>
 </body>
 </html>
 
