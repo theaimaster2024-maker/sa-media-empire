@@ -937,7 +937,6 @@ function showApp(){
   try{
     document.getElementById('auth').style.display='none';
     document.getElementById('app').style.display='block';
-    if(new URLSearchParams(location.search).has("projectDocument")){openProjectDocumentPage();return;}
     setupNav();
     startEditorPresence();
     const role=profile?.role||'employee';
