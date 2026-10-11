@@ -232,6 +232,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 </style>
 <link rel="stylesheet" href="dashboard.css?v=3">
 <link rel="stylesheet" href="private-notes.css?v=1">
+<link rel="stylesheet" href="project-documents.css?v=1">
 </head>
 <body>
 
@@ -683,7 +684,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
             <div style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-text" style="font-size:14px"></i> Script & Instructions</div>
             <div style="margin-bottom:10px"><label class="f-lbl">Google Doc / Script link</label><input class="f-inp" id="proj-script-link" type="text" placeholder="https://docs.google.com/document/..."/></div>
-            <div><label class="f-lbl">Editing Instructions</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
+            <div><label class="f-lbl">Initial instructions · full document editor inside the project</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
           </div>
           <div>
             <label class="f-lbl">Google Drive video link <span style="color:#6B7280;font-weight:400">(editor fills when done)</span></label>
@@ -712,11 +713,13 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <!-- Tabs -->
         <div style="padding:0 20px;border-bottom:1px solid #E5E7EB;display:flex;gap:0;flex-shrink:0">
           <button class="pdm-tab on" onclick="pdmTab('details',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Details</button>
+          <button class="pdm-tab" onclick="pdmTab('script',this)" style="font:inherit;padding:10px 16px;border:0;background:transparent;cursor:pointer">Script / Instructions</button>
           <button class="pdm-tab" onclick="pdmTab('review',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Review</button>
           <button class="pdm-tab" id="pdm-payment-tab" onclick="pdmTab('payment',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Payment</button>
         </div>
         <!-- Details tab -->
         <div id="pdm-tab-details" style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
+        <div id="pdm-tab-script" style="display:none"></div>
         <!-- Review tab -->
         <div id="pdm-tab-review" style="display:none;flex:1;overflow:hidden;flex-direction:column">
           <!-- Video embed -->
@@ -2187,7 +2190,7 @@ function finStatusBadge(status){
 async function loadFinChannelCards(allIncome,allExp){
   const el=document.getElementById('fin-channel-cards');if(!el)return;
   const month=document.getElementById('fin-month-sel')?.value||new Date().toISOString().slice(0,7);
-  const cards=_finChannels.map(ch=>{
+  const cards=_finChannels.filter(channelIsActive).map(ch=>{
     const chInc=(allIncome||[]).filter(i=>i.channel_id===ch.id&&i.status==='received'&&i.date?.startsWith(month)).reduce((s,i)=>s+Number(i.amount),0);
     const chExp=(allExp||[]).filter(e=>e.channel_id===ch.id&&e.approval_status==='paid'&&(e.payment_date||e.date)?.startsWith(month)).reduce((s,e)=>s+Number(e.amount),0);
     const net=chInc-chExp;
@@ -2402,15 +2405,16 @@ async function loadFinChannels(){
     sb.from('finance_expenses').select('*').eq('approval_status','paid')
   ]);
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <div><div style="font-size:22px;font-weight:800;color:#111827">Channels</div><div style="font-size:13px;color:#6B7280;margin-top:4px">Channel-wise performance overview</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:#111827">Channels</div><div style="font-size:13px;color:#6B7280;margin-top:4px">Active channels and archived history · All records remain in business totals</div></div>
     ${isOwner?`<button onclick="openAddChannel()" class="fin-btn fin-btn-primary"><i class="ti ti-plus"></i> Add Channel</button>`:''}
   </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px"><button class="fin-btn ${channelListMode==='active'?'fin-btn-primary':'fin-btn-secondary'}" onclick="setChannelListMode('active')">Active (${_finChannels.filter(channelIsActive).length})</button><button class="fin-btn ${channelListMode==='archived'?'fin-btn-primary':'fin-btn-secondary'}" onclick="setChannelListMode('archived')">Archived / Inactive (${_finChannels.filter(c=>!channelIsActive(c)).length})</button></div>
   <button class="fin-btn fin-btn-secondary" style="margin-bottom:16px" onclick="finTab('channels','whole_business')">Whole Business · View transactions →</button><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
-    ${_finChannels.map(ch=>{
+    ${_finChannels.filter(c=>channelListMode==='active'?channelIsActive(c):!channelIsActive(c)).map(ch=>{
       const chInc=(income||[]).filter(i=>i.channel_id===ch.id).reduce((s,i)=>s+Number(i.amount),0);
       const chExp=(expenses||[]).filter(e=>e.channel_id===ch.id).reduce((s,e)=>s+Number(e.amount),0);
       const net=chInc-chExp;
-      return `<div class="fin-card">
+      return `<div class="fin-card">${channelMenu(ch)}
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div style="position:relative;cursor:pointer" onclick="uploadChannelImg('${ch.id}')">
             <div style="width:50px;height:50px;border-radius:14px;background:${ch.color||'#7C3AED'};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;overflow:hidden">
@@ -2422,8 +2426,8 @@ async function loadFinChannels(){
             <input type="file" accept="image/*" style="display:none" id="ch-img-${ch.id}" onchange="saveChannelImg('${ch.id}',this)"/>
           </div>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:700;color:#111827">${ch.name}</div>
-            <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${ch.tagline||''}${ch.subscriber_count?' · '+ch.subscriber_count.toLocaleString()+' subs':''}</div>
+            <div style="font-size:15px;font-weight:700;color:#111827">${finEscape(ch.name)}</div>
+            <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${finEscape(ch.tagline||'')}${ch.subscriber_count?' · '+ch.subscriber_count.toLocaleString()+' subs':''}</div>
           </div>
           <span class="fin-badge" style="background:${ch.monetization_status==='monetized'?'#D1FAE5':'#DBEAFE'};color:${ch.monetization_status==='monetized'?'#059669':'#1D4ED8'};font-size:10px">${ch.monetization_status==='monetized'?'Monetized':'New'}</span>
         </div>
@@ -2511,7 +2515,7 @@ async function saveFinSettings(){
 function openFinModal(type){
   const modal=document.getElementById('fin-modal');const body=document.getElementById('fin-modal-body');
   if(!modal||!body)return;
-  const chOpts=_finChannels.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const chOpts=_finChannels.filter(channelIsActive).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   const g=(id)=>document.getElementById(id)?.value?.trim()||'';
   if(type==='income'){
     body.innerHTML=`<div style="padding:24px">
@@ -3199,7 +3203,7 @@ function openProjDetail(id){
     </div>
     ${driveEmbed}
     ${scriptHtml}
-    ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
+    <button class="btn-p" onclick="pdmTab('script',document.querySelector('.pdm-tab[onclick*=script]'))">Open Script / Instructions →</button>
     ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
     <div style="padding:14px;background:#F5F3FF;border-radius:10px"><label class="f-lbl" for="drive-submit-inp">Submitted links — one URL per line. Edit a line to replace it, add a line for another video.</label><textarea id="drive-submit-inp" class="f-inp" rows="3">${editorEscape(links.join('\n'))}</textarea><button class="btn-p" style="margin-top:8px" onclick="submitDriveLink(${p.id})">Save links</button></div>
@@ -4137,6 +4141,8 @@ function pdmTab(tab, btn){
     btn.style.fontWeight='600';
   }
   document.getElementById('pdm-tab-details').style.display=tab==='details'?'flex':'none';
+  document.getElementById('pdm-tab-script').style.display=tab==='script'?'flex':'none';
+  if(tab==='script')loadProjectDocument(_currentProjId);
   const rv=document.getElementById('pdm-tab-review');
   const pv=document.getElementById('pdm-tab-payment');
   if(tab==='review'){
@@ -4588,6 +4594,7 @@ function openProjectModal(id=null){
   document.getElementById('proj-pay-note').value=p?.payment_note||'';
   document.getElementById('proj-script-link').value=p?.script_link||'';
   document.getElementById('proj-instructions').value=p?.instructions||'';
+  document.getElementById('proj-instructions').parentElement.style.display=p?'none':'block';
   document.getElementById('proj-drive').value=p?.drive_link||'';
   document.getElementById('proj-feedback').value=p?.feedback||'';
   document.getElementById('proj-refs').value=(p?.reference_urls||[]).join(', ');
@@ -4808,6 +4815,8 @@ if(typeof supabase !== 'undefined'){
 }
 </script>
 <script src="private-notes.js?v=1"></script>
+<script src="channel-management.js?v=1"></script>
+<script src="project-documents.js?v=1"></script>
 </body>
 </html>
 
