@@ -232,7 +232,6 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 </style>
 <link rel="stylesheet" href="dashboard.css?v=3">
 <link rel="stylesheet" href="private-notes.css?v=1">
-<link rel="stylesheet" href="project-documents.css?v=3">
 </head>
 <body>
 
@@ -683,9 +682,8 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
           <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
             <div style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-text" style="font-size:14px"></i> Script & Instructions</div>
-            <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:14px;margin-bottom:14px"><b style="font-size:14px;color:#5B21B6">Script / Instructions document</b><p style="font-size:12px;line-height:1.6;color:#6B7280;margin:7px 0 10px">Write and format your script, embed YouTube / Drive audio and video, and upload original images.</p><button type="button" class="btn-p" onclick="saveProject(true)">Save project &amp; open document →</button></div>
             <div style="margin-bottom:10px"><label class="f-lbl">Google Doc / Script link</label><input class="f-inp" id="proj-script-link" type="text" placeholder="https://docs.google.com/document/..."/></div>
-            <div><label class="f-lbl">Initial instructions · full document editor inside the project</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
+            <div><label class="f-lbl">Editing Instructions</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
           </div>
           <div>
             <label class="f-lbl">Google Drive video link <span style="color:#6B7280;font-weight:400">(editor fills when done)</span></label>
@@ -714,13 +712,11 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         <!-- Tabs -->
         <div style="padding:0 20px;border-bottom:1px solid #E5E7EB;display:flex;gap:0;flex-shrink:0">
           <button class="pdm-tab on" onclick="pdmTab('details',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Details</button>
-          <button class="pdm-tab" onclick="pdmTab('script',this)" style="font:inherit;padding:10px 16px;border:0;background:transparent;cursor:pointer">Script / Instructions</button>
           <button class="pdm-tab" onclick="pdmTab('review',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Review</button>
           <button class="pdm-tab" id="pdm-payment-tab" onclick="pdmTab('payment',this)" style="font-family:inherit;font-size:13px;font-weight:500;padding:10px 16px;border:none;background:transparent;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;transition:.12s">Payment</button>
         </div>
         <!-- Details tab -->
         <div id="pdm-tab-details" style="padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px"></div>
-        <div id="pdm-tab-script" style="display:none"></div>
         <!-- Review tab -->
         <div id="pdm-tab-review" style="display:none;flex:1;overflow:hidden;flex-direction:column">
           <!-- Video embed -->
@@ -3127,7 +3123,6 @@ function renderKanban(){
           ${overdue?'<span style="color:#EF4444;font-weight:700;margin-left:2px">⚠ Overdue</span>':''}
         </div>`:''}
         ${p.instructions?`<div style="font-size:11px;color:#6B7280;line-height:1.5;padding:8px;background:#F9FAFB;border-radius:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
-        <button type="button" class="btn-p" style="margin-top:10px;width:100%;font-size:12px" onclick="event.stopPropagation();openProjectInstructions(${p.id})">Script / Instructions →</button>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
           <div style="font-size:10px;color:#D1D5DB;display:flex;align-items:center;gap:3px">${p.status==='done'&&!isOwnerManager?'Awaiting completion':'<i class="ti ti-grip-horizontal" style="font-size:11px"></i> drag to move'}</div>
           <i class="ti ti-chevron-right" style="font-size:13px;color:#D1D5DB"></i>
@@ -3206,7 +3201,7 @@ function openProjDetail(id){
     </div>
     ${driveEmbed}
     ${scriptHtml}
-    <button class="btn-p" onclick="pdmTab('script',document.querySelector('.pdm-tab[onclick*=script]'))">Open Script / Instructions →</button>
+    ${p.instructions?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Editing Instructions</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:8px;border:1px solid #E5E7EB">${p.instructions}</div></div>`:''}
     ${p.feedback?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Feedback / Revision</div><div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;background:#FEF3C7;padding:12px;border-radius:8px;border:1px solid #FDE68A">${p.feedback}</div></div>`:''}
     ${refs?`<div><div style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference links</div>${refs}</div>`:''}
     <div style="padding:14px;background:#F5F3FF;border-radius:10px"><label class="f-lbl" for="drive-submit-inp">Submitted links — one URL per line. Edit a line to replace it, add a line for another video.</label><textarea id="drive-submit-inp" class="f-inp" rows="3">${editorEscape(links.join('\n'))}</textarea><button class="btn-p" style="margin-top:8px" onclick="submitDriveLink(${p.id})">Save links</button></div>
@@ -4129,7 +4124,6 @@ tbody td{padding:12px;border-bottom:1px solid #F3F4F6;vertical-align:top}
 
 // ─ Project detail tabs
 function pdmTab(tab, btn){
-  if(tab==='script'){openProjectInstructions(_currentProjId);return;}
   if(tab!=='review')stopAudioRecord(false);
   document.getElementById('proj-detail-modal').classList.toggle('editor-review-open',tab==='review');
   document.querySelectorAll('.pdm-tab').forEach(b=>{
@@ -4145,8 +4139,6 @@ function pdmTab(tab, btn){
     btn.style.fontWeight='600';
   }
   document.getElementById('pdm-tab-details').style.display=tab==='details'?'flex':'none';
-  document.getElementById('pdm-tab-script').style.display=tab==='script'?'flex':'none';
-  if(tab==='script')loadProjectDocument(_currentProjId);
   const rv=document.getElementById('pdm-tab-review');
   const pv=document.getElementById('pdm-tab-payment');
   if(tab==='review'){
@@ -4598,7 +4590,6 @@ function openProjectModal(id=null){
   document.getElementById('proj-pay-note').value=p?.payment_note||'';
   document.getElementById('proj-script-link').value=p?.script_link||'';
   document.getElementById('proj-instructions').value=p?.instructions||'';
-  document.getElementById('proj-instructions').parentElement.style.display=p?'none':'block';
   document.getElementById('proj-drive').value=p?.drive_link||'';
   document.getElementById('proj-feedback').value=p?.feedback||'';
   document.getElementById('proj-refs').value=(p?.reference_urls||[]).join(', ');
@@ -4612,7 +4603,7 @@ function openProjectModal(id=null){
 }
 function closeProjectModal(){document.getElementById('project-modal').style.display='none';}
 
-async function saveProject(openScript=false){
+async function saveProject(){
   const title=document.getElementById('proj-title').value.trim();
   if(!title){toast('Project title দিন');return;}
   const refs=document.getElementById('proj-refs').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -4632,13 +4623,12 @@ async function saveProject(openScript=false){
     feedback:document.getElementById('proj-feedback').value.trim()||null,
     reference_urls:refs
   };
-  let error,savedId=_currentProjId;const isNew=!savedId;
-  if(savedId){({error}=await sb.from('editor_projects').update(payload).eq('id',savedId));}
-  else{const result=await sb.from('editor_projects').insert(payload).select('id').single();error=result.error;savedId=result.data?.id;}
+  let error;
+  if(_currentProjId){({error}=await sb.from('editor_projects').update(payload).eq('id',_currentProjId));}
+  else{({error}=await sb.from('editor_projects').insert(payload));}
   if(error){toast('Error: '+error.message);return;}
   toast(_currentProjId?'Updated ✓':'Project added ✓');
   closeProjectModal();await loadWorkspaceProjects();
-  if((openScript||isNew)&&savedId)openProjectInstructions(savedId);
 }
 
 async function deleteProject(){
@@ -4761,7 +4751,7 @@ function rememberEditorView(){
  if(!document.getElementById('pg-editors')?.classList.contains('on')){sessionStorage.removeItem(key);return;}
  const modal=document.getElementById('proj-detail-modal');
  const wsTabName=['projects','payment','ednotes'].find(t=>document.getElementById('ws-'+t)?.style.display==='block');
- const detailTab=['details','script','review','payment'].find(t=>document.getElementById('pdm-tab-'+t)?.style.display==='flex');
+ const detailTab=['details','review','payment'].find(t=>document.getElementById('pdm-tab-'+t)?.style.display==='flex');
  const scrolls={};
  document.querySelectorAll('#pg-editors [id],#proj-detail-modal [id]').forEach(el=>{if(el.scrollTop||el.scrollLeft)scrolls[el.id]=[el.scrollLeft,el.scrollTop];});
  try{sessionStorage.setItem(key,JSON.stringify({editorId:document.getElementById('ed-view-workspace').style.display==='block'?currentEditorId:null,wsTab:wsTabName,projectId:modal.style.display==='flex'?_currentProjId:null,detailTab,scrolls,y:window.scrollY}));}catch{}
@@ -4780,7 +4770,7 @@ async function restoreEditorView(){
  wsTab(tab,document.querySelector(`.ws-tab[onclick*="'${tab}'"]`));
  if(saved.projectId&&_currentProjects.some(p=>p.id===saved.projectId)){
   openProjDetail(saved.projectId);
-  const detail=['details','script','review'].includes(saved.detailTab)||(saved.detailTab==='payment'&&profile?.role!=='manager')?saved.detailTab:'details';
+  const detail=['details','review'].includes(saved.detailTab)||(saved.detailTab==='payment'&&profile?.role!=='manager')?saved.detailTab:'details';
   pdmTab(detail,document.querySelector(`.pdm-tab[onclick*="'${detail}'"]`));
  }
  requestAnimationFrame(()=>{window.scrollTo(0,saved.y||0);Object.entries(saved.scrolls||{}).forEach(([id,pos])=>{const el=document.getElementById(id);if(el)el.scrollTo(...pos);});});
@@ -4821,7 +4811,7 @@ if(typeof supabase !== 'undefined'){
 </script>
 <script src="private-notes.js?v=1"></script>
 <script src="channel-management.js?v=1"></script>
-<script src="project-documents.js?v=3"></script>
 </body>
 </html>
+
 
