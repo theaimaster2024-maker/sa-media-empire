@@ -75,3 +75,8 @@ async function downloadProjectImage(a){const{data,error}=await sb.storage.from('
 window.addEventListener('beforeunload',e=>{if([...projectDocs.values()].some(s=>s.dirty||s.saving||s.uploading)){e.preventDefault();e.returnValue=''}});
 window.addEventListener('online',()=>projectDocs.forEach(s=>saveProjectDocument(s.id)));
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&document.getElementById('pdm-tab-script')?.style.display==='flex'){e.preventDefault();saveProjectDocument(_currentProjId)}});
+
+function openProjectInstructions(id){
+ openProjDetail(Number(id));
+ pdmTab('script',document.querySelector('.pdm-tab[onclick*="script"]'));
+}

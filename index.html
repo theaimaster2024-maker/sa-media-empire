@@ -683,6 +683,7 @@ html,body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;backgr
           </div>
           <div style="border:1px solid #E5E7EB;border-radius:10px;padding:14px">
             <div style="font-size:11px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-file-text" style="font-size:14px"></i> Script & Instructions</div>
+            <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:14px;margin-bottom:14px"><b style="font-size:14px;color:#5B21B6">Script / Instructions document</b><p style="font-size:12px;line-height:1.6;color:#6B7280;margin:7px 0 10px">Write and format your script, embed YouTube / Drive audio and video, and upload original images.</p><button type="button" class="btn-p" onclick="saveProject(true)">Save project &amp; open document →</button></div>
             <div style="margin-bottom:10px"><label class="f-lbl">Google Doc / Script link</label><input class="f-inp" id="proj-script-link" type="text" placeholder="https://docs.google.com/document/..."/></div>
             <div><label class="f-lbl">Initial instructions · full document editor inside the project</label><textarea class="f-inp" id="proj-instructions" rows="4" style="resize:vertical;font-size:13px;line-height:1.7" placeholder="Step-by-step editing instructions, style guide, music, effects..."></textarea></div>
           </div>
@@ -3125,6 +3126,7 @@ function renderKanban(){
           ${overdue?'<span style="color:#EF4444;font-weight:700;margin-left:2px">⚠ Overdue</span>':''}
         </div>`:''}
         ${p.instructions?`<div style="font-size:11px;color:#6B7280;line-height:1.5;padding:8px;background:#F9FAFB;border-radius:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${p.instructions}</div>`:''}
+        <button type="button" class="btn-p" style="margin-top:10px;width:100%;font-size:12px" onclick="event.stopPropagation();openProjectInstructions(${p.id})">Script / Instructions →</button>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
           <div style="font-size:10px;color:#D1D5DB;display:flex;align-items:center;gap:3px">${p.status==='done'&&!isOwnerManager?'Awaiting completion':'<i class="ti ti-grip-horizontal" style="font-size:11px"></i> drag to move'}</div>
           <i class="ti ti-chevron-right" style="font-size:13px;color:#D1D5DB"></i>
@@ -4608,7 +4610,7 @@ function openProjectModal(id=null){
 }
 function closeProjectModal(){document.getElementById('project-modal').style.display='none';}
 
-async function saveProject(){
+async function saveProject(openScript=false){
   const title=document.getElementById('proj-title').value.trim();
   if(!title){toast('Project title দিন');return;}
   const refs=document.getElementById('proj-refs').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -4628,12 +4630,13 @@ async function saveProject(){
     feedback:document.getElementById('proj-feedback').value.trim()||null,
     reference_urls:refs
   };
-  let error;
-  if(_currentProjId){({error}=await sb.from('editor_projects').update(payload).eq('id',_currentProjId));}
-  else{({error}=await sb.from('editor_projects').insert(payload));}
+  let error,savedId=_currentProjId;const isNew=!savedId;
+  if(savedId){({error}=await sb.from('editor_projects').update(payload).eq('id',savedId));}
+  else{const result=await sb.from('editor_projects').insert(payload).select('id').single();error=result.error;savedId=result.data?.id;}
   if(error){toast('Error: '+error.message);return;}
   toast(_currentProjId?'Updated ✓':'Project added ✓');
   closeProjectModal();await loadWorkspaceProjects();
+  if((openScript||isNew)&&savedId)openProjectInstructions(savedId);
 }
 
 async function deleteProject(){
@@ -4756,7 +4759,7 @@ function rememberEditorView(){
  if(!document.getElementById('pg-editors')?.classList.contains('on')){sessionStorage.removeItem(key);return;}
  const modal=document.getElementById('proj-detail-modal');
  const wsTabName=['projects','payment','ednotes'].find(t=>document.getElementById('ws-'+t)?.style.display==='block');
- const detailTab=['details','review','payment'].find(t=>document.getElementById('pdm-tab-'+t)?.style.display==='flex');
+ const detailTab=['details','script','review','payment'].find(t=>document.getElementById('pdm-tab-'+t)?.style.display==='flex');
  const scrolls={};
  document.querySelectorAll('#pg-editors [id],#proj-detail-modal [id]').forEach(el=>{if(el.scrollTop||el.scrollLeft)scrolls[el.id]=[el.scrollLeft,el.scrollTop];});
  try{sessionStorage.setItem(key,JSON.stringify({editorId:document.getElementById('ed-view-workspace').style.display==='block'?currentEditorId:null,wsTab:wsTabName,projectId:modal.style.display==='flex'?_currentProjId:null,detailTab,scrolls,y:window.scrollY}));}catch{}
@@ -4775,7 +4778,7 @@ async function restoreEditorView(){
  wsTab(tab,document.querySelector(`.ws-tab[onclick*="'${tab}'"]`));
  if(saved.projectId&&_currentProjects.some(p=>p.id===saved.projectId)){
   openProjDetail(saved.projectId);
-  const detail=['details','review'].includes(saved.detailTab)||(saved.detailTab==='payment'&&profile?.role!=='manager')?saved.detailTab:'details';
+  const detail=['details','script','review'].includes(saved.detailTab)||(saved.detailTab==='payment'&&profile?.role!=='manager')?saved.detailTab:'details';
   pdmTab(detail,document.querySelector(`.pdm-tab[onclick*="'${detail}'"]`));
  }
  requestAnimationFrame(()=>{window.scrollTo(0,saved.y||0);Object.entries(saved.scrolls||{}).forEach(([id,pos])=>{const el=document.getElementById(id);if(el)el.scrollTo(...pos);});});
@@ -4816,7 +4819,7 @@ if(typeof supabase !== 'undefined'){
 </script>
 <script src="private-notes.js?v=1"></script>
 <script src="channel-management.js?v=1"></script>
-<script src="project-documents.js?v=1"></script>
+<script src="project-documents.js?v=2"></script>
 </body>
 </html>
 
