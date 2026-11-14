@@ -20,6 +20,7 @@
   --r-md:18px;
   --r-sm:12px;
   --serif:'Fraunces',Georgia,serif;
+  --num:'Helvetica Neue',Helvetica,Arial,sans-serif;
   --sans:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -118,8 +119,8 @@ textarea.inp{height:auto;padding:10px 13px;resize:vertical;min-height:70px}
 .slab{padding:30px 32px 26px;position:relative;overflow:hidden;background:linear-gradient(150deg,rgba(255,255,255,.82),rgba(255,255,255,.5));}
 .slab::after{content:'';position:absolute;right:-90px;top:-120px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(14,124,116,.16),transparent 65%)}
 .slab-label{font-weight:600;color:var(--ink-2)}
-.money-xl{font-family:var(--serif);font-weight:400;font-size:clamp(46px,6vw,76px);letter-spacing:-2.5px;line-height:1;margin:12px 0 6px;font-variation-settings:'opsz' 144}
-.money-xl .cur{font-size:.55em;letter-spacing:0;color:var(--ink-3);margin-right:4px;vertical-align:.32em}
+.money-xl{font-family:var(--num);font-weight:700;font-size:clamp(44px,5.6vw,70px);letter-spacing:-2px;line-height:1;margin:14px 0 8px}
+.money-xl .cur{font-size:.5em;font-weight:500;letter-spacing:0;color:var(--ink-3);margin-right:6px;vertical-align:.4em}
 .slab-note{color:var(--ink-3);font-size:13px}
 .flow{margin-top:26px}
 .flow-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:rgba(21,48,46,.06);gap:3px}
@@ -133,13 +134,13 @@ textarea.inp{height:auto;padding:10px 13px;resize:vertical;min-height:70px}
 .kpi{padding:20px 22px}
 .kpi small{color:var(--ink-2);font-weight:600;font-size:12.5px;display:flex;align-items:center;gap:7px}
 .kpi small i{font-size:16px;color:var(--teal)}
-.kpi strong{display:block;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.8px;margin:8px 0 2px}
+.kpi strong{display:block;font-family:var(--num);font-weight:700;font-size:28px;letter-spacing:-.6px;margin:8px 0 2px}
 .kpi p{font-size:12.5px;color:var(--ink-3)}
 .kpi.sun small i{color:var(--sun)}
 .kpi.rose small i{color:var(--rose)}
 
 .pending-card{display:flex;flex-direction:column}
-.pending-card .money-md{font-family:var(--serif);font-size:38px;letter-spacing:-1px;font-weight:400;margin:6px 0}
+.pending-card .money-md{font-family:var(--num);font-size:36px;letter-spacing:-1px;font-weight:700;margin:6px 0}
 .pending-list{margin-top:auto;display:grid;gap:8px;padding-top:14px}
 
 /* Channel tiles */
@@ -252,7 +253,7 @@ dialog.dlg[open]{animation:pop .18s ease-out}
 .up-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
 .up-sum button{border:1px solid var(--glass-line);background:var(--glass);border-radius:var(--r-md);padding:16px 18px;text-align:left;cursor:pointer;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 .up-sum small{color:var(--ink-2);font-weight:600}
-.up-sum strong{display:block;font-family:var(--serif);font-size:30px;font-weight:500}
+.up-sum strong{display:block;font-family:var(--num);font-size:28px;font-weight:700}
 .up-card{padding:18px 20px;margin-bottom:12px}
 .up-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .up-card h3{font-size:15.5px;margin:6px 0 2px}
@@ -312,3 +313,6 @@ dialog.dlg[open]{animation:pop .18s ease-out}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{.side,.topbar,.actions,.filters,.menu{display:none!important}.main{margin:0;padding:0}.glass{background:#fff;box-shadow:none;border:1px solid #ddd;backdrop-filter:none}}
+
+/* Numbers use Helvetica */
+.amt,.tbl td.r,.tbl tfoot td,.ch-nums b,.partner-steps b,.flow-legend strong{font-family:var(--num);font-weight:700;letter-spacing:-.2px}
