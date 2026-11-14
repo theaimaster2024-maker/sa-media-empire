@@ -27,11 +27,14 @@ async function saveOwnerDocument(){
 }
 function rememberOwnerSelection(){const s=window.getSelection(),ed=document.getElementById('owner-doc-editor');if(s.rangeCount&&ed.contains(s.anchorNode)&&ed.contains(s.focusNode))ownerDoc.range=s.getRangeAt(0).cloneRange()}
 function ownerFormat(command,value=null){if(!ownerDoc.loaded||profile?.role!=='owner')return;const ed=document.getElementById('owner-doc-editor');ed.focus();if(ownerDoc.range&&ed.contains(ownerDoc.range.commonAncestorContainer)){const s=window.getSelection();s.removeAllRanges();s.addRange(ownerDoc.range)}document.execCommand(command,false,value);rememberOwnerSelection();ownerDocChanged()}
-const ownerEditor=document.getElementById('owner-doc-editor');
-ownerEditor.addEventListener('input',ownerDocChanged);document.addEventListener('selectionchange',rememberOwnerSelection);
-ownerEditor.addEventListener('paste',e=>{e.preventDefault();document.execCommand('insertHTML',false,cleanOwnerDocument(e.clipboardData.getData('text/html')||e.clipboardData.getData('text/plain').split('\n').map(s=>'<div>'+finEscape(s)+'</div>').join('')));ownerDocChanged()});
-ownerEditor.addEventListener('drop',e=>e.preventDefault());
-document.querySelectorAll('#owner-doc-toolbar button').forEach(b=>b.addEventListener('mousedown',e=>e.preventDefault()));
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&document.getElementById('pg-owner-notes').classList.contains('on')){e.preventDefault();saveOwnerDocument()}});
+function bindOwnerDocument(){
+ const ownerEditor=document.getElementById('owner-doc-editor');if(!ownerEditor||ownerEditor.dataset.bound)return;ownerEditor.dataset.bound='1';
+ ownerEditor.addEventListener('input',ownerDocChanged);
+ ownerEditor.addEventListener('paste',e=>{e.preventDefault();document.execCommand('insertHTML',false,cleanOwnerDocument(e.clipboardData.getData('text/html')||e.clipboardData.getData('text/plain').split('\n').map(s=>'<div>'+finEscape(s)+'</div>').join('')));ownerDocChanged()});
+ ownerEditor.addEventListener('drop',e=>e.preventDefault());
+ document.querySelectorAll('#owner-doc-toolbar button').forEach(b=>b.addEventListener('mousedown',e=>e.preventDefault()));
+}
+document.addEventListener('selectionchange',()=>{if(document.getElementById('owner-doc-editor'))rememberOwnerSelection()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&document.getElementById('owner-doc-editor')){e.preventDefault();saveOwnerDocument()}});
 window.addEventListener('beforeunload',e=>{if(ownerDoc.dirty||ownerDoc.saving){e.preventDefault();e.returnValue=''}});
 window.addEventListener('online',()=>{if(ownerDoc.dirty)saveOwnerDocument()});
