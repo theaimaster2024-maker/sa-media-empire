@@ -359,3 +359,35 @@ dialog.dlg[open]{animation:pop .18s ease-out}
 
 /* Numbers use Helvetica */
 .amt,.tbl td.r,.tbl tfoot td,.ch-nums b,.partner-steps b,.flow-legend strong{font-family:var(--num);font-weight:700;letter-spacing:-.2px}
+
+/* Upload board: small tiles, details open on click */
+.up-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.up-grid.short{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.up-tile{padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s,opacity .15s;border-radius:22px}
+.up-tile:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 24px 40px -22px rgba(21,48,46,.42)}
+.up-tile.dragging{opacity:.4}
+.up-tile.drop{box-shadow:-4px 0 0 var(--teal),var(--shadow)}
+.up-poster{position:relative;aspect-ratio:16/9;background:linear-gradient(140deg,#1B2E2C,#0F1E1D);display:grid;place-items:center;overflow:hidden}
+.up-tile.short .up-poster{aspect-ratio:9/14}
+.up-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.up-poster-ic{color:rgba(255,255,255,.5);font-size:30px}
+.up-poster img+.up-poster-ic{display:none}
+.up-badge{position:absolute;left:10px;top:10px;min-width:28px;height:28px;padding:0 8px;border-radius:99px;background:rgba(255,255,255,.94);color:var(--ink);display:grid;place-items:center;font-family:var(--num);font-weight:700;font-size:13px;box-shadow:0 4px 10px -4px rgba(0,0,0,.5)}
+.up-tile.first .up-badge{background:var(--teal);color:#fff}
+.up-badge.ok{background:var(--teal);color:#fff}
+.up-flag{position:absolute;left:46px;top:10px;height:28px;padding:0 11px;border-radius:99px;background:var(--teal);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;box-shadow:0 4px 10px -4px rgba(0,0,0,.5)}
+.up-warn{position:absolute;right:10px;bottom:10px;height:24px;padding:0 9px;border-radius:99px;background:var(--sun-soft);color:#6B4A0F;font-size:11.5px;font-weight:700;display:grid;place-items:center}
+.up-tile-body{padding:12px 14px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.up-tile-body h3{font-size:14px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+.up-tile-body small{color:var(--ink-3);font-size:12px;margin-top:-4px}
+.up-tile-foot{display:flex;align-items:center;gap:6px;margin-top:auto}
+.up-tile-foot .btn{flex:1;min-width:0}
+.up-tile-foot .up-grip{margin-left:-6px}
+dialog.dlg.wide{width:min(1080px,calc(100% - 28px))}
+.up-detail{padding:22px 24px 20px}
+.up-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+.up-detail-head h2{font-size:24px;margin:2px 0 0}
+.up-detail-meta{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.up-detail .up-body{padding:0 0 8px;border-top:1px solid var(--hair);margin-top:10px}
+.up-detail footer{margin-top:14px;flex-wrap:wrap}
+@media (max-width:640px){.up-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.up-tile-foot .btn{font-size:0;gap:0;padding:0}.up-tile-foot .btn i{font-size:16px}.up-detail{padding:16px 14px}}

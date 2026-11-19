@@ -1,7 +1,7 @@
 'use strict';
 /* Video upload board — one tab per channel, a queue of ready videos, and a history.
    Every signed-in team member can see and edit it. */
-const UP={channels:[],videos:[],tab:localStorage.getItem('sa-upload-tab')||null,view:'queue',open:new Set(),loaded:new Set(),drag:null};
+const UP={channels:[],videos:[],tab:localStorage.getItem('sa-upload-tab')||null,view:'queue',drag:null};
 
 /* ── link helpers ── */
 function upHttps(v){try{const u=new URL(String(v||'').trim());return u.protocol==='https:'?u.href:null}catch{return null}}
@@ -48,32 +48,47 @@ function drawUploads(){
     <div class="up-chan"><span class="pill ${c.format==='short'?'sun':''}">${c.format==='short'?'Shorts channel':'Long videos'}</span>${ytLink(c.youtube_url)?`<a class="btn btn-ghost btn-sm" href="${esc(ytLink(c.youtube_url))}" target="_blank" rel="noopener noreferrer"><i class="ti ti-external-link"></i>Open channel</a>`:''}
       <details class="menu"><summary class="icon-btn" aria-label="Channel options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upEditChannel('${c.id}')">Edit channel</button>${upCanManage()?`<button class="danger" onclick="upDeleteChannel('${c.id}')">Delete channel</button>`:''}</div></details></div>
   </div>
-  <div id="up-list">${UP.view==='queue'?(ready.map((x,i)=>upCard(x,i,c)).join('')||upEmpty(c)):(done.map(x=>upHistoryRow(x,c)).join('')||'<div class="glass card empty"><i class="ti ti-history"></i><b>Nothing uploaded yet</b>Videos you mark as uploaded show up here.</div>')}</div>`;
+  ${UP.view==='queue'?(ready.length?`<div id="up-list" class="up-grid ${c.format==='short'?'short':''}">${ready.map((x,i)=>upCard(x,i,c)).join('')}</div>`:upEmpty(c)):(done.length?`<div class="up-grid ${c.format==='short'?'short':''}">${done.map(x=>upHistoryRow(x,c)).join('')}</div>`:'<div class="glass card empty"><i class="ti ti-history"></i><b>Nothing uploaded yet</b>Videos you mark as uploaded show up here.</div>')}`;
   if(UP.view==='queue')upBindDrag();
 }
 function upEmpty(c){return `<div class="glass card empty"><i class="ti ti-cloud-upload"></i><b>No videos waiting for ${esc(c.name)}</b>Add a finished video with its Drive link, title and description.<div style="margin-top:14px"><button class="btn btn-primary" onclick="upEditVideo()"><i class="ti ti-plus"></i>Add video</button></div></div>`}
 function upSelect(id){UP.tab=id;localStorage.setItem('sa-upload-tab',id);UP.view='queue';drawUploads()}
 
-/* ── queue card ── */
+/* ── tiles (small cards) + detail view ── */
+function upPoster(x,c){
+  // The thumbnail if there is one; otherwise Google Drive's own preview frame of the video.
+  const t=c.format==='short'?null:thumbSrc(x.thumbnail_url);if(t)return t;
+  const d=driveInfo(x.drive_url);return d?.drive&&!d.folder?`https://drive.google.com/thumbnail?id=${d.id}&sz=w640`:null;
+}
 function upCard(x,i,c){
-  const first=i===0,open=first||UP.open.has(x.id),short=c.format==='short';
-  const d=driveInfo(x.drive_url),ts=short?null:thumbSrc(x.thumbnail_url);
-  const hd=`<header class="up-head" ${first?'':`onclick="upToggle('${x.id}')"`}>
-    <span class="up-grip" title="Drag to change the order"><i class="ti ti-grip-vertical"></i></span>
-    <span class="up-num">${i+1}</span>
-    ${!open&&ts?`<img class="up-mini" src="${esc(ts)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''}
-    <div class="up-title"><h3>${esc(x.title)}</h3>${first?'<span class="pill">Next to upload</span>':''}</div>
-    <div class="up-actions" onclick="event.stopPropagation()">
-      <button class="btn btn-primary btn-sm" onclick="upMarkUploaded('${x.id}')"><i class="ti ti-check"></i>Mark uploaded</button>
-      <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upMove('${x.id}',-1)">Move up</button><button onclick="upMove('${x.id}',1)">Move down</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details>
-    </div></header>`;
-  if(!open)return `<article class="glass up-item" data-id="${x.id}" >${hd}</article>`;
-  const pv=drivePreview(d),loaded=UP.loaded.has(x.id);
+  const first=i===0,short=c.format==='short',poster=upPoster(x,c),noThumb=!short&&!thumbSrc(x.thumbnail_url);
+  return `<article class="glass up-tile ${first?'first':''} ${short?'short':''}" data-id="${x.id}" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
+    <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i>
+      <span class="up-badge">${i+1}</span>${first?'<span class="up-flag">Next to upload</span>':''}${noThumb?'<span class="up-warn">No thumbnail yet</span>':''}</div>
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3>
+      <div class="up-tile-foot" onclick="event.stopPropagation()"><span class="up-grip" title="Drag to change the order"><i class="ti ti-grip-vertical"></i></span>
+        <button class="btn btn-primary btn-sm" onclick="upMarkUploaded('${x.id}')"><i class="ti ti-check"></i>Mark uploaded</button>
+        <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upDetail('${x.id}')">Open details</button><button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upMove('${x.id}',-1)">Move earlier</button><button onclick="upMove('${x.id}',1)">Move later</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details></div></div></article>`;
+}
+function upHistoryRow(x,c){
+  const poster=upPoster(x,c),yt=ytLink(x.youtube_url);
+  return `<article class="glass up-tile done ${c.format==='short'?'short':''}" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
+    <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i><span class="up-badge ok"><i class="ti ti-check"></i></span></div>
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3><small>Uploaded ${x.uploaded_at?new Date(x.uploaded_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</small>
+      <div class="up-tile-foot" onclick="event.stopPropagation()">${yt?`<a class="btn btn-ghost btn-sm" href="${esc(yt)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-youtube"></i>Watch</a>`:'<span></span>'}
+        <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upDetail('${x.id}')">Open details</button><button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upBackToQueue('${x.id}')">Put back in queue</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details></div></div></article>`;
+}
+function upDetail(id){
+  const x=UP.videos.find(v=>v.id===id);if(!x)return;
+  const c=UP.channels.find(k=>k.id===x.channel_id)||upChannel(),short=c.format==='short',ready=x.status==='ready';
+  const d=driveInfo(x.drive_url),pv=drivePreview(d),ts=short?null:thumbSrc(x.thumbnail_url),yt=ytLink(x.youtube_url);
+  const pos=ready?upList('ready').findIndex(v=>v.id===id)+1:0;
   const video=`<div class="up-block"><div class="up-label"><span>Video</span>${d?`<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">Open in Drive</a>`:''}${d?.drive&&!d.folder?`<a href="${esc(driveDownload(d))}" target="_blank" rel="noopener noreferrer">Download</a>`:''}</div>
-    <div class="up-frame ${short?'tall':''}">${pv?(loaded?`<iframe src="${esc(pv)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy" referrerpolicy="no-referrer"></iframe>`:`<button class="up-play" onclick="upLoad('${x.id}')"><i class="ti ti-player-play-filled"></i><span>${d.folder?'Show Drive folder':'Play preview'}</span></button>`):d?`<a class="up-play" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-external-link"></i><span>Open video link</span></a>`:'<div class="up-missing">No video link yet</div>'}</div></div>`;
+    <div class="up-frame ${short?'tall':''}">${pv?`<iframe src="${esc(pv)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`:d?`<a class="up-play" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-external-link"></i><span>Open video link</span></a>`:'<div class="up-missing">No video link yet</div>'}</div></div>`;
   const thumb=short?'':`<div class="up-block"><div class="up-label"><span>Thumbnail</span>${x.thumbnail_url&&upHttps(x.thumbnail_url)?`<a href="${esc(thumbDownload(x.thumbnail_url,x.title+'.png'))}" target="_blank" rel="noopener noreferrer">Download</a>`:''}</div>
-    <div class="up-frame">${ts?`<img src="${esc(ts)}" alt="Thumbnail for ${esc(x.title)}" loading="lazy" referrerpolicy="no-referrer">`:x.thumbnail_url&&upHttps(x.thumbnail_url)?`<a class="up-play" href="${esc(upHttps(x.thumbnail_url))}" target="_blank" rel="noopener noreferrer"><i class="ti ti-photo"></i><span>Open thumbnail</span></a>`:'<div class="up-missing">No thumbnail yet</div>'}</div></div>`;
-  return `<article class="glass up-item open ${first?'first':''}" data-id="${x.id}">${hd}
+    <div class="up-frame">${ts?`<img src="${esc(ts)}" alt="Thumbnail for ${esc(x.title)}" referrerpolicy="no-referrer">`:x.thumbnail_url&&upHttps(x.thumbnail_url)?`<a class="up-play" href="${esc(upHttps(x.thumbnail_url))}" target="_blank" rel="noopener noreferrer"><i class="ti ti-photo"></i><span>Open thumbnail</span></a>`:'<div class="up-missing">No thumbnail yet</div>'}</div></div>`;
+  dialog(`<div class="dlg-body up-detail">
+    <header class="up-detail-head"><div><div class="up-detail-meta">${esc(c.name)}${ready?` — number ${pos} in the queue`:` — uploaded ${x.uploaded_at?new Date(x.uploaded_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}`}</div><h2>${esc(x.title)}</h2></div><button class="icon-btn" data-close aria-label="Close"><i class="ti ti-x"></i></button></header>
     <div class="up-body ${short?'short':''}">
       <div class="up-media">${video}${thumb}</div>
       <div class="up-text">
@@ -83,17 +98,12 @@ function upCard(x,i,c){
         </div>
         <div class="up-block"><div class="up-label"><span>Description</span><button onclick="upCopy('${x.id}','description')"><i class="ti ti-copy"></i>Copy</button></div><div class="up-copybox desc">${x.description?esc(x.description):'<em>No description yet</em>'}</div></div>
       </div>
-    </div></article>`;
+    </div>
+    <footer>${yt?`<a class="btn btn-ghost" href="${esc(yt)}" target="_blank" rel="noopener noreferrer" style="margin-right:auto"><i class="ti ti-brand-youtube"></i>Watch on YouTube</a>`:''}<button class="btn btn-ghost" onclick="upEditVideo('${x.id}')"><i class="ti ti-pencil"></i>Edit</button>${ready?`<button class="btn btn-primary" onclick="upMarkUploaded('${x.id}')"><i class="ti ti-check"></i>Mark uploaded</button>`:`<button class="btn btn-ghost" onclick="upBackToQueue('${x.id}')">Put back in queue</button>`}</footer></div>`,dl=>{
+    dl.classList.add('wide');dl.addEventListener('click',e=>{if(e.target===dl)dl.close()});
+  });
 }
-function upToggle(id){UP.open.has(id)?UP.open.delete(id):UP.open.add(id);drawUploads()}
-function upLoad(id){UP.loaded.add(id);drawUploads()}
-function upHistoryRow(x,c){
-  const ts=c.format==='short'?null:thumbSrc(x.thumbnail_url),yt=ytLink(x.youtube_url),d=driveInfo(x.drive_url);
-  return `<article class="glass up-item done"><header class="up-head"><span class="up-num ok"><i class="ti ti-check"></i></span>${ts?`<img class="up-mini" src="${esc(ts)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''}
-    <div class="up-title"><h3>${esc(x.title)}</h3><small>Uploaded ${x.uploaded_at?new Date(x.uploaded_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</small></div>
-    <div class="up-actions">${yt?`<a class="btn btn-ghost btn-sm" href="${esc(yt)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-youtube"></i>Watch</a>`:''}
-      <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop">${d?`<button onclick="window.open('${esc(d.url)}','_blank','noopener')">Open in Drive</button>`:''}<button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upBackToQueue('${x.id}')">Put back in queue</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details></div></header></article>`;
-}
+function upCloseDialogs(){document.querySelectorAll('dialog[open]').forEach(d=>d.close())}
 
 /* ── ordering ── */
 async function upSaveOrder(ids){
@@ -104,7 +114,7 @@ async function upSaveOrder(ids){
 function upMove(id,dir){const ids=upList('ready').map(x=>x.id),i=ids.indexOf(id),j=i+dir;if(i<0||j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];upSaveOrder(ids)}
 function upBindDrag(){
   const list=$('#up-list');if(!list)return;
-  list.querySelectorAll('.up-item[data-id]').forEach(el=>{
+  list.querySelectorAll('.up-tile[data-id]').forEach(el=>{
     const grip=el.querySelector('.up-grip');
     if(grip){grip.addEventListener('mousedown',()=>{el.draggable=true});grip.addEventListener('click',e=>e.stopPropagation())}
     el.addEventListener('dragstart',e=>{UP.drag=el.dataset.id;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',el.dataset.id)});
@@ -123,18 +133,18 @@ function upMarkUploaded(id){
     d.querySelector('form').onsubmit=async e=>{e.preventDefault();const raw=d.querySelector('[name=yt]').value.trim(),yt=raw?ytLink(raw):null,err=d.querySelector('.err');
       if(raw&&!yt){err.textContent='That doesn’t look like a YouTube link.';return}
       const r=await sb.from('upload_videos').update({status:'uploaded',uploaded_at:new Date().toISOString(),uploaded_by:user.id,youtube_url:yt}).eq('id',id).select('id');
-      if(r.error){err.textContent=r.error.message;return}d.close();UP.open.delete(id);toast('Moved to history');renderUploads()};
+      if(r.error){err.textContent=r.error.message;return}upCloseDialogs();toast('Moved to history');renderUploads()};
   });
 }
 async function upBackToQueue(id){
   const max=Math.max(0,...upList('ready').map(x=>x.position));
   const r=await sb.from('upload_videos').update({status:'ready',uploaded_at:null,uploaded_by:null,position:max+1}).eq('id',id);
-  if(r.error){toast(r.error.message);return}toast('Back in the queue');UP.view='queue';renderUploads();
+  if(r.error){toast(r.error.message);return}upCloseDialogs();toast('Back in the queue');UP.view='queue';renderUploads();
 }
 async function upDeleteVideo(id){
   const x=UP.videos.find(v=>v.id===id);if(!x)return;
   if(!await confirmDialog('Delete this video entry?',`“${esc(x.title)}” is removed from the board. The file in Google Drive is not touched.`,'Delete entry'))return;
-  const r=await sb.from('upload_videos').delete().eq('id',id);if(r.error){toast(r.error.message);return}toast('Entry deleted');renderUploads();
+  const r=await sb.from('upload_videos').delete().eq('id',id);if(r.error){toast(r.error.message);return}upCloseDialogs();toast('Entry deleted');renderUploads();
 }
 function upEditVideo(id){
   const c=upChannel();if(!c){toast('Add a channel first');return}
@@ -163,7 +173,7 @@ function upEditVideo(id){
       const row={title:fd.title.trim(),description:fd.description.trim()||null,drive_url:drive||null,thumbnail_url:short?null:(th||null),notes:fd.notes.trim()||null};
       let r;if(id)r=await sb.from('upload_videos').update(row).eq('id',id).select('id');
       else{const max=Math.max(0,...UP.videos.filter(v=>v.channel_id===ch.id&&v.status==='ready').map(v=>v.position));r=await sb.from('upload_videos').insert({...row,channel_id:ch.id,position:max+1,created_by:user.id}).select('id')}
-      if(r.error){err.textContent=r.error.message;return}d.close();toast(id?'Changes saved':'Video added to the queue');UP.view=id?UP.view:'queue';renderUploads()};
+      if(r.error){err.textContent=r.error.message;return}upCloseDialogs();toast(id?'Changes saved':'Video added to the queue');UP.view=id?UP.view:'queue';renderUploads()};
   });
 }
 
