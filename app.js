@@ -6,7 +6,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 
 let user=null,profile=null;
 const D={channels:[],income:[],expenses:[],subs:[],settings:null,legacy:[],loaded:false};
-const UI={tx:{type:'all',month:'',channel:'',q:''},rep:{year:null},upload:{filter:'ready',q:''}};
+const UI={tx:{type:'all',month:'',channel:'',q:''},rep:{year:null}};
 
 const INCOME_SOURCES=['YouTube AdSense','Sponsorship','Affiliate Income','Channel Sale','Client Payment','Other'];
 const EXPENSE_CATS=['Owner Salary','Partnership Payment','AI Subscription','Software Subscription','Production Cost','Animation','Editor Payment','Equipment','Bank & Transfer Fees','Channel Purchase','Marketing','Other'];
@@ -107,6 +107,7 @@ async function startApp(u){
   user=u;const {data}=await sb.from('profiles').select('id,name,role').eq('id',u.id).single();profile=data;
   $('#auth').style.display='none';$('#app').style.display='block';
   const name=profile?.name||u.email.split('@')[0];$('#me-name').textContent=name;$('#me-av').textContent=name[0].toUpperCase();$('#me-role').textContent=profile?.role||'';
+  document.querySelectorAll('.brand-sub').forEach(el=>el.textContent=isOwner()?'Finance workspace':'Team workspace');
   buildNav();
   if(isOwner()){try{await loadData()}catch(e){$('#view').innerHTML=errorBox(e.message)}}
   route();
@@ -120,11 +121,11 @@ const PAGES={
   partners:{t:'Partner share',i:'ti-users-group',g:'Money',owner:1},
   subscriptions:{t:'Subscriptions',i:'ti-repeat',g:'Money',owner:1},
   reports:{t:'Reports',i:'ti-chart-histogram',g:'Money',owner:1},
-  uploads:{t:'Video upload',i:'ti-cloud-upload',g:'Workspace',manager:1},
+  uploads:{t:'Video upload',i:'ti-cloud-upload',g:'Workspace',all:1},
   notes:{t:'Private notes',i:'ti-lock',g:'Workspace',owner:1},
   settings:{t:'Settings',i:'ti-settings',g:'Workspace',owner:1}
 };
-function canSee(p){return isOwner()||(p.manager&&profile?.role==='manager')}
+function canSee(p){return isOwner()||(!!p.all&&!!profile)}
 function buildNav(){
   let html='',g=null;
   for(const [k,p] of Object.entries(PAGES)){if(!canSee(p))continue;if(p.g!==g){g=p.g;if(g)html+=`<div class="nav-group">${g}</div>`}html+=`<a href="#/${k}" data-pg="${k}"><i class="ti ${p.i}"></i>${p.t}</a>`}
@@ -136,7 +137,7 @@ async function route(){
   if(typeof ownerDoc!=='undefined'&&ownerDoc.dirty&&$('#owner-doc-editor'))await saveOwnerDocument();
   const [pg,arg]=(location.hash.replace(/^#\/?/,'')||'').split('/');
   let key=PAGES[pg]?pg:pg==='channel'?'channels':(isOwner()?'dashboard':'uploads');
-  if(!canSee(PAGES[key])){$('#view').innerHTML=`<div class="blocked glass"><h1>This space is owner-only</h1><p>SA Media Empire is now a finance workspace for the owner. Ask Shakil if you need something from it.</p><button class="btn btn-ghost" onclick="$('#logout').click()">Sign out</button></div>`;$('#nav').innerHTML='';return}
+  if(!canSee(PAGES[key])){$('#view').innerHTML=`<div class="blocked glass"><h1>This page is owner-only</h1><p>Your account can use the Video upload board. Finance and private notes are for the owner.</p><a class="btn btn-primary" href="#/uploads" style="margin-right:8px">Go to Video upload</a><button class="btn btn-ghost" onclick="$('#logout').click()">Sign out</button></div>`;return}
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.pg===key));
   document.querySelectorAll('dialog[open]').forEach(d=>d.close());  document.body.classList.remove('nav-open');window.scrollTo(0,0);
   document.title=(pg==='channel'&&arg?chName(arg):PAGES[key].t)+' · SA Media Empire';
@@ -495,45 +496,6 @@ function renderSettings(){
   <p class="err" role="alert"></p><button class="btn btn-primary" type="submit">Save settings</button></form></section>`;
   $('#set-form').onsubmit=async e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target));localStorage.setItem('sa-usd-rate',fd.rate);const row={opening_balance:n(fd.opening_balance),currency:'BDT',updated_by:user.id,updated_at:new Date().toISOString()};
     const res=s.id?await sb.from('finance_settings').update(row).eq('id',s.id).select('id'):await sb.from('finance_settings').insert(row).select('id');if(res.error){e.target.querySelector('.err').textContent=res.error.message;return}toast('Settings saved');refresh()};
-}
-
-/* ── video upload (unchanged workflow) ─────────────────────────────── */
-let _uploadRows=[],_uploadChannels=[];
-function uploadVideoUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&['youtube.com','www.youtube.com','m.youtube.com','youtu.be'].includes(u.hostname)&&u.pathname!=='/'?u.href:null}catch{return null}}
-function safeUrl(v){try{return ['https:','http:'].includes(new URL(v).protocol)}catch{return false}}
-function sourceLinks(p){return [...new Set([p.drive_link,...(Array.isArray(p.submission_links)?p.submission_links:[])].filter(x=>x&&safeUrl(x)))]}
-async function renderUploads(){
-  const v=$('#view');v.innerHTML=head('Video upload','Finished videos and where each one is in the upload process.')+'<div class="glass card empty"><div class="spin" style="margin:auto"></div></div>';
-  const [projects,eds,channels]=await Promise.all([sb.from('editor_projects').select('*').eq('is_completed',true).order('updated_at',{ascending:false}),sb.from('editors').select('id,name'),sb.from('finance_channels').select('id,name').order('name')]);
-  const err=[projects,eds,channels].find(r=>r.error);if(err){v.innerHTML=head('Video upload')+errorBox(err.error.message);return}
-  _uploadChannels=channels.data||[];_uploadRows=(projects.data||[]).map(p=>({...p,editor_name:(eds.data||[]).find(e=>e.id===p.editor_id)?.name||'Unassigned'}));
-  v.innerHTML=head('Video upload','Finished videos and where each one is in the upload process.',`<button class="btn btn-ghost" onclick="renderUploads()"><i class="ti ti-refresh"></i>Refresh</button>`)+
-  `<div class="up-sum">${[['ready','Ready to upload'],['uploaded','Uploaded'],['published','Published']].map(([k,l])=>`<button onclick="UI.upload.filter='${k}';drawUploads()"><small>${l}</small><strong>${_uploadRows.filter(p=>p.upload_status===k).length}</strong></button>`).join('')}</div>
-  <div class="filters"><div class="seg" id="up-seg">${[['queue','Upload queue'],['ready','Ready'],['uploaded','Uploaded'],['published','Published'],['all','All']].map(([k,l])=>`<button data-k="${k}">${l}</button>`).join('')}</div><input class="inp search" placeholder="Search video" value="${esc(UI.upload.q)}" oninput="UI.upload.q=this.value;drawUploads()"></div><div id="up-list"></div>`;
-  $('#up-seg').onclick=e=>{const b=e.target.closest('button');if(b){UI.upload.filter=b.dataset.k;drawUploads()}};drawUploads();
-}
-function drawUploads(){
-  document.querySelectorAll('#up-seg button').forEach(b=>b.classList.toggle('on',b.dataset.k===UI.upload.filter));
-  const f=UI.upload.filter,q=UI.upload.q.toLowerCase();const rows=_uploadRows.filter(p=>(f==='all'||(f==='queue'?p.upload_status!=='published':p.upload_status===f))&&`${p.project_name} ${p.editor_name}`.toLowerCase().includes(q));
-  $('#up-list').innerHTML=rows.map(p=>{const url=uploadVideoUrl(p.upload_url),links=sourceLinks(p);return `<article class="glass up-card"><div class="up-card-top"><div><span class="pill ${p.upload_status==='published'?'':p.upload_status==='uploaded'?'grey':'sun'}">${{ready:'Ready to upload',uploaded:'Uploaded',published:'Published'}[p.upload_status]||'Ready to upload'}</span><h3>${esc(p.project_name)}</h3><p>${esc(_uploadChannels.find(c=>c.id===p.upload_channel_id)?.name||'Channel not chosen')} — edited by ${esc(p.editor_name)}</p></div></div>
-   <div class="up-links">${links.map((l,i)=>`<a href="${esc(l)}" target="_blank" rel="noopener noreferrer">Source video ${i+1}</a>`).join('')||'<span>No source link saved.</span>'}${url?`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">YouTube video</a>`:''}</div>
-   ${p.upload_notes?`<p class="up-note">${esc(p.upload_notes)}</p>`:''}<footer><small>${p.published_at?'Published '+new Date(p.published_at).toLocaleString('en-GB'):p.uploaded_at?'Uploaded '+new Date(p.uploaded_at).toLocaleString('en-GB'):'Waiting for upload'}</small><button class="btn btn-primary btn-sm" onclick="editUpload(${p.id})">${p.upload_status==='ready'?'Update status':'Manage upload'}</button></footer></article>`}).join('')||'<div class="glass card empty"><i class="ti ti-cloud-upload"></i><b>Nothing here</b>No videos in this group.</div>';
-}
-async function editUpload(id){
-  const {data:p,error}=await sb.from('editor_projects').select('*').eq('id',id).single();if(error||!p?.is_completed){toast(error?.message||'This video is no longer marked complete');return renderUploads()}
-  dialog(`<form><h2>Video upload</h2><p class="dlg-sub">${esc(p.project_name)}</p>
-   <label class="fld"><span>Status</span><select class="inp" name="status"><option value="ready">Ready to upload</option><option value="uploaded">Uploaded to YouTube</option><option value="published">Published</option></select></label>
-   <label class="fld"><span>Channel</span><select class="inp" name="channel"><option value="">Not chosen</option>${_uploadChannels.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>
-   <label class="fld"><span>YouTube link (needed for Published)</span><input class="inp" name="url" type="url" placeholder="https://www.youtube.com/watch?v=…" value="${esc(p.upload_url||'')}"></label>
-   <label class="fld"><span>Notes</span><textarea class="inp" name="notes" rows="3">${esc(p.upload_notes||'')}</textarea></label>
-   <p class="err" role="alert"></p><footer><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save status</button></footer></form>`,d=>{
-    d.querySelector('[name=status]').value=p.upload_status||'ready';d.querySelector('[name=channel]').value=p.upload_channel_id||'';
-    d.querySelector('form').onsubmit=async e=>{e.preventDefault();const st=d.querySelector('[name=status]').value,raw=d.querySelector('[name=url]').value.trim(),url=raw?uploadVideoUrl(raw):null,err=d.querySelector('.err');
-      if(raw&&!url||st==='published'&&!url){err.textContent='Add a valid YouTube video link.';return}
-      let q=sb.from('editor_projects').update({upload_status:st,upload_url:url,upload_channel_id:d.querySelector('[name=channel]').value||null,upload_notes:d.querySelector('[name=notes]').value.trim()||null}).eq('id',id).eq('is_completed',true);q=p.updated_at?q.eq('updated_at',p.updated_at):q.is('updated_at',null);
-      const r=await q.select('id');if(r.error){err.textContent=r.error.message;return}if(!r.data?.length){err.textContent='This video changed somewhere else. Close and open it again.';return}
-      d.close();UI.upload.filter=st;toast('Upload status saved');renderUploads()};
-  });
 }
 
 /* ── private notes ─────────────────────────────── */
