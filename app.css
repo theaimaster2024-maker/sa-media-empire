@@ -391,3 +391,6 @@ dialog.dlg.wide{width:min(1080px,calc(100% - 28px))}
 .up-detail .up-body{padding:0 0 8px;border-top:1px solid var(--hair);margin-top:10px}
 .up-detail footer{margin-top:14px;flex-wrap:wrap}
 @media (max-width:640px){.up-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.up-tile-foot .btn{font-size:0;gap:0;padding:0}.up-tile-foot .btn i{font-size:16px}.up-detail{padding:16px 14px}}
+.up-tab b.up-draftcount{background:#F59E0B;color:#fff;margin-left:-4px}
+.up-note-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 14px;border-radius:12px;background:rgba(245,158,11,.12);color:var(--ink-2);font-size:13px}
+.up-note-bar i{font-size:18px;color:#D97706}
