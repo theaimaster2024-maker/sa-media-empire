@@ -1,7 +1,7 @@
 'use strict';
 /* Video upload board — one tab per channel, a queue of ready videos, and a history.
    Every signed-in team member can see and edit it. */
-const UP={channels:[],videos:[],tab:localStorage.getItem('sa-upload-tab')||null,view:'queue',drag:null};
+const UP={channels:[],videos:[],cc:{},tab:localStorage.getItem('sa-upload-tab')||null,view:'queue',drag:null};
 
 /* ── link helpers ── */
 function upHttps(v){try{const u=new URL(String(v||'').trim());return u.protocol==='https:'?u.href:null}catch{return null}}
@@ -32,9 +32,9 @@ async function upCopy(id,field){const v=UP.videos.find(x=>x.id===id);const text=
 async function renderUploads(){
   const v=$('#view');
   if(!UP.channels.length)v.innerHTML=head('Video upload','Finished videos for each channel, in the order they go up.')+'<div class="glass card empty"><div class="spin" style="margin:auto"></div></div>';
-  const [ch,vid]=await Promise.all([sb.from('upload_channels').select('*').order('position'),sb.from('upload_videos').select('*').order('position')]);
+  const [ch,vid,cm]=await Promise.all([sb.from('upload_channels').select('*').order('position'),sb.from('upload_videos').select('*').order('position'),sb.from('upload_video_comments').select('video_id')]);
   const err=[ch,vid].find(r=>r.error);if(err){v.innerHTML=head('Video upload')+errorBox(err.error.message);return}
-  UP.channels=ch.data||[];UP.videos=vid.data||[];
+  UP.channels=ch.data||[];UP.videos=vid.data||[];UP.cc={};(cm.data||[]).forEach(r=>{UP.cc[r.video_id]=(UP.cc[r.video_id]||0)+1});
   if(!UP.channels.some(c=>c.id===UP.tab))UP.tab=UP.channels[0]?.id||null;
   drawUploads();
 }
@@ -67,7 +67,7 @@ function upDraftCard(x,c){
   const poster=upPoster(x,c);
   return `<article class="glass up-tile short" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
     <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i><span class="up-flag">Needs approval</span></div>
-    <div class="up-tile-body"><h3>${esc(x.title)}</h3>
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3>${upCC(x)}
       <div class="up-tile-foot" onclick="event.stopPropagation()">
         <button class="btn btn-primary btn-sm" onclick="upApprove('${x.id}')"><i class="ti ti-check"></i>Approve</button>
         <button class="btn btn-ghost btn-sm" onclick="upReject('${x.id}')"><i class="ti ti-x"></i>Not approve</button>
@@ -77,7 +77,7 @@ function upRejectedCard(x,c){
   const poster=upPoster(x,c);
   return `<article class="glass up-tile short done" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
     <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i><span class="up-warn">Not approved</span></div>
-    <div class="up-tile-body"><h3>${esc(x.title)}</h3>${x.reviewed_at?`<small>Rejected ${new Date(x.reviewed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</small>`:''}
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3>${upCC(x)}${x.reviewed_at?`<small>Rejected ${new Date(x.reviewed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</small>`:''}
       <div class="up-tile-foot" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" onclick="upBackToDraft('${x.id}')"><i class="ti ti-arrow-back-up"></i>Back to draft</button>
         <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upDetail('${x.id}')">Open details</button><button onclick="upEditVideo('${x.id}')">Edit</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete for good</button></div></details></div></div></article>`;
@@ -91,7 +91,96 @@ function upApprove(id){
   const max=Math.max(0,...UP.videos.filter(v=>v.status==='ready'&&v.channel_id===UP.videos.find(x=>x.id===id)?.channel_id).map(v=>v.position));
   return upSetStatus(id,{status:'ready',position:max+1,reviewed_by:user.id,reviewed_at:new Date().toISOString()},'Approved — moved to To upload');
 }
-function upReject(id){return upSetStatus(id,{status:'not_approved',reviewed_by:user.id,reviewed_at:new Date().toISOString()},'Moved to Not approved')}
+
+
+/* ── review comments: text, voice note, images ── */
+const UPC_BUCKET='upload-comments';
+function upCC(x){const n=UP.cc[x.id]||0;return n?`<small class="up-cc" title="Comments"><i class="ti ti-message-2"></i>${n}</small>`:''}
+function upTime(t){return new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+function upComposer(root,{placeholder='Write a note… you can also paste a screenshot here'}={}){
+  const st={imgs:[],audio:null,rec:null,stream:null,timer:null,t0:0};
+  root.innerHTML=`<div class="up-cmp"><textarea class="inp" rows="3" placeholder="${esc(placeholder)}"></textarea><div class="up-cmp-att"></div>
+    <div class="up-cmp-bar"><label class="btn btn-ghost btn-sm"><i class="ti ti-photo"></i>Add image<input type="file" accept="image/*" multiple hidden></label>
+    <button type="button" class="btn btn-ghost btn-sm up-mic"><i class="ti ti-microphone"></i><span>Record voice</span></button></div></div>`;
+  const ta=root.querySelector('textarea'),att=root.querySelector('.up-cmp-att'),mic=root.querySelector('.up-mic'),inp=root.querySelector('input[type=file]');
+  const draw=()=>{att.innerHTML=st.imgs.map((f,i)=>`<span class="up-chip img"><img src="${f.url}" alt=""><button type="button" data-i="${i}" aria-label="Remove image"><i class="ti ti-x"></i></button></span>`).join('')+(st.audio?`<span class="up-chip aud"><audio controls src="${st.audio.url}"></audio><button type="button" data-a="1" aria-label="Remove voice note"><i class="ti ti-x"></i></button></span>`:'');
+    att.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{URL.revokeObjectURL(st.imgs[b.dataset.i].url);st.imgs.splice(b.dataset.i,1);draw()});
+    att.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{URL.revokeObjectURL(st.audio.url);st.audio=null;draw()})};
+  const addImgs=files=>{for(const f of files){if(!f.type.startsWith('image/'))continue;if(f.size>8*1024*1024){toast('Each image must be under 8 MB');continue}
+    if(st.imgs.length>=6){toast('Up to 6 images per comment');break}st.imgs.push({file:f,url:URL.createObjectURL(f)})}draw()};
+  inp.onchange=()=>{addImgs([...inp.files]);inp.value=''};
+  ta.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith('image/'));if(fs.length){e.preventDefault();addImgs(fs)}});
+  const stopRec=()=>{clearInterval(st.timer);st.stream?.getTracks().forEach(t=>t.stop());st.stream=null;if(st.rec&&st.rec.state!=='inactive')st.rec.stop();mic.classList.remove('rec');mic.querySelector('span').textContent='Record voice'};
+  mic.onclick=async()=>{
+    if(st.rec&&st.rec.state==='recording'){stopRec();return}
+    if(st.audio){toast('Remove the current voice note to record a new one');return}
+    if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){toast('This browser cannot record voice');return}
+    try{st.stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch{toast('Microphone is blocked — allow it in the browser');return}
+    const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(m=>MediaRecorder.isTypeSupported?.(m))||'';
+    const chunks=[];st.rec=new MediaRecorder(st.stream,mime?{mimeType:mime}:undefined);
+    st.rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+    st.rec.onstop=()=>{const type=st.rec.mimeType||mime||'audio/webm',blob=new Blob(chunks,{type});if(blob.size>15*1024*1024){toast('Voice note is too long');return}if(blob.size)st.audio={blob,url:URL.createObjectURL(blob),type};draw()};
+    st.rec.start();st.t0=Date.now();mic.classList.add('rec');
+    st.timer=setInterval(()=>{const sec=Math.floor((Date.now()-st.t0)/1000);mic.querySelector('span').textContent=`Stop · ${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;if(sec>=300)stopRec()},500);
+  };
+  return {
+    has:()=>!!(ta.value.trim()||st.imgs.length||st.audio||st.rec?.state==='recording'),
+    stop:stopRec,
+    async save(videoId,kind){
+      if(st.rec?.state==='recording'){stopRec();await new Promise(r=>setTimeout(r,300))}
+      const body=ta.value.trim();if(!body&&!st.imgs.length&&!st.audio)return null;
+      const stamp=Date.now(),paths=[];let audio_path=null;
+      for(const [i,f] of st.imgs.entries()){const path=`${videoId}/${stamp}-${i}-${f.file.name.replace(/[^\w.-]+/g,'_').slice(-50)||'image.png'}`;
+        const r=await sb.storage.from(UPC_BUCKET).upload(path,f.file,{contentType:f.file.type});if(r.error)throw r.error;paths.push(path)}
+      if(st.audio){const ext=st.audio.type.includes('mp4')?'m4a':'webm';audio_path=`${videoId}/${stamp}-voice.${ext}`;
+        const r=await sb.storage.from(UPC_BUCKET).upload(audio_path,st.audio.blob,{contentType:st.audio.type.split(';')[0]});if(r.error)throw r.error}
+      const ins=await sb.from('upload_video_comments').insert({video_id:videoId,author_id:user.id,author_name:profile?.name||'Team',kind,body:body||null,audio_path,image_paths:paths}).select('id');
+      if(ins.error)throw ins.error;UP.cc[videoId]=(UP.cc[videoId]||0)+1;return true},
+    reset(){ta.value='';st.imgs.forEach(f=>URL.revokeObjectURL(f.url));if(st.audio)URL.revokeObjectURL(st.audio.url);st.imgs=[];st.audio=null;draw()}
+  };
+}
+async function upLoadComments(dl,videoId){
+  const box=dl.querySelector('#up-cmt-list');if(!box)return;
+  const r=await sb.from('upload_video_comments').select('*').eq('video_id',videoId).order('created_at');
+  if(r.error){box.innerHTML=`<p class="err">${esc(r.error.message)}</p>`;return}
+  const rows=r.data||[];UP.cc[videoId]=rows.length;
+  const allPaths=rows.flatMap(c=>[...(c.image_paths||[]),...(c.audio_path?[c.audio_path]:[])]);
+  const urls={};if(allPaths.length){const s=await sb.storage.from(UPC_BUCKET).createSignedUrls(allPaths,3600);(s.data||[]).forEach(o=>{if(o.signedUrl)urls[o.path]=o.signedUrl})}
+  const head=dl.querySelector('#up-cmt-count');if(head)head.textContent=rows.length?`(${rows.length})`:'';
+  box.innerHTML=rows.length?rows.map(c=>`<article class="up-cmt"><header><b>${esc(c.author_name||'Team')}</b>${c.kind==='review'?'<span class="pill sun">Not approved note</span>':''}<span>${upTime(c.created_at)}</span>${(c.author_id===user.id||profile?.role==='owner')?`<button class="icon-btn" data-del="${c.id}" aria-label="Delete comment"><i class="ti ti-trash"></i></button>`:''}</header>
+    ${c.body?`<p>${esc(c.body)}</p>`:''}${c.audio_path&&urls[c.audio_path]?`<audio controls preload="none" src="${esc(urls[c.audio_path])}"></audio>`:''}
+    ${(c.image_paths||[]).length?`<div class="up-cmt-imgs">${c.image_paths.map(pa=>urls[pa]?`<a href="${esc(urls[pa])}" target="_blank" rel="noopener noreferrer"><img src="${esc(urls[pa])}" alt="Attached image" loading="lazy"></a>`:'').join('')}</div>`:''}</article>`).join(''):'<p class="up-cmt-empty">No comments yet.</p>';
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+    if(!await confirmDialog('Delete this comment?','The text, voice note and images in it are removed.','Delete'))return;
+    const c=rows.find(x=>x.id===b.dataset.del);const d=await sb.from('upload_video_comments').delete().eq('id',b.dataset.del);
+    if(d.error){toast(d.error.message);return}
+    const files=[...(c.image_paths||[]),...(c.audio_path?[c.audio_path]:[])];if(files.length)sb.storage.from(UPC_BUCKET).remove(files);
+    upLoadComments(dl,videoId);drawUploads()});
+}
+function upInitComments(dl,videoId){
+  const host=dl.querySelector('#up-cmt-compose');if(!host)return;
+  const comp=upComposer(host,{placeholder:'Add a comment for the team…'});
+  dl.addEventListener('close',()=>comp.stop());
+  const btn=dl.querySelector('#up-cmt-send'),err=dl.querySelector('#up-cmt-err');
+  btn.onclick=async()=>{err.textContent='';if(!comp.has()){err.textContent='Write something, record a voice note or add an image first.';return}
+    btn.disabled=true;try{await comp.save(videoId,'comment');comp.reset();toast('Comment posted');await upLoadComments(dl,videoId);drawUploads()}catch(e){err.textContent=e.message||'Could not post the comment'}btn.disabled=false};
+  upLoadComments(dl,videoId);
+}
+function upReject(id){
+  const x=UP.videos.find(v=>v.id===id);if(!x)return;
+  dialog(`<form><h2>Not approve this video</h2><p class="dlg-sub">${esc(x.title)}</p>
+    <div class="fld"><span>Why? (optional)</span><div id="rj-cmp"></div><span class="hint">Your manager will see this note on the video. Type it, record your voice, or add screenshots.</span></div>
+    <p class="err" role="alert"></p><footer><button type="button" class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-danger" type="submit"><i class="ti ti-x"></i>Not approve</button></footer></form>`,d=>{
+    const comp=upComposer(d.querySelector('#rj-cmp'),{placeholder:'What should be fixed? (you can leave this empty)'});
+    d.addEventListener('close',()=>comp.stop());
+    d.querySelector('form').onsubmit=async e=>{e.preventDefault();const err=d.querySelector('.err'),btn=d.querySelector('[type=submit]');btn.disabled=true;err.textContent='';
+      const r=await sb.from('upload_videos').update({status:'not_approved',reviewed_by:user.id,reviewed_at:new Date().toISOString()}).eq('id',id).select('id');
+      if(r.error){err.textContent=r.error.message;btn.disabled=false;return}
+      let note='Moved to Not approved';
+      try{await comp.save(id,'review')}catch(ex){note='Moved to Not approved, but the note was not saved — add it from the video details'}
+      upCloseDialogs();toast(note);UP.view='rejected';renderUploads()};
+  });
+}
 function upBackToDraft(id){return upSetStatus(id,{status:'draft',reviewed_by:null,reviewed_at:null},'Back in Draft','draft')}
 function upEmpty(c){return `<div class="glass card empty"><i class="ti ti-cloud-upload"></i><b>No videos waiting for ${esc(c.name)}</b>Add a finished video with its Drive link, title and description.<div style="margin-top:14px"><button class="btn btn-primary" onclick="upEditVideo()"><i class="ti ti-plus"></i>Add video</button></div></div>`}
 function upSelect(id){UP.tab=id;localStorage.setItem('sa-upload-tab',id);const c=UP.channels.find(k=>k.id===id);UP.view=c&&upIsShort(c)&&UP.videos.some(v=>v.channel_id===id&&v.status==='draft')?'draft':'queue';drawUploads()}
@@ -107,7 +196,7 @@ function upCard(x,i,c){
   return `<article class="glass up-tile ${first?'first':''} ${short?'short':''}" data-id="${x.id}" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
     <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i>
       <span class="up-badge">${i+1}</span>${first?'<span class="up-flag">Next to upload</span>':''}${noThumb?'<span class="up-warn">No thumbnail yet</span>':''}</div>
-    <div class="up-tile-body"><h3>${esc(x.title)}</h3>
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3>${upCC(x)}
       <div class="up-tile-foot" onclick="event.stopPropagation()"><span class="up-grip" title="Drag to change the order"><i class="ti ti-grip-vertical"></i></span>
         <button class="btn btn-primary btn-sm" onclick="upMarkUploaded('${x.id}')"><i class="ti ti-check"></i>Mark uploaded</button>
         <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upDetail('${x.id}')">Open details</button><button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upMove('${x.id}',-1)">Move earlier</button><button onclick="upMove('${x.id}',1)">Move later</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details></div></div></article>`;
@@ -116,7 +205,7 @@ function upHistoryRow(x,c){
   const poster=upPoster(x,c),yt=ytLink(x.youtube_url);
   return `<article class="glass up-tile done ${c.format==='short'?'short':''}" tabindex="0" role="button" aria-label="Open ${esc(x.title)}" onclick="upDetail('${x.id}')" onkeydown="if(event.key==='Enter')upDetail('${x.id}')">
     <div class="up-poster">${poster?`<img src="${esc(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:''}<i class="ti ti-player-play-filled up-poster-ic"></i><span class="up-badge ok"><i class="ti ti-check"></i></span></div>
-    <div class="up-tile-body"><h3>${esc(x.title)}</h3><small>Uploaded ${x.uploaded_at?new Date(x.uploaded_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</small>
+    <div class="up-tile-body"><h3>${esc(x.title)}</h3>${upCC(x)}<small>Uploaded ${x.uploaded_at?new Date(x.uploaded_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</small>
       <div class="up-tile-foot" onclick="event.stopPropagation()">${yt?`<a class="btn btn-ghost btn-sm" href="${esc(yt)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-youtube"></i>Watch</a>`:'<span></span>'}
         <details class="menu"><summary class="icon-btn" aria-label="Options"><i class="ti ti-dots"></i></summary><div class="menu-pop"><button onclick="upDetail('${x.id}')">Open details</button><button onclick="upEditVideo('${x.id}')">Edit</button><button onclick="upBackToQueue('${x.id}')">Put back in queue</button><button class="danger" onclick="upDeleteVideo('${x.id}')">Delete</button></div></details></div></div></article>`;
 }
@@ -141,8 +230,9 @@ function upDetail(id){
         <div class="up-block"><div class="up-label"><span>Description</span><button onclick="upCopy('${x.id}','description')"><i class="ti ti-copy"></i>Copy</button></div><div class="up-copybox desc">${x.description?esc(x.description):'<em>No description yet</em>'}</div></div>
       </div>
     </div>
+    <section class="up-cmts"><h3>Comments <small id="up-cmt-count"></small></h3><div id="up-cmt-list"><div class="spin" style="margin:12px auto"></div></div><div id="up-cmt-compose"></div><p class="err" id="up-cmt-err" role="alert"></p><button type="button" class="btn btn-primary btn-sm" id="up-cmt-send"><i class="ti ti-send"></i>Post comment</button></section>
     <footer>${yt?`<a class="btn btn-ghost" href="${esc(yt)}" target="_blank" rel="noopener noreferrer" style="margin-right:auto"><i class="ti ti-brand-youtube"></i>Watch on YouTube</a>`:''}<button class="btn btn-ghost" onclick="upEditVideo('${x.id}')"><i class="ti ti-pencil"></i>Edit</button>${draft?`<button class="btn btn-ghost" onclick="upReject('${x.id}')"><i class="ti ti-x"></i>Not approve</button><button class="btn btn-primary" onclick="upApprove('${x.id}')"><i class="ti ti-check"></i>Approve</button>`:rej?`<button class="btn btn-ghost" onclick="upBackToDraft('${x.id}')">Back to draft</button>`:ready?`<button class="btn btn-primary" onclick="upMarkUploaded('${x.id}')"><i class="ti ti-check"></i>Mark uploaded</button>`:`<button class="btn btn-ghost" onclick="upBackToQueue('${x.id}')">Put back in queue</button>`}</footer></div>`,dl=>{
-    dl.classList.add('wide');dl.addEventListener('click',e=>{if(e.target===dl)dl.close()});
+    dl.classList.add('wide');dl.addEventListener('click',e=>{if(e.target===dl)dl.close()});upInitComments(dl,x.id);
   });
 }
 function upCloseDialogs(){document.querySelectorAll('dialog[open]').forEach(d=>d.close())}
