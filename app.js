@@ -118,6 +118,7 @@ const PAGES={
   dashboard:{t:'Dashboard',i:'ti-layout-dashboard',g:'',owner:1},
   transactions:{t:'Transactions',i:'ti-arrows-exchange',g:'Money',owner:1},
   channels:{t:'Channels',i:'ti-brand-youtube',g:'Money',owner:1},
+  pipeline:{t:'Sale pipeline',i:'ti-tag',g:'Money',owner:1},
   partners:{t:'Partner share',i:'ti-users-group',g:'Money',owner:1},
   subscriptions:{t:'Subscriptions',i:'ti-repeat',g:'Money',owner:1},
   reports:{t:'Reports',i:'ti-chart-histogram',g:'Money',owner:1},
@@ -144,7 +145,7 @@ async function route(){
   const v=$('#view');
   try{
     if(pg==='channel'&&arg)return renderChannel(arg);
-    ({dashboard:renderDashboard,transactions:renderTransactions,channels:renderChannels,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,notes:renderNotes,settings:renderSettings})[key]();
+    ({dashboard:renderDashboard,transactions:renderTransactions,channels:renderChannels,pipeline:renderPipeline,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,notes:renderNotes,settings:renderSettings})[key]();
   }catch(e){console.error(e);v.innerHTML=errorBox(e.message)}
 }
 function errorBox(msg){return `<div class="glass card empty"><i class="ti ti-alert-circle"></i><b>Something didn’t load</b>${esc(msg)}<div style="margin-top:14px"><button class="btn btn-ghost" onclick="refresh()">Try again</button></div></div>`}
