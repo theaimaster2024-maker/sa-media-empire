@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const chByName = (nm?: string) => { if (!nm) return null; const k = nm.toLowerCase(); return channels.find((c: any) => c.name.toLowerCase() === k || c.name.toLowerCase().includes(k))?.id || null; };
 
     const system = await buildContext(db, mode, prof?.name || 'Shakil', channels);
-    const hist = ((await db.from('hisab_chat').select('role,text').order('id', { ascending: false }).limit(16)).data || []).reverse();
+    const hist = ((await db.from('hisab_chat').select('role,text').order('id', { ascending: false }).limit(24)).data || []).reverse();
     await db.from('hisab_chat').insert({ role: 'user', text: (image ? '📷 ' : '') + (text || '(screenshot)'), profile: mode });
 
     const msgs: Msg[] = [];
@@ -189,7 +189,8 @@ async function buildContext(db: any, mode: string, name: string, channels: any[]
   }
 
   const L: string[] = [];
-  L.push(`You are Hisab, ${name}'s money assistant. Same brain as his Hisab phone app, now inside his SA Media Empire website (owner-only).`,
+  L.push(`You are Hisab, ${name}'s money assistant. Same brain as his Hisab phone app, now inside his SA Media Empire website (owner-only). You run on Anthropic's Claude Opus 5.5 (if Claude is ever down, Google Gemini answers instead). If he asks which model you are, say that.`,
+    `Think carefully before answering: check the numbers against the data below, notice contradictions (e.g. a balance that doesn't match his words), and ask one short question only when something is truly unclear.`,
     `He has two profiles: PERSONAL money (his own bKash/bank/cards) and BUSINESS money (SA Media: Wise, AdSense, channel costs). Never mix them. Right now he is looking at the ${mode.toUpperCase()} tab, so lean that way unless he asks otherwise.`,
     `Business money that goes to him personally is one of: owner_salary, partner_share, owner_loan, owner_withdrawal. If it's unclear which, ask him (one short question). Phone entries marked business become PENDING SA Media entries until he approves (mark_business_done).`,
     `You manage everything: add, fix, delete (delete_items) — whatever he asks, right away. Changes show in the phone app too. SCREENSHOTS: read every amount, date, TrxID; add only what isn't already listed (never duplicate); set balances if shown; then say in 1-3 lines what you recorded. Before deleting many things, list them and ask once.`,
@@ -293,7 +294,7 @@ async function callLLM(sec: any, system: string, msgs: Msg[], withTools = true) 
   for (const key of sec.claude_keys || []) {
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: sec.claude_model, max_tokens: 1500, system, messages: clean(msgs), ...(withTools ? { tools: TOOLS } : {}) }) });
+        body: JSON.stringify({ model: sec.claude_model, max_tokens: withTools ? 8000 : 1500, system, messages: clean(msgs), ...(withTools ? { tools: TOOLS, thinking: { type: 'adaptive' } } : {}) }) });
       if (!r.ok) { errors.push('claude ' + r.status); continue; }
       const j = await r.json();
       return { content: j.content || [], stop: j.stop_reason, provider: 'claude' };
@@ -311,6 +312,7 @@ async function gemini(model: string, key: string, system: string, msgs: Msg[], w
     const parts: any[] = [];
     if (typeof m.content === 'string') parts.push({ text: m.content });
     else for (const b of m.content) {
+      if (b.type === 'thinking' || b.type === 'redacted_thinking') continue;
       if (b.type === 'text') parts.push({ text: b.text });
       else if (b.type === 'image') parts.push({ inline_data: { mime_type: b.source.media_type, data: b.source.data } });
       else if (b.type === 'tool_use') { idToName[b.id] = b.name; const p: any = { functionCall: { name: b.name, args: b.input || {} } }; if (b._sig) p.thoughtSignature = b._sig; parts.push(p); }
@@ -323,7 +325,8 @@ async function gemini(model: string, key: string, system: string, msgs: Msg[], w
     generationConfig: { maxOutputTokens: 8192, temperature: 0.4 } });
   // AIza… and AQ.… keys both work with x-goog-api-key. The newest Flash models are often busy (503) on the free tier → fall back.
   let r: Response | null = null;
-  for (const m of [...new Set([model, 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash-preview'])]) {
+  const ok = /^gemini-[a-z0-9.\-]+$/.test(model || '') ? model : 'gemini-3.6-flash';
+  for (const m of [...new Set([ok, 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash-preview'])]) {
     r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, { method: 'POST', headers: { 'x-goog-api-key': key, 'content-type': 'application/json' }, body });
     if (r.ok || ![429, 500, 503, 404].includes(r.status)) break;
   }
