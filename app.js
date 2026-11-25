@@ -123,6 +123,7 @@ const PAGES={
   subscriptions:{t:'Subscriptions',i:'ti-repeat',g:'Money',owner:1},
   reports:{t:'Reports',i:'ti-chart-histogram',g:'Money',owner:1},
   uploads:{t:'Video upload',i:'ti-cloud-upload',g:'Workspace',all:1},
+  voice:{t:'Voice',i:'ti-microphone-2',g:'Workspace',all:1},
   notes:{t:'Private notes',i:'ti-lock',g:'Workspace',owner:1},
   settings:{t:'Settings',i:'ti-settings',g:'Workspace',owner:1}
 };
@@ -138,14 +139,14 @@ async function route(){
   if(typeof ownerDoc!=='undefined'&&ownerDoc.dirty&&$('#owner-doc-editor'))await saveOwnerDocument();
   const [pg,arg]=(location.hash.replace(/^#\/?/,'')||'').split('/');
   let key=PAGES[pg]?pg:pg==='channel'?'channels':(isOwner()?'dashboard':'uploads');
-  if(!canSee(PAGES[key])){$('#view').innerHTML=`<div class="blocked glass"><h1>This page is owner-only</h1><p>Your account can use the Video upload board. Finance and private notes are for the owner.</p><a class="btn btn-primary" href="#/uploads" style="margin-right:8px">Go to Video upload</a><button class="btn btn-ghost" onclick="$('#logout').click()">Sign out</button></div>`;return}
+  if(!canSee(PAGES[key])){$('#view').innerHTML=`<div class="blocked glass"><h1>This page is owner-only</h1><p>Your account can use the Video upload board and Voice. Finance and private notes are for the owner.</p><a class="btn btn-primary" href="#/uploads" style="margin-right:8px">Go to Video upload</a><button class="btn btn-ghost" onclick="$('#logout').click()">Sign out</button></div>`;return}
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.pg===key));
   document.querySelectorAll('dialog[open]').forEach(d=>d.close());  document.body.classList.remove('nav-open');window.scrollTo(0,0);
   document.title=(pg==='channel'&&arg?chName(arg):PAGES[key].t)+' · SA Media Empire';
   const v=$('#view');
   try{
     if(pg==='channel'&&arg)return renderChannel(arg);
-    ({dashboard:renderDashboard,hisab:renderHisab,transactions:renderTransactions,channels:renderChannels,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,notes:renderNotes,settings:renderSettings})[key]();
+    ({dashboard:renderDashboard,hisab:renderHisab,transactions:renderTransactions,channels:renderChannels,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,voice:renderVoice,notes:renderNotes,settings:renderSettings})[key]();
   }catch(e){console.error(e);v.innerHTML=errorBox(e.message)}
 }
 function errorBox(msg){return `<div class="glass card empty"><i class="ti ti-alert-circle"></i><b>Something didn’t load</b>${esc(msg)}<div style="margin-top:14px"><button class="btn btn-ghost" onclick="refresh()">Try again</button></div></div>`}
