@@ -8,7 +8,7 @@ let user=null,profile=null;
 const D={channels:[],income:[],expenses:[],subs:[],settings:null,legacy:[],loaded:false};
 const UI={tx:{type:'all',month:'',channel:'',q:''},rep:{year:null}};
 
-const INCOME_SOURCES=['YouTube AdSense','Sponsorship','Affiliate Income','Channel Sale','Client Payment','Other'];
+const INCOME_SOURCES=['YouTube AdSense','Sponsorship','Affiliate Income','Channel Sale','Client Payment','Owner Investment','Owner Loan Repaid','Other'];
 const EXPENSE_CATS=['Owner Salary','Partnership Payment','Owner Loan','Owner Withdrawal','AI Subscription','Software Subscription','Production Cost','Animation','Editor Payment','Equipment','Bank & Transfer Fees','Channel Purchase','Marketing','Other'];
 const METHODS=['Bank Transfer','Wise','bKash','Cash','Card','Binance / USDT','Other'];
 
