@@ -412,3 +412,19 @@ dialog.dlg.wide{width:min(1080px,calc(100% - 28px))}
 .up-chip.aud button{position:static}
 .up-mic.rec{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5}.up-mic.rec i{animation:upPulse 1s infinite}
 @keyframes upPulse{50%{opacity:.3}}
+/* Hisab page */
+.h-accs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;position:relative;z-index:1}
+.h-acc{background:rgba(255,255,255,.7);border:1px solid var(--hair);border-radius:14px;padding:9px 13px;min-width:120px}
+.h-acc small{display:block;color:var(--ink-3);font-size:11.5px;font-weight:600}
+.h-acc b{font-family:var(--num);font-size:16px}
+.h-li{cursor:pointer;border-radius:12px}
+.h-li:hover{background:rgba(255,255,255,.55)}
+.hisab-grid{align-items:start}
+.h-chat{position:sticky;top:18px;display:flex;flex-direction:column;max-height:calc(100vh - 120px)}
+.h-log{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;min-height:220px;padding:2px}
+.h-b{max-width:88%;padding:9px 13px;border-radius:16px;font-size:13.5px;line-height:1.5}
+.h-b.me{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:5px}
+.h-b.ai{align-self:flex-start;background:rgba(255,255,255,.85);border:1px solid var(--hair);border-bottom-left-radius:5px}
+.h-ask{display:flex;gap:8px;align-items:center;margin-top:12px}
+.h-ask .inp{flex:1;height:40px;border-radius:999px}
+@media (max-width:980px){.hisab-grid{grid-template-columns:1fr}.h-chat{position:static;max-height:none}}

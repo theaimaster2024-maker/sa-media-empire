@@ -9,7 +9,7 @@ const D={channels:[],income:[],expenses:[],subs:[],settings:null,legacy:[],loade
 const UI={tx:{type:'all',month:'',channel:'',q:''},rep:{year:null}};
 
 const INCOME_SOURCES=['YouTube AdSense','Sponsorship','Affiliate Income','Channel Sale','Client Payment','Other'];
-const EXPENSE_CATS=['Owner Salary','Partnership Payment','AI Subscription','Software Subscription','Production Cost','Animation','Editor Payment','Equipment','Bank & Transfer Fees','Channel Purchase','Marketing','Other'];
+const EXPENSE_CATS=['Owner Salary','Partnership Payment','Owner Loan','Owner Withdrawal','AI Subscription','Software Subscription','Production Cost','Animation','Editor Payment','Equipment','Bank & Transfer Fees','Channel Purchase','Marketing','Other'];
 const METHODS=['Bank Transfer','Wise','bKash','Cash','Card','Binance / USDT','Other'];
 
 /* ── helpers ─────────────────────────────── */
@@ -65,8 +65,8 @@ const CH_COLS='id,name,tagline,platform,status,monetization_status,subscriber_co
 async function loadData(){
   const [ch,inc,exp,subs,set]=await Promise.all([
     sb.from('finance_channels').select(CH_COLS).order('name'),
-    sb.from('finance_income').select('id,date,amount,source,channel_id,description,payment_method,reference_no,status,notes,created_at').order('date',{ascending:false}),
-    sb.from('finance_expenses').select('id,date,due_date,payee,amount,description,category,scope,channel_id,payment_method,approval_status,payment_date,reference_no,notes,voucher_number,editor_project_id,created_at').order('date',{ascending:false}),
+    sb.from('finance_income').select('id,date,amount,source,channel_id,description,payment_method,reference_no,status,notes,created_at,origin,hisab_txn_id').order('date',{ascending:false}),
+    sb.from('finance_expenses').select('id,date,due_date,payee,amount,description,category,scope,channel_id,payment_method,approval_status,payment_date,reference_no,notes,voucher_number,editor_project_id,created_at,origin,hisab_txn_id').order('date',{ascending:false}),
     sb.from('finance_subscriptions').select('*').order('next_payment'),
     sb.from('finance_settings').select('*').limit(1)
   ]);
@@ -116,6 +116,7 @@ async function startApp(u){
 /* ── navigation ─────────────────────────────── */
 const PAGES={
   dashboard:{t:'Dashboard',i:'ti-layout-dashboard',g:'',owner:1},
+  hisab:{t:'Hisab',i:'ti-wallet',g:'Money',owner:1},
   transactions:{t:'Transactions',i:'ti-arrows-exchange',g:'Money',owner:1},
   channels:{t:'Channels',i:'ti-brand-youtube',g:'Money',owner:1},
   partners:{t:'Partner share',i:'ti-users-group',g:'Money',owner:1},
@@ -144,7 +145,7 @@ async function route(){
   const v=$('#view');
   try{
     if(pg==='channel'&&arg)return renderChannel(arg);
-    ({dashboard:renderDashboard,transactions:renderTransactions,channels:renderChannels,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,notes:renderNotes,settings:renderSettings})[key]();
+    ({dashboard:renderDashboard,hisab:renderHisab,transactions:renderTransactions,channels:renderChannels,partners:renderPartners,subscriptions:renderSubs,reports:renderReports,uploads:renderUploads,notes:renderNotes,settings:renderSettings})[key]();
   }catch(e){console.error(e);v.innerHTML=errorBox(e.message)}
 }
 function errorBox(msg){return `<div class="glass card empty"><i class="ti ti-alert-circle"></i><b>Something didn’t load</b>${esc(msg)}<div style="margin-top:14px"><button class="btn btn-ghost" onclick="refresh()">Try again</button></div></div>`}
@@ -191,6 +192,7 @@ function renderDashboard(){
   $('#view').innerHTML=head(`${hi}, ${esc((profile?.name||'').split(' ')[0])}`,`Here is where the business stands on ${fmtDate(todayISO())}.`,
     `<button class="btn btn-ghost" onclick="openEntry('in')"><i class="ti ti-plus"></i>Add income</button><button class="btn btn-primary" onclick="openEntry('out')"><i class="ti ti-plus"></i>Add expense</button>`)+
   `<div class="stack">
+   ${typeof fromPhone==='function'&&fromPhone().length?`<a class="glass card" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);padding:14px 20px" href="#/hisab" onclick="localStorage.setItem('hisab-tab','business');H.tab='business'"><i class="ti ti-device-mobile" style="font-size:20px;color:var(--sun)"></i><b>${fromPhone().length} business entr${fromPhone().length===1?'y':'ies'} from the Hisab app need your OK</b><span class="hint" style="margin-left:auto">Review</span></a>`:''}
    <div class="row r-2-1">
     <section class="glass slab">
       <div class="slab-label">Money in the business</div>
