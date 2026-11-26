@@ -123,7 +123,7 @@ const PAGES={
   subscriptions:{t:'Subscriptions',i:'ti-repeat',g:'Money',owner:1},
   reports:{t:'Reports',i:'ti-chart-histogram',g:'Money',owner:1},
   uploads:{t:'Video upload',i:'ti-cloud-upload',g:'Workspace',all:1},
-  voice:{t:'Voice',i:'ti-microphone-2',g:'Workspace',all:1},
+  voice:{t:'Voice & Audio',i:'ti-microphone-2',g:'Workspace',all:1},
   notes:{t:'Private notes',i:'ti-lock',g:'Workspace',owner:1},
   settings:{t:'Settings',i:'ti-settings',g:'Workspace',owner:1}
 };

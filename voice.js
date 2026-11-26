@@ -10,7 +10,36 @@ const VOICE_MODELS=[
   {id:'eleven_flash_v2_5',name:'Flash v2.5',hint:'Fastest and cheapest, for drafts.'}
 ];
 const V={loaded:false,presets:[],gens:[],people:{},status:null,sel:null,custom:{id:'',name:'',checked:null},model:'eleven_v4',text:'',
-  set:{stability:.5,similarity_boost:.75,style:0,speed:1,use_speaker_boost:true},busy:false,last:null,urls:{}};
+  set:{stability:.5,similarity_boost:.75,style:0,speed:1,use_speaker_boost:true},busy:false,last:null,urls:{},
+  tab:'voice',histKind:'all',
+  music:{prompt:'',label:'',seconds:30,instrumental:true,busy:false,last:null},
+  sfx:{prompt:'',label:'',seconds:null,influence:.3,loop:false,busy:false,last:null}};
+const AUDIO_IDEAS={
+  music:[
+    ['Documentary','Calm, curious documentary underscore, soft piano and light plucked strings, gentle pulse, 90 BPM, no vocals'],
+    ['Quirky facts','Playful quirky background music for a funny animal facts Short, pizzicato strings, bassoon and light percussion, bouncy, 110 BPM'],
+    ['Workout','Energetic modern workout track, punchy drums, deep bass, bright synths, motivating, 128 BPM, no vocals'],
+    ['Lo-fi','Chill lo-fi hip hop beat, warm Rhodes keys, vinyl crackle, soft boom-bap drums, relaxed, 80 BPM'],
+    ['Epic history','Epic cinematic orchestral score for a war history video, low brass, taiko drums, rising strings, tense then triumphant'],
+    ['Suspense','Dark suspenseful ambient underscore, low drones, ticking pulse, sparse piano notes, building tension'],
+    ['Podcast bed','Light friendly podcast background music, acoustic guitar and soft claps, warm and upbeat, low in the mix, 100 BPM'],
+    ['Corporate','Clean uplifting corporate background music, light piano, soft synth pads, steady pulse, optimistic']
+  ],
+  sfx:[
+    ['Whoosh','Fast clean whoosh transition, airy, short'],
+    ['Pop','Soft cartoon pop, short and punchy'],
+    ['Riser','Cinematic riser building tension for 3 seconds, ends abruptly'],
+    ['Impact','Deep cinematic boom impact with a short tail'],
+    ['Ding','Bright notification ding, pleasant bell, single hit'],
+    ['Click','Crisp UI mouse click, single, dry'],
+    ['Footsteps','Footsteps on a wooden floor, steady walking pace, indoor'],
+    ['Crowd','Stadium crowd cheering and applauding, big room'],
+    ['Rain','Gentle rain on a window, calm ambience, seamless loop'],
+    ['Jungle','Tropical jungle ambience, birds and insects, distant water, seamless loop'],
+    ['Splash','Small object splashing into water, close up'],
+    ['Typing','Fast keyboard typing on a mechanical keyboard, close mic']
+  ]};
+function voiceTab(t){V.tab=t;renderVoice()}
 
 async function voiceLoad(){
   const [p,g,pr]=await Promise.all([
@@ -56,7 +85,7 @@ function voicePick(id,silent){
 function renderVoice(){
   const v=$('#view');
   if(!V.loaded){
-    v.innerHTML=head('Voice','ElevenLabs voices for every channel')+`<div class="glass card empty"><div class="spin" style="margin:0 auto 10px"></div>Loading voices…</div>`;
+    v.innerHTML=head('Voice & Audio','Voiceovers, background music and sound effects with ElevenLabs.')+`<div class="glass card empty"><div class="spin" style="margin:0 auto 10px"></div>Loading voices…</div>`;
     voiceLoad().then(()=>{if(location.hash.startsWith('#/voice'))renderVoice()}).catch(e=>v.innerHTML=errorBox(e.message));
     if(!V.status)voiceStatus();
     return;
@@ -69,9 +98,8 @@ function renderVoice(){
       <span class="v-av">${esc((p.name||'?')[0])}</span><span class="v-tile-t"><b>${esc(p.name)}</b><small>${esc(p.channel||'')}${p.channel&&p.voice_name?' · ':''}${esc(p.voice_name||'')}</small></span></button>`).join('');
   const sl=(k,label,min,max,step,fmt)=>`<label class="v-sl"><span>${label} <b id="v-${k}-o">${fmt(V.set[k])}</b></span><input type="range" min="${min}" max="${max}" step="${step}" value="${V.set[k]}" oninput="V.set.${k}=+this.value;$('#v-${k}-o').textContent=(${fmt.toString()})(+this.value)"></label>`;
   const pct=x=>Math.round(x*100)+'%';
-  v.innerHTML=head('Voice','Write it, pick a voice, get the MP3. ElevenLabs, Eleven v4 by default.')+`
-  <div class="row r-2-1 v-grid">
-    <div class="stack">
+  const tabs=`<div class="v-tabs" role="tablist">${[['voice','ti-microphone-2','Voice'],['music','ti-music','Music'],['sfx','ti-wave-sine','Sound effects']].map(([k,i,t])=>`<button role="tab" class="v-tabb ${V.tab===k?'on':''}" onclick="voiceTab('${k}')"><i class="ti ${i}"></i>${t}</button>`).join('')}</div>`;
+  const voiceLeft=`
       <div class="glass card">
         <div class="card-h"><h2>1 · Voice</h2><span class="sub">${V.presets.length} channel voices</span></div>
         <div class="v-tiles">${presetTiles}
@@ -107,14 +135,19 @@ function renderVoice(){
         <button class="btn btn-primary v-gobtn" id="v-go" onclick="voiceGenerate()" ${V.busy?'disabled':''}>${V.busy?'<span class="spin sm"></span>Generating…':'<i class="ti ti-player-play"></i>Generate voice'}</button>
         <div id="v-result">${V.last?voiceResultHtml(V.last):`<p class="hint">The MP3 shows up here and in History. Each character uses ElevenLabs credits.</p>`}</div>
       </div>
-    </div>
-
+  `;
+  const left=V.tab==='music'?audioMusicHtml():V.tab==='sfx'?audioSfxHtml():voiceLeft;
+  const gens=V.histKind==='all'?V.gens:V.gens.filter(g=>(g.kind||'voice')===V.histKind);
+  v.innerHTML=head('Voice & Audio','Voiceovers, background music and sound effects with ElevenLabs.')+tabs+`
+  <div class="row r-2-1 v-grid">
+    <div class="stack">${left}</div>
     <div class="stack">
       <div class="glass card" id="v-acct">${voiceAcctHtml()}</div>
-      ${isOwner()?`<div class="glass card"><div class="card-h"><h2>Channel voices</h2><button class="btn btn-ghost btn-sm" onclick="voicePresetDlg(null)"><i class="ti ti-plus"></i>Add</button></div>
+      ${isOwner()&&V.tab==='voice'?`<div class="glass card"><div class="card-h"><h2>Channel voices</h2><button class="btn btn-ghost btn-sm" onclick="voicePresetDlg(null)"><i class="ti ti-plus"></i>Add</button></div>
         <div class="list">${V.presets.map(p=>`<div class="li v-li"><span class="li-ic in"><i class="ti ti-microphone-2"></i></span><div style="min-width:0"><div class="li-t">${esc(p.name)}</div><div class="li-s">${esc(p.voice_id)} · ${esc(p.model_id)}</div></div><button class="icon-btn" title="Edit" onclick="voicePresetDlg('${p.id}')"><i class="ti ti-pencil"></i></button></div>`).join('')||'<p class="hint">No presets yet.</p>'}</div></div>`:''}
-      <div class="glass card"><div class="card-h"><h2>History</h2><span class="sub">${V.gens.length} recent</span></div>
-        <div class="v-hist">${V.gens.map(voiceGenHtml).join('')||`<div class="empty"><i class="ti ti-waveform"></i><b>Nothing yet</b>Generated voices appear here for the whole team.</div>`}</div></div>
+      <div class="glass card"><div class="card-h"><h2>History</h2><span class="sub">${gens.length} recent</span></div>
+        <div class="v-hf">${[['all','All'],['voice','Voice'],['music','Music'],['sfx','SFX']].map(([k,t])=>`<button class="v-chip ${V.histKind===k?'on':''}" onclick="V.histKind='${k}';renderVoice()">${t}</button>`).join('')}</div>
+        <div class="v-hist">${gens.map(voiceGenHtml).join('')||`<div class="empty"><i class="ti ti-waveform"></i><b>Nothing yet</b>Everything the team generates shows up here.</div>`}</div></div>
     </div>
   </div>`;
 }
@@ -146,24 +179,28 @@ function voiceAcctHtml(){
 }
 function voiceResultHtml(r){
   return `<div class="v-res"><audio controls autoplay src="${esc(r.url)}"></audio>
-    <div class="v-res-meta"><span class="pill"><i class="ti ti-check"></i>Done</span><span class="hint">${esc(r.voice)} · ${esc(r.model)} · ${(+r.chars).toLocaleString()} characters</span>
+    <div class="v-res-meta"><span class="pill"><i class="ti ti-check"></i>Done</span><span class="hint">${esc(r.voice)} · ${esc(r.model)}${r.chars?` · ${(+r.chars).toLocaleString()} characters`:''}</span>
     <button class="btn btn-ghost btn-sm" onclick="voiceDownload('${esc(r.path)}','${esc(r.file)}')"><i class="ti ti-download"></i>Download MP3</button></div></div>`;
 }
 function voiceFileName(g){
-  const base=(g.preset_name||g.voice_name||'voice').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const kind=g.kind||'voice';
+  const base=(kind==='voice'?'':kind+'_')+(g.preset_name||g.voice_name||(kind==='music'?'music':kind==='sfx'?'sound':'voice')).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
   const t=new Date(g.created_at||Date.now());const pad=n=>String(n).padStart(2,'0');
   return `${base}_${t.getFullYear()}${pad(t.getMonth()+1)}${pad(t.getDate())}_${pad(t.getHours())}${pad(t.getMinutes())}.mp3`;
 }
+const AUDIO_KIND={voice:{i:'ti-microphone-2',t:'Voice'},music:{i:'ti-music',t:'Music'},sfx:{i:'ti-wave-sine',t:'Sound effect'}};
 function voiceGenHtml(g){
-  const url=V.urls[g.audio_path];const mine=g.created_by===user?.id||isOwner();
+  const url=V.urls[g.audio_path];const mine=g.created_by===user?.id||isOwner();const kind=g.kind||'voice';const K=AUDIO_KIND[kind]||AUDIO_KIND.voice;
   const when=new Date(g.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
-  return `<div class="v-gen">
-    <div class="v-gen-h"><b>${esc(g.preset_name||g.voice_name||g.voice_id)}</b><span class="hint">${esc(when)}${V.people[g.created_by]?` · ${esc(V.people[g.created_by])}`:''}</span></div>
+  const title=kind==='voice'?(g.preset_name||g.voice_name||g.voice_id):(g.preset_name||K.t);
+  const tag=kind==='voice'?g.model_id:`${K.t}${g.duration_s?' · '+audioFmtSec(g.duration_s):''}${g.settings?.loop?' · loop':''}`;
+  return `<div class="v-gen v-k-${kind}">
+    <div class="v-gen-h"><b><i class="ti ${K.i}"></i> ${esc(title)}</b><span class="hint">${esc(when)}${V.people[g.created_by]?` · ${esc(V.people[g.created_by])}`:''}</span></div>
     <p class="v-gen-t" title="${esc(g.text)}">${esc(g.text)}</p>
     ${url?`<audio controls preload="none" src="${esc(url)}"></audio>`:'<p class="hint">Audio link expired, reload the page.</p>'}
-    <div class="v-gen-a"><span class="pill grey">${esc(g.model_id)}</span>
+    <div class="v-gen-a"><span class="pill grey">${esc(tag)}</span>
       <button class="btn btn-ghost btn-sm" onclick="voiceDownload('${esc(g.audio_path)}','${esc(voiceFileName(g))}')"><i class="ti ti-download"></i>MP3</button>
-      <button class="btn btn-ghost btn-sm" onclick="voiceReuse('${g.id}')" title="Put this text and voice back in the editor"><i class="ti ti-arrow-back-up"></i>Reuse</button>
+      <button class="btn btn-ghost btn-sm" onclick="voiceReuse('${g.id}')" title="Put this back in the editor"><i class="ti ti-arrow-back-up"></i>Reuse</button>
       ${mine?`<button class="icon-btn" title="Delete" onclick="voiceDelete('${g.id}')"><i class="ti ti-trash"></i></button>`:''}</div>
   </div>`;
 }
@@ -174,13 +211,19 @@ async function voiceDownload(path,file){
 }
 function voiceReuse(id){
   const g=V.gens.find(x=>x.id===id);if(!g)return;
+  const kind=g.kind||'voice';
+  if(kind!=='voice'){const st=V[kind],s=g.settings||{};st.prompt=g.text;st.label=g.preset_name||'';
+    if(kind==='music'){st.seconds=+s.seconds||30;st.instrumental=s.instrumental!==false}
+    else{st.seconds=s.seconds==null?null:+s.seconds;st.influence=s.prompt_influence==null?.3:+s.prompt_influence;st.loop=!!s.loop}
+    V.tab=kind;renderVoice();window.scrollTo({top:0,behavior:'smooth'});return}
+  V.tab='voice';
   const p=V.presets.find(x=>x.voice_id===g.voice_id&&x.name===g.preset_name);
   if(p)voicePick(p.id,true);else{V.sel='custom';V.custom={id:g.voice_id,name:g.voice_name||'',checked:null}}
   V.model=g.model_id;if(g.settings){const s=g.settings;V.set={stability:+s.stability,similarity_boost:+s.similarity_boost,style:+s.style,speed:+s.speed,use_speaker_boost:s.use_speaker_boost!==false}}
   V.text=g.text;renderVoice();window.scrollTo({top:0,behavior:'smooth'});
 }
 async function voiceDelete(id){
-  if(!await confirmDialog('Delete this voice?','It is removed from History for everyone. Download it first if you need it.','Delete'))return;
+  if(!await confirmDialog('Delete this audio?','It is removed from History for everyone. Download it first if you need it.','Delete'))return;
   const {error}=await sb.from('voice_generations').delete().eq('id',id);
   if(error){toast(error.message);return}
   V.gens=V.gens.filter(g=>g.id!==id);toast('Deleted');renderVoice();
@@ -263,4 +306,69 @@ function voiceSearchDlg(){
       ${x.preview_url?`<audio controls preload="none" src="${esc(x.preview_url)}"></audio>`:''}</div><button class="btn btn-ghost btn-sm" data-i="${i}">Use</button></div>`).join('');
     r.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const x=list[+b.dataset.i];V.sel='custom';V.custom={id:x.voice_id,name:x.name,checked:{found:true,name:x.name,preview_url:x.preview_url,library:!x.mine}};d.close();renderVoice()});
   };
+}
+
+/* ---------- Music & sound effects ---------- */
+function audioIdeas(kind){
+  return `<div class="v-ideas">${AUDIO_IDEAS[kind].map(([t,p],i)=>`<button class="v-chip" onclick="audioIdea('${kind}',${i})" title="${esc(p)}">${esc(t)}</button>`).join('')}</div>`;
+}
+function audioIdea(kind,i){const [t,p]=AUDIO_IDEAS[kind][i];V[kind].prompt=p;V[kind].label=t;if(kind==='sfx')V.sfx.loop=/seamless loop/i.test(p);renderVoice()}
+function audioFmtSec(s){s=+s;if(s<60)return (s%1?s.toFixed(1):s)+' s';const m=Math.floor(s/60),r=Math.round(s%60);return `${m}:${String(r).padStart(2,'0')}`}
+function audioMusicHtml(){
+  const M=V.music;
+  return `<div class="glass card">
+      <div class="card-h"><h2>Background music</h2><span class="sub">Eleven Music</span></div>
+      <p class="hint" style="margin:-4px 0 10px">Describe the mood, instruments, tempo and where it is used. Pick an idea to start from.</p>
+      ${audioIdeas('music')}
+      <textarea class="inp v-text v-text-s" placeholder="e.g. Calm curious documentary underscore, soft piano and plucked strings, 90 BPM, no vocals" oninput="V.music.prompt=this.value">${esc(M.prompt)}</textarea>
+      <div class="grid2 v-opts">
+        <label class="v-sl"><span>Length <b id="m-len">${audioFmtSec(M.seconds)}</b></span><input type="range" min="10" max="300" step="5" value="${M.seconds}" oninput="V.music.seconds=+this.value;$('#m-len').textContent=audioFmtSec(this.value)"></label>
+        <label class="fld"><span>Name (optional)</span><input class="inp" value="${esc(M.label)}" placeholder="OddlyTold bed" oninput="V.music.label=this.value"></label>
+      </div>
+      <label class="v-chk"><input type="checkbox" ${M.instrumental?'checked':''} onchange="V.music.instrumental=this.checked"> Instrumental only (no singing) — best under a voiceover</label>
+    </div>
+    <div class="glass card v-go">
+      <button class="btn btn-primary v-gobtn" id="a-go" onclick="audioGenerate('music')" ${M.busy?'disabled':''}>${M.busy?'<span class="spin sm"></span>Composing… (can take a minute)':'<i class="ti ti-music"></i>Generate music'}</button>
+      <div id="a-result">${M.last?voiceResultHtml(M.last):`<p class="hint">Longer tracks take longer and use more credits. 30–60 s is plenty for a Short.</p>`}</div>
+    </div>`;
+}
+function audioSfxHtml(){
+  const S=V.sfx;const auto=S.seconds===null;
+  return `<div class="glass card">
+      <div class="card-h"><h2>Sound effect</h2><span class="sub">ElevenLabs SFX v2</span></div>
+      <p class="hint" style="margin:-4px 0 10px">Say what makes the sound, the action, the material and the space. Ambiences can loop.</p>
+      ${audioIdeas('sfx')}
+      <textarea class="inp v-text v-text-s" placeholder="e.g. Heavy wooden door creaks open slowly, then slams shut, indoor reverb" oninput="V.sfx.prompt=this.value">${esc(S.prompt)}</textarea>
+      <div class="grid2 v-opts">
+        <label class="v-sl"><span>Length <b id="s-len">${auto?'Auto':audioFmtSec(S.seconds)}</b></span>
+          <input type="range" min="0" max="30" step="0.5" value="${auto?0:S.seconds}" oninput="const x=+this.value;V.sfx.seconds=x<0.5?null:x;$('#s-len').textContent=x<0.5?'Auto':audioFmtSec(x)">
+          <small class="hint">All the way left = ElevenLabs picks the length</small></label>
+        <label class="v-sl"><span>Follow the prompt <b id="s-inf">${Math.round(S.influence*100)}%</b></span>
+          <input type="range" min="0" max="1" step="0.05" value="${S.influence}" oninput="V.sfx.influence=+this.value;$('#s-inf').textContent=Math.round(this.value*100)+'%'">
+          <small class="hint">Higher = closer to your words, lower = more creative</small></label>
+        <label class="fld"><span>Name (optional)</span><input class="inp" value="${esc(S.label)}" placeholder="Whoosh 1" oninput="V.sfx.label=this.value"></label>
+      </div>
+      <label class="v-chk"><input type="checkbox" ${S.loop?'checked':''} onchange="V.sfx.loop=this.checked"> Seamless loop (for ambience and background beds)</label>
+    </div>
+    <div class="glass card v-go">
+      <button class="btn btn-primary v-gobtn" id="a-go" onclick="audioGenerate('sfx')" ${S.busy?'disabled':''}>${S.busy?'<span class="spin sm"></span>Generating…':'<i class="ti ti-wave-sine"></i>Generate sound effect'}</button>
+      <div id="a-result">${S.last?voiceResultHtml(S.last):`<p class="hint">Each sound effect is saved to History, so you can grab it again later.</p>`}</div>
+    </div>`;
+}
+async function audioGenerate(kind){
+  const st=V[kind];if(st.busy)return;
+  const prompt=st.prompt.trim();if(!prompt){toast(kind==='music'?'Describe the music first':'Describe the sound first');return}
+  st.busy=true;renderVoice();const t0=Date.now();
+  try{
+    const body=kind==='music'
+      ?{action:'music',prompt,seconds:st.seconds,instrumental:st.instrumental,label:st.label.trim()||null}
+      :{action:'sfx',prompt,seconds:st.seconds,prompt_influence:st.influence,loop:st.loop,label:st.label.trim()||null};
+    const {data,error}=await sb.functions.invoke('voice-studio',{body});
+    if(error||!data?.ok)throw new Error(await fnErr(error,data));
+    const g={id:data.id,kind,created_at:data.created_at,created_by:user.id,preset_name:body.label,voice_id:null,voice_name:null,model_id:data.model_id,text:prompt,settings:data.settings,audio_path:data.path,chars:prompt.length,duration_s:data.settings?.seconds??null};
+    V.urls[data.path]=data.url;V.gens.unshift(g);
+    st.last={url:data.url,path:data.path,voice:kind==='music'?'Music':'Sound effect',model:g.duration_s?audioFmtSec(g.duration_s):'auto length',chars:null,file:voiceFileName(g)};
+    toast(`${kind==='music'?'Music':'Sound effect'} ready in ${Math.round((Date.now()-t0)/1000)}s`);
+  }catch(e){st.busy=false;st.last=null;toast(e.message);renderVoice();const r=$('#a-result');if(r)r.innerHTML=`<p class="v-warn"><i class="ti ti-alert-triangle"></i> ${esc(e.message)}</p>`;return}
+  st.busy=false;renderVoice();
 }
