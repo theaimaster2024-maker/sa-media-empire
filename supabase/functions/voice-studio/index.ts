@@ -1,6 +1,6 @@
 // Voice studio for SA Media Empire: ElevenLabs text-to-speech for every team member.
 // The ElevenLabs key lives in public.voice_secrets (RLS on, no policies: service role only). It never reaches the browser.
-// Actions: status, voice, search, generate (any signed-in team member); set_key (owner only).
+// Actions: status, voice, search, generate, music, sfx (any signed-in team member); set_key (owner only).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store' };
@@ -150,6 +150,55 @@ Deno.serve(async (req) => {
       if (ierr) throw ierr;
       const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 6);
       return reply({ ok: true, id: row.id, created_at: row.created_at, path, url: signed?.signedUrl, chars: text.length, parts: parts.length, format, by: prof.name });
+    }
+
+    // Background music and sound effects. Both come back as one MP3 and are saved to History like voices.
+    if (action === 'music' || action === 'sfx') {
+      const kind = action;
+      const prompt = String(body.prompt || '').trim();
+      if (!prompt) return reply({ error: kind === 'music' ? 'Describe the music first' : 'Describe the sound first' }, 400);
+      if (prompt.length > 2000) return reply({ error: 'Keep the description under 2,000 characters' }, 400);
+      let path_: string, payload: Record<string, unknown>, model_id: string, duration: number | null;
+      if (kind === 'music') {
+        const secs = Math.round(clamp(body.seconds, 10, 300, 30));
+        duration = secs;
+        model_id = 'music_v1';
+        payload = { prompt, music_length_ms: secs * 1000, model_id };
+        if (body.instrumental !== false) payload.force_instrumental = true;
+        path_ = '/v1/music';
+      } else {
+        const auto = body.seconds === null || body.seconds === undefined || body.seconds === 'auto';
+        duration = auto ? null : Math.round(clamp(body.seconds, 0.5, 30, 5) * 10) / 10;
+        model_id = 'eleven_text_to_sound_v2';
+        payload = { text: prompt, prompt_influence: clamp(body.prompt_influence, 0, 1, 0.3), model_id };
+        if (duration !== null) payload.duration_seconds = duration;
+        if (body.loop) payload.loop = true;
+        path_ = '/v1/sound-generation';
+      }
+      const call = (fmt: string) => xi(key, `${path_}?output_format=${fmt}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg' }, body: JSON.stringify(payload) });
+      let format = 'mp3_44100_192';
+      let r = await call(format);
+      if (!r.ok) {
+        const msg = await xiError(r);
+        if (/format|tier|subscription/i.test(msg)) { format = 'mp3_44100_128'; r = await call(format); if (!r.ok) return reply({ error: 'ElevenLabs: ' + await xiError(r) }, 502); }
+        else return reply({ error: 'ElevenLabs: ' + msg, permission: /permission/i.test(msg) }, 502);
+      }
+      const bytes = new Uint8Array(await r.arrayBuffer());
+      const label = String(body.label || prompt).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || kind;
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+      const path = `${stamp.slice(0, 6)}/${kind}_${stamp}_${label}_${crypto.randomUUID().slice(0, 6)}.mp3`;
+      const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: 'audio/mpeg', upsert: false });
+      if (up.error) throw up.error;
+      const settings = kind === 'music'
+        ? { seconds: duration, instrumental: payload.force_instrumental === true, output_format: format }
+        : { seconds: duration, prompt_influence: payload.prompt_influence, loop: !!payload.loop, output_format: format };
+      const { data: row, error: ierr } = await admin.from('voice_generations').insert({
+        kind, created_by: user.id, preset_name: body.label ? String(body.label).slice(0, 120) : null,
+        voice_id: null, voice_name: null, model_id, text: prompt, settings, audio_path: path, chars: prompt.length, duration_s: duration,
+      }).select('id,created_at').single();
+      if (ierr) throw ierr;
+      const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 6);
+      return reply({ ok: true, kind, id: row.id, created_at: row.created_at, path, url: signed?.signedUrl, model_id, settings, by: prof.name });
     }
 
     return reply({ error: 'Unknown action' }, 400);

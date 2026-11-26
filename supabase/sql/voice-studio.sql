@@ -74,3 +74,11 @@ select * from (values
   ('RenderFit intro', 'RenderFit', 'tMvyQtpCVQ0DkixuYm6J', 'Asher', 'eleven_v4', 0.6, 0.75, 0.0, 0.88, 'Short, slow, premium intro lines', 5)
 ) v(name, channel, voice_id, voice_name, model_id, stability, similarity_boost, style, speed, note, position)
 where not exists (select 1 from public.voice_presets);
+
+-- Music and sound effects share the history table.
+alter table public.voice_generations add column if not exists kind text not null default 'voice';
+alter table public.voice_generations drop constraint if exists voice_generations_kind_check;
+alter table public.voice_generations add constraint voice_generations_kind_check check (kind in ('voice','music','sfx'));
+alter table public.voice_generations alter column voice_id drop not null;
+alter table public.voice_generations add column if not exists duration_s numeric;
+create index if not exists voice_generations_kind_idx on public.voice_generations (kind, created_at desc);
